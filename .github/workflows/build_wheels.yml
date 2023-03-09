@@ -1,0 +1,95 @@
+name: Wheels
+
+on:
+  push:
+  pull_request:
+  release:
+    types:
+      - published
+  schedule:
+    # At 12:00 on every day-of-month
+    - cron: "0 12 */1 * *"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
+  cancel-in-progress: true
+
+
+jobs:
+  build_wheels:
+    name: Wheel for Linux-${{ matrix.cibw_python }}-${{ matrix.cibw_arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        cibw_python: [ "cp37-*", "cp38-*", "cp39-*", "cp310-*", "cp311-*"]
+        cibw_arch: [ "x86_64" ]
+
+    steps:
+      - uses: actions/checkout@v3
+      - name: Disable ptrace security restrictions
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.0
+        env:
+          CIBW_BUILD: ${{ matrix.cibw_python }}
+          CIBW_ARCHS_LINUX: ${{ matrix.cibw_arch }}
+          CIBW_PRERELEASE_PYTHONS: True
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+
+  build_sdist:
+    name: Build source distribution
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+
+      - name: Build sdist
+        run: pipx run build --sdist
+
+      - uses: actions/upload-artifact@v3
+        with:
+          path: dist/*.tar.gz
+
+  test_wheels:
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: [ "3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Set up dependencies
+        run: |
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt-get update
+          sudo apt-get install -qy \
+            gdb \
+            python${{matrix.python_version}}-dev \
+            python${{matrix.python_version}}-dbg \
+            python${{matrix.python_version}}-distutils
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install -r requirements-test.txt
+          python3 -m pip install dist/*cp310*.whl
+      - name: Disable ptrace security restrictions
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      - name: Run pytest
+        env:
+          PYTHON_TEST_VERSION: ${{ matrix.python_version }}
+        run: python3 -m pytest tests -k 'not 2.7' -n auto -vvv
