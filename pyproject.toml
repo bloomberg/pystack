@@ -1,0 +1,42 @@
+[build-system]
+
+requires = [
+     "setuptools",
+     "wheel",
+     "Cython"
+]
+
+build-backend = 'setuptools.build_meta'
+
+[tool.isort]
+
+force_single_line = true
+multi_line_output = 3
+include_trailing_comma = true
+force_grid_wrap = 0
+use_parentheses = true
+line_length = 88
+known_first_party=["pystack"]
+known_third_party=["rich", "elftools", "pytest"]
+
+[tool.towncrier]
+package = "pystack"
+package_dir = "src"
+filename = "NEWS.rst"
+directory = "news"
+
+[tool.cibuildwheel]
+build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*"]
+skip = "*musllinux*"
+manylinux-x86_64-image = "manylinux2014"
+manylinux-i686-image = "manylinux2014"
+
+[tool.cibuildwheel.linux]
+before-all = [
+  "cd /",
+  "curl  https://sourceware.org/elfutils/ftp/0.178/elfutils-0.178.tar.bz2 > ./elfutils.tar.bz2",
+  "tar -xvf elfutils.tar.bz2",
+  "cd elfutils-0.178",
+  "CFLAGS='-w' ./configure --disable-libdebuginfod --disable-debuginfod",
+  "make install"
+]

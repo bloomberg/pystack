@@ -1,0 +1,7 @@
+black
+flake8
+isort
+mypy
+bump2version
+towncrier
+-r requirements-docs.txt

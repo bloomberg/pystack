@@ -1,0 +1,66 @@
+{
+   <cython_cached_module_and_code_objects>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   fun:PyCode_NewWithPosOnlyArgs
+   fun:PyCode_New
+   fun:__Pyx_InitCachedConstants
+   fun:_ZL25__pyx_pymod_exec__pystackP7_object
+   fun:PyModule_ExecDef
+   fun:exec_builtin_or_dynamic
+   fun:_imp_exec_dynamic_impl
+   fun:_imp_exec_dynamic
+   fun:cfunction_vectorcall_O
+   fun:PyVectorcall_Call
+   fun:do_call_core
+   fun:_PyEval_EvalFrameDefault
+   fun:PyEval_EvalFrameEx
+   fun:_PyEval_EvalCodeWithName
+   fun:_PyFunction_Vectorcall
+   fun:_PyObject_Vectorcall
+   fun:call_function
+   fun:_PyEval_EvalFrameDefault
+}
+
+# CPython does not deallocate multitude of immortal objects
+# and this confuses valgrind. For this, we want to suppress
+# all traces that are not 'definite lost' that originated from
+# raw malloc/calloc/realloc.
+
+{
+   <cpython_possible_leaks_with_malloc>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:malloc
+   ...
+}
+{
+   <cpython_possible_leaks_with_realloc>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:realloc
+   ...
+}
+{
+   <cpython_possible_leaks_with_realloc>
+   Memcheck:Leak
+   match-leak-kinds: possible
+   fun:calloc
+   ...
+}
+
+# When dynamically loading the Python extension that contains
+# libdwfl's symbols, an initializer installed by libdwfl 
+# tries to dlopen an optional library (libdebuginfod) for
+# preparing some internal state and this confuses valgrind (this
+# call list is not used by any code in our library).
+{
+   <__libdwfl_debuginfod_init_initializer_in_shared_objects>
+   Memcheck:Leak
+   match-leak-kinds: definite
+   fun:malloc
+   ...
+   fun:__libdwfl_debuginfod_init
+   ...
+}

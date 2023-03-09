@@ -1,0 +1,43 @@
+"""Sphinx configuration file for pystack's documentation."""
+
+# -- General configuration ------------------------------------------------------------
+
+extensions = [
+    # first-party extensions
+    "sphinx.ext.autodoc",
+    "sphinx.ext.doctest",
+    "sphinx.ext.extlinks",
+    "sphinx.ext.githubpages",
+    "sphinx.ext.intersphinx",
+    "sphinx.ext.napoleon",
+    "sphinx.ext.todo",
+    "sphinx.ext.viewcode",
+    # third-party extensions
+    'sphinxarg.ext',
+]
+
+# General information about the project.
+project = "pystack"
+author = "Pablo Galindo Salgado"
+
+# -- Options for HTML -----------------------------------------------------------------
+
+html_title = project
+html_theme = "furo"
+html_static_path = ["_static"]
+html_logo = "_static/images/pystack.png"
+
+# -- Options for smartquotes ----------------------------------------------------------
+
+# Disable the conversion of dashes so that long options like "--find-links" won't
+# render as "-find-links" if included in the text.The default of "qDe" converts normal
+# quote characters ('"' and "'"), en and em dashes ("--" and "---"), and ellipses "..."
+smartquotes_action = "qe"
+
+# -- Options for intersphinx ----------------------------------------------------------
+
+intersphinx_mapping = {
+    "python": (
+        "https://docs.python.org/3",
+    )
+}

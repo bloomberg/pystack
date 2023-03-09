@@ -1,0 +1,11 @@
+exclude src/pystack/*.cpp
+exclude src/pystack/*.h
+
+include pyproject.toml
+include Makefile
+include src/pystack/py.typed
+recursive-include src/pystack/_pystack/ *
+recursive-include src/pystack *.py
+recursive-include src/pystack *.pyx *.pxd
+recursive-include src/pystack *.pxd
+recursive-include src/pystack *.pyi
