@@ -220,6 +220,21 @@ AbstractUnwinder::gatherInlineFrames(
     return StatusCode::SUCCESS;
 }
 
+const char*
+AbstractUnwinder::getNonInlineSymbolName(Dwfl_Module* mod, Dwarf_Addr pc) const
+{
+    auto item = d_symbol_by_pc_cache.find(pc);
+    if (item != d_symbol_by_pc_cache.end()) {
+        return item->second;
+    }
+
+    GElf_Sym sym;
+    GElf_Off offset;
+    const char* raw_symname = dwfl_module_addrinfo(mod, pc, &offset, &sym, nullptr, nullptr, nullptr);
+    d_symbol_by_pc_cache.emplace(pc, raw_symname);
+    return raw_symname;
+}
+
 std::vector<NativeFrame>
 AbstractUnwinder::gatherFrames(const std::vector<Frame>& frames) const
 {
@@ -231,16 +246,13 @@ AbstractUnwinder::gatherFrames(const std::vector<Frame>& frames) const
         bool isactivation = frame.isActivation;
         Dwarf_Addr pc_adjusted = pc - (isactivation ? 0 : 1);
 
-        GElf_Sym sym;
-        GElf_Off offset;
         Dwfl_Module* mod = dwfl_addrmodule(Dwfl(), pc_adjusted);
         const char* mod_name =
                 dwfl_module_info(mod, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr)
                         ?: "???";
         assert(mod_name != nullptr);
         LOG(DEBUG) << "Module identified for pc " << std::hex << std::showbase << pc << ": " << mod_name;
-        const char* raw_symname =
-                dwfl_module_addrinfo(mod, pc, &offset, &sym, nullptr, nullptr, nullptr);
+        const char* raw_symname = getNonInlineSymbolName(mod, pc);
         if (!raw_symname) {
             LOG(DEBUG) << std::hex << std::showbase << "Non-inline symbol name could not be resolved @ "
                        << pc;

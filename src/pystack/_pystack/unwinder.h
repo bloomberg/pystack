@@ -111,6 +111,8 @@ class AbstractUnwinder
     std::pair<int, Scopes> dwarfGetScopes(Dwarf_Die* cudie, Dwarf_Addr pc_adjusted) const;
     std::pair<int, Scopes> dwarfGetScopesDie(Dwarf_Die* die) const;
 
+    const char* getNonInlineSymbolName(Dwfl_Module* mod, Dwarf_Addr pc) const;
+
     StatusCode gatherInlineFrames(
             std::vector<NativeFrame>& native_frames,
             const std::string& noninline_symname,
@@ -123,6 +125,7 @@ class AbstractUnwinder
     mutable ModuleCuDieRanges d_range_maps_cache;
     mutable std::unordered_map<Dwarf_Addr, ScopesInfo> d_dwarf_getscopes_cache;
     mutable std::unordered_map<void*, ScopesInfo> d_dwarf_getscopes_die_cache;
+    mutable std::unordered_map<Dwarf_Addr, const char*> d_symbol_by_pc_cache;
 };
 
 class Unwinder : public AbstractUnwinder
