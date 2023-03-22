@@ -261,6 +261,13 @@ cdef class CoreFileAnalyzer:
         return result
 
     @intercept_runtime_errors(EngineError)
+    def extract_module_load_points(self) -> Dict[str, int]:
+        return {
+            pathlib.Path(mod.filename).name: mod.start
+            for mod in self._core_analyzer.get().ModuleInformation()
+        }
+
+    @intercept_runtime_errors(EngineError)
     def extract_build_ids(self) -> Tuple[str, str, str]:
         cdef object memory_maps = self._core_analyzer.get().MemoryMaps()
         cdef object module_information = self._core_analyzer.get().ModuleInformation()
@@ -331,12 +338,16 @@ cdef class ProcessManager:
 
         mapped_files = core_extractor.get().extractMappedFiles()
         memory_maps = core_extractor.get().MemoryMaps()
+        load_point_by_module = {
+            pathlib.Path(mod.filename).name: mod.start
+            for mod in core_extractor.get().ModuleInformation()
+        }
 
         virtual_maps = list(
             generate_maps_from_core_data(mapped_files, memory_maps)
         )
         pid = core_extractor.get().Pid()
-        map_info = parse_maps_file_for_binary(executable, virtual_maps)
+        map_info = parse_maps_file_for_binary(executable, virtual_maps, load_point_by_module)
 
         if map_info.python is None:
             raise InvalidPythonProcess(

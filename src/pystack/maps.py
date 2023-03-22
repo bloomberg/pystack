@@ -180,7 +180,7 @@ def _get_base_map(binary_maps: List[VirtualMap]) -> VirtualMap:
     return first_map
 
 
-def _get_bss(elf_maps: List[VirtualMap]) -> Optional[VirtualMap]:
+def _get_bss(elf_maps: List[VirtualMap], load_point: int) -> Optional[VirtualMap]:
     binary_map = _get_base_map(elf_maps)
     if not binary_map or not binary_map.path:
         return None
@@ -191,8 +191,13 @@ def _get_bss(elf_maps: List[VirtualMap]) -> Optional[VirtualMap]:
     bss_info = get_bss_info(binary_map.path)
     if not bss_info:
         return None
-    start = binary_map.start + bss_info["corrected_addr"]
-    LOGGER.info("Determined exact addr of .bss section: %s", hex(start))
+    start = load_point + bss_info["corrected_addr"]
+    LOGGER.info(
+        "Determined exact addr of .bss section: %s (%s + %s)",
+        hex(start),
+        hex(load_point),
+        hex(bss_info["corrected_addr"]),
+    )
     offset = 0
 
     # Calculate the offset based on the mapped files. The offset in core files
@@ -202,8 +207,6 @@ def _get_bss(elf_maps: List[VirtualMap]) -> Optional[VirtualMap]:
     first_matching_map = next((map for map in elf_maps if map.contains(start)), None)
     if first_matching_map is None:
         return None
-
-    first_matching_maps = list(map for map in elf_maps if map.contains(start))
 
     offset = first_matching_map.offset + (start - first_matching_map.start)
 
@@ -221,13 +224,25 @@ def _get_bss(elf_maps: List[VirtualMap]) -> Optional[VirtualMap]:
 
 
 def parse_maps_file_for_binary(
-    binary_name: Path, all_maps_iter: Iterable[VirtualMap]
+    binary_name: Path,
+    all_maps_iter: Iterable[VirtualMap],
+    load_point_by_module: Optional[Dict[str, int]] = None,
 ) -> MemoryMapInformation:
     min_addr = float("inf")
     max_addr = 0
     maps_by_library: Dict[str, List[VirtualMap]] = collections.defaultdict(list)
     current_lib = ""
     all_maps = tuple(all_maps_iter)
+
+    if load_point_by_module is None:
+        load_point_by_module = collections.defaultdict(lambda: 2**64)
+        for memory_range in all_maps:
+            if memory_range.path is not None:
+                load_point_by_module[memory_range.path.name] = min(
+                    memory_range.start,
+                    load_point_by_module[memory_range.path.name],
+                )
+
     for memory_range in all_maps:
         current_lib = (
             memory_range.path.name if memory_range.path is not None else current_lib
@@ -269,6 +284,7 @@ def parse_maps_file_for_binary(
     elif len(libpython_binaries) == 1:
         libpython_name = libpython_binaries[0]
         libpython_maps = maps_by_library[libpython_name]
+        load_point = load_point_by_module[libpython_name]
         elf_maps = libpython_maps
         libpython = _get_base_map(libpython_maps)
         LOGGER.info("%r first map found: %r", libpython_name, libpython)
@@ -276,13 +292,14 @@ def parse_maps_file_for_binary(
         LOGGER.info("Process does not have a libpython.so, reading from binary")
         elf_maps = binary_maps
         libpython = None
+        load_point = load_point_by_module[binary_name.name]
 
     heap_maps = maps_by_library.get("[heap]")
     if heap_maps is not None:
         heap, *_ = heap_maps
         LOGGER.info("Heap map found: %r", heap)
 
-    bss = _get_bss(elf_maps)
+    bss = _get_bss(elf_maps, load_point)
     if bss is None:
         bss = (
             next(

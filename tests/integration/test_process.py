@@ -53,7 +53,10 @@ def test_core_version_detection_using_bss_section(python, tmpdir):
     ) as corefile:
         core_map_analyzer = CoreFileAnalyzer(str(corefile), str(python_executable))
         virtual_maps = tuple(core_map_analyzer.extract_maps())
-        maps = parse_maps_file_for_binary(python_executable, virtual_maps)
+        load_point_by_module = core_map_analyzer.extract_module_load_points()
+        maps = parse_maps_file_for_binary(
+            python_executable, virtual_maps, load_point_by_module
+        )
         major, minor = scan_core_bss_for_python_version(corefile, maps.bss)
 
     # THEN
