@@ -33,6 +33,7 @@ manylinux-i686-image = "manylinux2014"
 
 [tool.cibuildwheel.linux]
 before-all = [
+  "yum install -y python-devel-2.7.5",
   "cd /",
   "curl  https://sourceware.org/elfutils/ftp/0.178/elfutils-0.178.tar.bz2 > ./elfutils.tar.bz2",
   "tar -xvf elfutils.tar.bz2",
