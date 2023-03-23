@@ -540,7 +540,11 @@ def test_get_build_ids_from_core(tmpdir: Path) -> None:
     with generate_core_file(
         python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
     ) as core_file:
-        core_map_analyzer = CoreFileAnalyzer(str(core_file))
+        # NOTE: `extract_build_ids` can fail if no executable is provided, but
+        # pystack always provides an executable when calling extract_build_ids,
+        # found using `extract_executable` if the user didn't provide it.
+        executable = CoreFileAnalyzer(str(core_file)).extract_executable()
+        core_map_analyzer = CoreFileAnalyzer(str(core_file), executable=executable)
         build_ids = set(core_map_analyzer.extract_build_ids())
 
     # THEN
