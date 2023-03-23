@@ -38,6 +38,6 @@ before-all = [
   "curl  https://sourceware.org/elfutils/ftp/0.178/elfutils-0.178.tar.bz2 > ./elfutils.tar.bz2",
   "tar -xvf elfutils.tar.bz2",
   "cd elfutils-0.178",
-  "CFLAGS='-w' ./configure --disable-libdebuginfod --disable-debuginfod",
+  "CFLAGS='-w' ./configure --disable-libdebuginfod --disable-debuginfod --prefix=/usr --libdir=/usr/lib64",
   "make install"
 ]
