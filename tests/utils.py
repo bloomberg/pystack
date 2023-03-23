@@ -1,3 +1,4 @@
+import collections
 import contextlib
 import itertools
 import os
@@ -27,8 +28,10 @@ ALL_VERSIONS = [
     ((2, 7), "python2.7"),
 ]
 
+Interpreter = collections.namedtuple("Interpreter", "version path has_symbols")
 
-def find_all_available_pythons() -> Iterable[pathlib.Path]:
+
+def find_all_available_pythons() -> Iterable[Interpreter]:
     test_version = os.getenv("PYTHON_TEST_VERSION")
     if test_version is not None:
         major, minor = test_version.split(".")
@@ -40,6 +43,7 @@ def find_all_available_pythons() -> Iterable[pathlib.Path]:
         location = shutil.which(name)
         if not location:
             continue
+
         result = subprocess.run(
             [location, "--version"],
             stdout=subprocess.DEVNULL,
@@ -47,7 +51,18 @@ def find_all_available_pythons() -> Iterable[pathlib.Path]:
         )
         if result.returncode != 0:
             continue
-        yield (version, pathlib.Path(location))
+
+        result = subprocess.run(
+            ["file", "-L", location],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.DEVNULL,
+        )
+        if result.returncode != 0:
+            continue
+        assert result.stdout is not None
+        has_symbols = result.returncode == 0 and b" stripped" not in result.stdout
+
+        yield Interpreter(version, pathlib.Path(location), has_symbols)
 
 
 AVAILABLE_PYTHONS = tuple(find_all_available_pythons())
@@ -124,7 +139,7 @@ def python_has_position_information(major: int, minor: int) -> bool:
 
 def generate_all_pystack_combinations(
     corefile=False, native=False
-) -> Tuple[str, StackMethod, bool, pathlib.Path]:
+) -> Iterable[Tuple[str, StackMethod, bool, Tuple[Tuple[int, int], pathlib.Path]]]:
     if corefile:
         stack_methods = (
             StackMethod.SYMBOLS,
@@ -150,7 +165,7 @@ def generate_all_pystack_combinations(
         blocking_methods,
         AVAILABLE_PYTHONS,
     ):
-        ((major_version, minor_version), _) = python
+        (major_version, minor_version) = python.version
         if method == StackMethod.BSS and (
             major_version > 3 or (major_version == 3 and minor_version >= 10)
         ):
@@ -163,14 +178,16 @@ def generate_all_pystack_combinations(
             major_version > 3 or (major_version == 3 and minor_version >= 11)
         ):
             continue
+        if method == StackMethod.SYMBOLS and not python.has_symbols:
+            continue
 
-        python_id = "bbpy" if "bbpy" in python[1].name else ""
+        python_id = "bbpy" if "bbpy" in python.path.name else ""
         the_id = (
             f"method={method.name}, blocking={blocking}, "
             f"python={python_id}{major_version}.{minor_version}"
         )
 
-        yield the_id, method, blocking, python
+        yield the_id, method, blocking, python[:2]
 
 
 def all_pystack_combinations(corefile=False, native=False):
@@ -186,5 +203,14 @@ def all_pystack_combinations(corefile=False, native=False):
 
 
 ALL_PYTHONS = pytest.mark.parametrize(
-    "python", AVAILABLE_PYTHONS, ids=[python[1].name for python in AVAILABLE_PYTHONS]
+    "python",
+    [python[:2] for python in AVAILABLE_PYTHONS],
+    ids=[python[1].name for python in AVAILABLE_PYTHONS],
+)
+
+
+ALL_PYTHONS_WITH_SYMBOLS = pytest.mark.parametrize(
+    "python",
+    [python[:2] for python in AVAILABLE_PYTHONS if python.has_symbols],
+    ids=[python[1].name for python in AVAILABLE_PYTHONS if python.has_symbols],
 )
