@@ -5,6 +5,7 @@ from pystack.engine import NativeReportingMode
 from pystack.engine import get_process_threads
 from pystack.engine import get_process_threads_for_core
 from tests.utils import ALL_PYTHONS
+from tests.utils import ALL_PYTHONS_WITH_SYMBOLS
 from tests.utils import generate_core_file
 from tests.utils import spawn_child_process
 
@@ -14,7 +15,7 @@ TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
 VERSION_REGEXP = re.compile(r"python(?P<major>\d+)\.(?P<minor>\d+)")
 
 
-@ALL_PYTHONS
+@ALL_PYTHONS_WITH_SYMBOLS
 def test_gc_status_is_reported_when_garbage_collecting_in_process(python, tmpdir):
     # GIVEN
 
@@ -62,7 +63,7 @@ def test_gc_status_is_reported_when_no_garbage_collecting_in_process(python, tmp
     assert {thread.gc_status for thread in threads} == {""}
 
 
-@ALL_PYTHONS
+@ALL_PYTHONS_WITH_SYMBOLS
 def test_gc_status_is_reported_when_garbage_collecting_in_core(python, tmpdir):
     # GIVEN
 
