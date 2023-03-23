@@ -14,76 +14,79 @@
 
 # Pystack
 
-> Tool for analysis of the stack of remote python processes and core files
+> Print the stack trace of a running Python process, or of a Python core dump.
 
-Pystack is a tool that uses forbidden magic to allow you to inspect the stack frame of a running
-Python process or core file in Linux, to know what it is doing without having to interpret nasty
-CPython internals.
+Pystack is a tool that uses forbidden magic to let you inspect the stack frames of a running Python
+process or a Python core dump, to easily and quickly learn what it is doing (or what it was doing
+when it crashed) without having to interpret nasty CPython internals.
 
 # What Pystack can do
 
 Pystack has the following amazing features:
 
-- 💻 Works with both live processes and core files.
-- 🧵 It can tell you if a thread has the Python GIL, if is waiting for it or if
-  is currently dropping it.
-- 🗑️ It can tell you if a given thread is garbage collecting.
-- 🐍 Obtain the merged Python/native traceback to better debug and analyze
-  extension modules and native code. This means that you will obtain the native
-  stack trace (C/C++ function calls) but when the interpreter calls a Python
-  function, the Python name, file and line number will be shown at that point
-  instead of the internal C code that the interpreter uses to do such call.
-- 📈 It can show inlined and overloaded native function calls.
-- 🔍 It can show values of local variables and function arguments of Python
-  stack frames.
-- 🔍 Automatic demangling of symbols.
-- 🔒 Is always safe to use in running processes: Pystack does not modify or
-  execute any code in the running process at all: it just read some segments of
-  its memory and the ELF files referenced by the memory maps.
-- ⚡ It can perform a Python stack analysis without stopping the process at all.
-- 🚀 Is super fast! It can analyze core files 10x faster than other
-  general-purpose tools like gdb.
-- 🎯 Works with aggressively optimized binaries for the Python interpreters.
-- 🔍 Works with binaries that do not have symbols or DWARF information (Python
-  stack only).
-- 💼 Self-contained: it does not depend on external tools or programs other than
-  the Python interpreter used to run Pystack itself.
+- 💻 Works with both running processes and core dump files.
+- 🧵 Shows if each thread currently holds the Python GIL, or is waiting to acquire it, or is
+  currently dropping it.
+- 🗑️ Shows if a thread is running a garbage collection cycle.
+- 🐍 Optionally shows native function calls as well as Python ones. In this mode, Pystack prints
+  the native stack trace (C/C++/Rust function calls), except that calls to Python callables are
+  replaced with frames showing the Python code being executed, instead of showing the internal C
+  code the interpreter used to make the call.
+- 🔍 Automatically demangles symbols shown in the native stack.
+- 📈 Includes calls to inlined functions in the native stack whenever enough debug information is
+  available.
+- 🔍 Optionally shows the values of local variables and function arguments in Python stack frames.
+- 🔒 Safe to use on running processes. Pystack does not modify any memory or execute any code in
+  the running process. It attaches just long enough to read some of the process's memory.
+- ⚡ Optionally, it can perform a Python stack analysis without pausing the process at all. This
+  minimizes impact to the debugged process, at the cost of potentially failing due to data races.
+- 🚀 Super fast! It can analyze core files 10x faster than general-purpose tools like gdb.
+- 🎯 Works even with aggressively optimized Python interpreter binaries.
+- 🔍 Works even with Python interpreters binaries that do not have symbols or debug information
+  (Python stack only).
+- 💼 Self-contained: it does not depend on external tools or programs other than the Python
+  interpreter used to run Pystack itself.
 
 ## Building from source
 
-If you wish to build Memray from source you need the following binary dependencies in your system:
+If you wish to build Pystack from source you need the following binary dependencies in your system:
 
 - libdw
 - libelf
 
-Note that this sometimes both libraries are provided together as part of the `elfutils` package.
+Note that sometimes both libraries are provided together as part of a distribution's `elfutils`
+package.
 
-Check your package manager on how to install these dependencies (for example `apt-get install libdw-dev libelf-dev` in Debian-based systems).
-Note that you may need to teach the compiler where to find the header and library files of the dependencies. 
+Check your package manager on how to install these dependencies (for example
+`apt-get install libdw-dev libelf-dev` in Debian-based systems). Note that you may need to tell the
+compiler where to find the header and library files of the dependencies in order for the build to
+succeed. Check your distribution's documentation to determine the location of the header and
+library files or for more detailed information.
 
-before installing `pystack`. Check the documentation of your package manager to know the location of the header and library
-files for more detailed information.
-
-Once you have the binary dependencies installed, you can clone the repository and follow with the normal building process:
+Once you have the binary dependencies installed, you can clone the repository and follow the
+typical build process for Python libraries:
 
 ```shell
-git clone git@github.com:bloomberg/pystack.git memray
+git clone git@github.com:bloomberg/pystack.git pystack
 cd pystack
 python3 -m venv ../pystack-env/  # just an example, put this wherever you want
 source ../pystack-env/bin/activate
 python3 -m pip install --upgrade pip
-python3 -m pip install -e . -r requirements-test.txt -r requirements-extra.txt
+python3 -m pip install -e .
+python3 -m pip install -r requirements-test.txt -r requirements-extra.txt
 ```
 
-This will install Pystack in the virtual environment in development mode (the `-e` of the last `pip install` command).
+This will install Pystack in the virtual environment in development mode (the `-e` of the last
+`pip install` command), and then install the Python libraries needed to test it, lint it, and
+generate its documentation.
 
 # Documentation
 
-You can find the latest documentation available [here](https://bloomberg.github.io/pystack/).
+You can find the full documentation [here](https://bloomberg.github.io/pystack/).
 
 # Usage
 
-Pystack can be used for both live processes and core files.
+Pystack has distinct subcommands used for analyzing running processes and core dump files.
 
 ```shell
 usage: pystack [-h] [-v] [--no-color] {remote,core} ...
@@ -101,12 +104,14 @@ commands:
     core         Analyze a core dump file given its location and the executable
 ```
 
-## Analyzing processes
+## Analyzing running processes
 
-The `remote` command is used to analyze the status of a remote process. The analysis is always done in a safe and
-non-intrusive way as no code is loaded in the memory space of the process under analysis and no memory is modified
-in the remote process. This makes the analysis using ``pystack`` a great option even for services and application
-running in environments where the running process must not be impacted in any way. There are several options available:
+The `remote` command is used to analyze the status of a running (remote) process. The analysis is
+always done in a safe and non-intrusive way as no code is loaded in the memory space of the process
+under analysis and no memory is modified in the remote process. This makes analysis using Pystack a
+great option even for services and application running in environments where the running process
+must not be impacted in any way (other than being temporarily paused, though `--no-block` can avoid
+even that). There are several options available:
 
 ```shell
 usage: pystack remote [-h] [-v] [--no-color] [--no-block] [--native] [--native-all] [--locals] [--exhaustive] [--self] pid
@@ -125,7 +130,7 @@ options:
   --exhaustive   Use all possible methods to obtain the Python stack info (may be slow)
 ```
 
-To use ``pystack`` you just need to provide the PID of the process:
+To use Pystack you just need to provide the PID of the process:
 
 ```shell
 $ pystack remote 112
@@ -142,13 +147,12 @@ Traceback for thread 112 [] (most recent call last):
 
 ## Analyzing core dumps
 
-The `core` subcommand is used to analyze the status of a core dump file.
-Analyzing core files is very similar to analyzing processes but there are some
-differences as the core file does not contain the totality of the memory that
-was valid when the program was alive.  In most cases this makes no difference
-as `pystack` will try to adapt automatically, but in some cases (see other
-sections) you need to specify extra command line options. When analyzing cores,
-there are several options available:
+The `core` subcommand is used to analyze the status of a core dump file. Analyzing core files is
+very similar to analyzing processes but there are some differences as the core file does not
+contain the totality of the memory that was valid when the program was alive. In most cases this
+makes no difference as Pystack will try to adapt automatically, but in some cases you need to
+specify extra command line options to help Pystack locate the information it needs. When analyzing
+cores, there are several options available:
 
 ```shell
 usage: pystack core [-h] [-v] [--no-color] [--native] [--native-all] [--locals] [--exhaustive] [--lib-search-path LIB_SEARCH_PATH | --lib-search-root LIB_SEARCH_ROOT] core [executable]
@@ -171,7 +175,8 @@ options:
                         Root directory to search recursively for shared libraries loaded into the core.
 ```
 
-To use `pystack` with core files, in most cases you just need to provide the location of the core:
+To use Pystack with core dump files, in most cases you just need to provide the location of the
+core:
 
 ```shell
 $ pystack core ./the_core_file
@@ -203,30 +208,38 @@ Pystack is Apache-2.0 licensed, as found in the [LICENSE](LICENSE) file.
 
 - [Code of Conduct](https://github.com/bloomberg/.github/blob/main/CODE_OF_CONDUCT.md)
 
-This project has adopted a Code of Conduct. If you have any concerns about the Code, or behavior that you have experienced in the project, please contact us at opensource@bloomberg.net.
+This project has adopted a Code of Conduct. If you have any concerns about the Code, or behavior
+that you have experienced in the project, please contact us at opensource@bloomberg.net.
 
 # Security Policy
 
 - [Security Policy](https://github.com/bloomberg/pystack/security/policy)
 
-If you believe you have identified a security vulnerability in this project, please send an email to the project team at opensource@bloomberg.net, detailing the suspected issue and any methods you've found to reproduce it.
+If you believe you have identified a security vulnerability in this project, please send an email
+to the project team at opensource@bloomberg.net, detailing the suspected issue and any methods
+you've found to reproduce it.
 
-Please do NOT open an issue in the GitHub repository, as we'd prefer to keep vulnerability reports private until we've had an opportunity to review and address them.
+Please do NOT open an issue in the GitHub repository, as we'd prefer to keep vulnerability reports
+private until we've had an opportunity to review and address them.
 
 # Contributing
 
 We welcome your contributions to help us improve and extend this project!
 
-Below you will find some basic steps required to be able to contribute to the project. If you have any questions about this process or any other aspect of contributing to a Bloomberg open source project, feel free to send an email to opensource@bloomberg.net and we'll get your questions answered as quickly as we can.
+Below you will find some basic steps required to be able to contribute to the project. If you have
+any questions about this process or any other aspect of contributing to a Bloomberg open source
+project, feel free to send an email to opensource@bloomberg.net and we'll get your questions
+answered as quickly as we can.
 
 ## Contribution Licensing
 
-Since this project is distributed under the terms of an [open source license](LICENSE), contributions that you make
-are licensed under the same terms. In order for us to be able to accept your contributions,
-we will need explicit confirmation from you that you are able and willing to provide them under
-these terms, and the mechanism we use to do this is called a Developer's Certificate of Origin
-[(DCO)](https://github.com/bloomberg/.github/blob/main/DCO.md). This is very similar to the process used by the Linux(R) kernel, Samba, and many
-other major open source projects.
+Since this project is distributed under the terms of an [open source license](LICENSE),
+contributions that you make are licensed under the same terms. In order for us to be able to accept
+your contributions, we will need explicit confirmation from you that you are able and willing to
+provide them under these terms, and the mechanism we use to do this is called a Developer's
+Certificate of Origin [(DCO)](https://github.com/bloomberg/.github/blob/main/DCO.md). This is very
+similar to the process used by the Linux(R) kernel, Samba, and many other major open source
+projects.
 
 To participate under these terms, all that you must do is include a line like the following as the
 last line of the commit message for each commit in your contribution:
@@ -242,4 +255,5 @@ You must use your real name (sorry, no pseudonyms, and no anonymous contribution
 - Create an Issue, select 'Feature Request', and explain the proposed change.
 - Follow the guidelines in the issue template presented to you.
 - Submit the Issue.
-- Submit a Pull Request and link it to the Issue by including "#<issue number>" in the Pull Request summary.
+- Submit a Pull Request and link it to the Issue by including "#<issue number>" in the Pull Request
+  summary.
