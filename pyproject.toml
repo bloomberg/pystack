@@ -35,9 +35,10 @@ manylinux-i686-image = "manylinux2014"
 before-all = [
   "yum install -y python-devel-2.7.5",
   "cd /",
-  "curl  https://sourceware.org/elfutils/ftp/0.178/elfutils-0.178.tar.bz2 > ./elfutils.tar.bz2",
-  "tar -xvf elfutils.tar.bz2",
-  "cd elfutils-0.178",
-  "CFLAGS='-w' ./configure --disable-libdebuginfod --disable-debuginfod --prefix=/usr --libdir=/usr/lib64",
+  "VERS=0.189",
+  "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
+  "tar -xf elfutils.tar.bz2",
+  "cd elfutils-$VERS",
+  "CFLAGS='-w' ./configure --enable-libdebuginfod=dummy --disable-debuginfod --prefix=/usr --libdir=/usr/lib64",
   "make install"
 ]
