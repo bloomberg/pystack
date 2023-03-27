@@ -296,7 +296,7 @@ def parse_maps_file_for_binary(
 
     heap_maps = maps_by_library.get("[heap]")
     if heap_maps is not None:
-        *_, heap = heap_maps
+        *_, heap = [m for m in heap_maps if getattr(m.path, "name", None) == "[heap]"]
         LOGGER.info("Heap map found: %r", heap)
 
     bss = _get_bss(elf_maps, load_point)
