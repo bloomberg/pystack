@@ -12,44 +12,44 @@
 [![Tests](https://github.com/bloomberg/pystack/actions/workflows/build.yml/badge.svg)](https://github.com/bloomberg/pystack/actions/workflows/build.yml)
 ![Code Style](https://img.shields.io/badge/code%20style-black-000000.svg)
 
-# Pystack
+# PyStack
 
 > Print the stack trace of a running Python process, or of a Python core dump.
 
-Pystack is a tool that uses forbidden magic to let you inspect the stack frames of a running Python
-process or a Python core dump, to easily and quickly learn what it is doing (or what it was doing
+PyStack is a tool that uses forbidden magic to let you inspect the stack frames of a running Python
+process or a Python core dump, to learn easily and quickly what it is doing (or what it was doing
 when it crashed) without having to interpret nasty CPython internals.
 
-# What Pystack can do
+# What PyStack can do
 
-Pystack has the following amazing features:
+PyStack has the following amazing features:
 
 - 💻 Works with both running processes and core dump files.
-- 🧵 Shows if each thread currently holds the Python GIL, or is waiting to acquire it, or is
+- 🧵 Shows if each thread currently holds the Python GIL, is waiting to acquire it, or is
   currently dropping it.
 - 🗑️ Shows if a thread is running a garbage collection cycle.
-- 🐍 Optionally shows native function calls as well as Python ones. In this mode, Pystack prints
-  the native stack trace (C/C++/Rust function calls), except that calls to Python callables are
+- 🐍 Optionally shows native function calls, as well as Python ones. In this mode, PyStack prints
+  the native stack trace (C/C++/Rust function calls), except that the calls to Python callables are
   replaced with frames showing the Python code being executed, instead of showing the internal C
   code the interpreter used to make the call.
 - 🔍 Automatically demangles symbols shown in the native stack.
 - 📈 Includes calls to inlined functions in the native stack whenever enough debug information is
   available.
 - 🔍 Optionally shows the values of local variables and function arguments in Python stack frames.
-- 🔒 Safe to use on running processes. Pystack does not modify any memory or execute any code in
-  the running process. It attaches just long enough to read some of the process's memory.
+- 🔒 Safe to use on running processes. PyStack does not modify any memory or execute any code in
+  a process that is running. It simply attaches just long enough to read some of the process's memory.
 - ⚡ Optionally, it can perform a Python stack analysis without pausing the process at all. This
   minimizes impact to the debugged process, at the cost of potentially failing due to data races.
-- 🚀 Super fast! It can analyze core files 10x faster than general-purpose tools like gdb.
-- 🎯 Works even with aggressively optimized Python interpreter binaries.
-- 🔍 Works even with Python interpreters binaries that do not have symbols or debug information
+- 🚀 Super fast! It can analyze core files 10x faster than general-purpose tools like GDB.
+- 🎯 Even works with aggressively optimized Python interpreter binaries.
+- 🔍 Even works with Python interpreters' binaries that do not have symbols or debug information
   (Python stack only).
 - 💼 Self-contained: it does not depend on external tools or programs other than the Python
-  interpreter used to run Pystack itself.
+  interpreter used to run PyStack itself.
 
 ## Building from source
 
-If you wish to build Pystack from source you need the following binary dependencies in your system:
+If you wish to build PyStack from source, you need the following binary dependencies in your system:
 
 - libdw
 - libelf
@@ -57,13 +57,13 @@ If you wish to build Pystack from source you need the following binary dependenc
 Note that sometimes both libraries are provided together as part of a distribution's `elfutils`
 package.
 
-Check your package manager on how to install these dependencies (for example
+Check your package manager on how to install these dependencies (e.g.,
 `apt-get install libdw-dev libelf-dev` in Debian-based systems). Note that you may need to tell the
-compiler where to find the header and library files of the dependencies in order for the build to
+compiler where to find the header and library files of the dependencies for the build to
 succeed. Check your distribution's documentation to determine the location of the header and
 library files or for more detailed information.
 
-Once you have the binary dependencies installed, you can clone the repository and follow the
+Once you have these binary dependencies installed, you can clone the repository and follow the
 typical build process for Python libraries:
 
 ```shell
@@ -76,7 +76,7 @@ python3 -m pip install -e .
 python3 -m pip install -r requirements-test.txt -r requirements-extra.txt
 ```
 
-This will install Pystack in the virtual environment in development mode (the `-e` of the last
+This will install PyStack in the virtual environment in development mode (the `-e` of the last
 `pip install` command), and then install the Python libraries needed to test it, lint it, and
 generate its documentation.
 
@@ -86,12 +86,12 @@ You can find the full documentation [here](https://bloomberg.github.io/pystack/)
 
 # Usage
 
-Pystack has distinct subcommands used for analyzing running processes and core dump files.
+PyStack uses distinct subcommands for analyzing running processes and core dump files.
 
 ```shell
 usage: pystack [-h] [-v] [--no-color] {remote,core} ...
 
-Get python stack trace of a remote process
+Get Python stack trace of a remote process
 
 options:
   -h, --help     show this help message and exit
@@ -99,7 +99,7 @@ options:
   --no-color     Deactivate colored output
 
 commands:
-  {remote,core}  What should be analyzed by Pystack (use <command> --help for a command-specific help section).
+  {remote,core}  What should be analyzed by PyStack (use <command> --help for a command-specific help section).
     remote       Analyze a remote process given its PID
     core         Analyze a core dump file given its location and the executable
 ```
@@ -107,9 +107,9 @@ commands:
 ## Analyzing running processes
 
 The `remote` command is used to analyze the status of a running (remote) process. The analysis is
-always done in a safe and non-intrusive way as no code is loaded in the memory space of the process
-under analysis and no memory is modified in the remote process. This makes analysis using Pystack a
-great option even for services and application running in environments where the running process
+always done in a safe and non-intrusive way, as no code is loaded in the memory space of the process
+under analysis and no memory is modified in the remote process. This makes analysis using PyStack a
+great option even for those services and applications that are running in environments where the running process
 must not be impacted in any way (other than being temporarily paused, though `--no-block` can avoid
 even that). There are several options available:
 
@@ -130,7 +130,7 @@ options:
   --exhaustive   Use all possible methods to obtain the Python stack info (may be slow)
 ```
 
-To use Pystack you just need to provide the PID of the process:
+To use PyStack, you just need to provide the PID of the process:
 
 ```shell
 $ pystack remote 112
@@ -148,10 +148,10 @@ Traceback for thread 112 [] (most recent call last):
 ## Analyzing core dumps
 
 The `core` subcommand is used to analyze the status of a core dump file. Analyzing core files is
-very similar to analyzing processes but there are some differences as the core file does not
-contain the totality of the memory that was valid when the program was alive. In most cases this
-makes no difference as Pystack will try to adapt automatically, but in some cases you need to
-specify extra command line options to help Pystack locate the information it needs. When analyzing
+very similar to analyzing processes but there are some differences, as the core file does not
+contain the totality of the memory that was valid when the program was live. In most cases, this
+makes no difference, as PyStack will try to adapt automatically. However, in some cases, you will need to
+specify extra command line options to help PyStack locate the information it needs. When analyzing
 cores, there are several options available:
 
 ```shell
@@ -175,8 +175,7 @@ options:
                         Root directory to search recursively for shared libraries loaded into the core.
 ```
 
-To use Pystack with core dump files, in most cases you just need to provide the location of the
-core:
+In most cases, you just need to provide the location of the core to use PyStack with core dump files:
 
 ```shell
 $ pystack core ./the_core_file
@@ -202,7 +201,7 @@ Traceback for thread 570 [] (most recent call last):
 
 # License
 
-Pystack is Apache-2.0 licensed, as found in the [LICENSE](LICENSE) file.
+PyStack is Apache-2.0 licensed, as found in the [LICENSE](LICENSE) file.
 
 # Code of Conduct
 
@@ -234,10 +233,10 @@ answered as quickly as we can.
 ## Contribution Licensing
 
 Since this project is distributed under the terms of an [open source license](LICENSE),
-contributions that you make are licensed under the same terms. In order for us to be able to accept
+contributions that you make are licensed under the same terms. For us to be able to accept
 your contributions, we will need explicit confirmation from you that you are able and willing to
 provide them under these terms, and the mechanism we use to do this is called a Developer's
-Certificate of Origin [(DCO)](https://github.com/bloomberg/.github/blob/main/DCO.md). This is very
+Certificate of Origin [(DCO)](https://github.com/bloomberg/.github/blob/main/DCO.md). This is
 similar to the process used by the Linux(R) kernel, Samba, and many other major open source
 projects.
 
