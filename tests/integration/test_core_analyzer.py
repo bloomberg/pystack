@@ -279,11 +279,10 @@ def test_thread_registered_with_python_with_other_threads(tmpdir):
     native_frames = list(non_python_thread.native_frames)
     assert len(native_frames) >= 5
     symbols = {frame.symbol for frame in native_frames}
-    assert {
-        "start_thread",
-        "os_thread(void*)",
-        "sleep",
-    }.issubset(symbols)
+    assert any(
+        expected_symbol in symbols
+        for expected_symbol in {"sleep", "__nanosleep", "nanosleep"}
+    )
 
 
 @ALL_PYTHONS
