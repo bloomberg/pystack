@@ -16,8 +16,11 @@ TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
 if sys.version_info < (3, 10):
     STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.BSS, StackMethod.HEAP)
     CORE_STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.BSS)
-else:
+elif sys.version_info < (3, 11):
     STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA, StackMethod.HEAP)
+    CORE_STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA)
+else:
+    STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA)
     CORE_STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA)
 
 
