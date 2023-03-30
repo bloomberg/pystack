@@ -221,7 +221,5 @@ constexpr long Pystack_TPFLAGS_UNICODE_SUBCLASS = 1uL << 28u;
 constexpr long Pystack_TPFLAGS_DICT_SUBCLASS = 1uL << 29u;
 constexpr long Pystack_TPFLAGS_BASE_EXC_SUBCLASS = 1uL << 30u;
 constexpr long Pystack_TPFLAGS_TYPE_SUBCLASS = 1uL << 31u;
-constexpr long Pystack_TPFLAGS_STRING_SUBCLASS =
-        (Pystack_TPFLAGS_BYTES_SUBCLASS | Pystack_TPFLAGS_UNICODE_SUBCLASS);
 
 }  // namespace pystack

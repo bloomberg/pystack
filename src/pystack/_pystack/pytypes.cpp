@@ -602,25 +602,41 @@ Object::toBool() const
 Object::ObjectType
 Object::objectType() const
 {
-    if (PYTHON_MAJOR_VERSION > 2 && hasFlags(Pystack_TPFLAGS_BYTES_SUBCLASS)) {
-        return ObjectType::BYTES;
-    } else if (hasFlags(Pystack_TPFLAGS_STRING_SUBCLASS)) {
+    // clang-format off
+    constexpr long subclass_mask =
+            (Pystack_TPFLAGS_INT_SUBCLASS
+             | Pystack_TPFLAGS_LONG_SUBCLASS
+             | Pystack_TPFLAGS_LIST_SUBCLASS
+             | Pystack_TPFLAGS_TUPLE_SUBCLASS
+             | Pystack_TPFLAGS_BYTES_SUBCLASS
+             | Pystack_TPFLAGS_UNICODE_SUBCLASS
+             | Pystack_TPFLAGS_DICT_SUBCLASS
+             | Pystack_TPFLAGS_BASE_EXC_SUBCLASS
+             | Pystack_TPFLAGS_TYPE_SUBCLASS);
+    // clang-format on
+
+    const long subclass_flags = d_flags & subclass_mask;
+
+
+    if (subclass_flags == Pystack_TPFLAGS_BYTES_SUBCLASS) {
+        return PYTHON_MAJOR_VERSION > 2 ? ObjectType::BYTES : ObjectType::STRING;
+    } else if (subclass_flags == Pystack_TPFLAGS_UNICODE_SUBCLASS) {
         return ObjectType::STRING;
-    } else if (hasFlags(Pystack_TPFLAGS_INT_SUBCLASS)) {
+    } else if (subclass_flags == Pystack_TPFLAGS_INT_SUBCLASS) {
         if (d_classname == "bool") {
             return ObjectType::INT_BOOL;
         }
         return ObjectType::INT;
-    } else if (hasFlags(Pystack_TPFLAGS_LONG_SUBCLASS)) {
+    } else if (subclass_flags == Pystack_TPFLAGS_LONG_SUBCLASS) {
         if (d_classname == "bool") {
             return ObjectType::LONG_BOOL;
         }
         return ObjectType::LONG;
-    } else if (hasFlags(Pystack_TPFLAGS_TUPLE_SUBCLASS)) {
+    } else if (subclass_flags == Pystack_TPFLAGS_TUPLE_SUBCLASS) {
         return ObjectType::TUPLE;
-    } else if (hasFlags(Pystack_TPFLAGS_LIST_SUBCLASS)) {
+    } else if (subclass_flags == Pystack_TPFLAGS_LIST_SUBCLASS) {
         return ObjectType::LIST;
-    } else if (hasFlags(Pystack_TPFLAGS_DICT_SUBCLASS)) {
+    } else if (subclass_flags == Pystack_TPFLAGS_DICT_SUBCLASS) {
         return ObjectType::DICT;
     } else if (d_classname == "float") {
         return ObjectType::FLOAT;
