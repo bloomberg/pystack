@@ -422,9 +422,6 @@ cdef object _construct_frame_stack_from_thread_object(
         current_code = current_frame.Code().get()
 
         filename = current_code.Filename()
-        if not os.path.isabs(filename):
-            filename = os.path.realpath(os.path.join(f"/proc/{pid}/cwd", filename))
-
         location_info = LocationInfo(
                 current_code.Location().lineno,
                 current_code.Location().end_lineno,
