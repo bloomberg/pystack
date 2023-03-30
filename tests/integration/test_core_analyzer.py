@@ -22,6 +22,7 @@ from tests.utils import all_pystack_combinations
 from tests.utils import generate_core_file
 from tests.utils import python_has_inlined_eval_frames
 from tests.utils import python_has_position_information
+from tests.utils import xfail_on_expected_exceptions
 
 CORE_FILE_PATHS = Path(__file__).parent / "corefiles"
 TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
@@ -54,9 +55,12 @@ def test_single_thread_stack(
     with generate_core_file(
         python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
     ) as core_file:
-        threads = list(
-            get_process_threads_for_core(core_file, python_executable, method=method)
-        )
+        with xfail_on_expected_exceptions(method):
+            threads = list(
+                get_process_threads_for_core(
+                    core_file, python_executable, method=method
+                )
+            )
 
     # THEN
 
@@ -164,9 +168,12 @@ def test_multiple_thread_stack_native(
     with generate_core_file(
         python_executable, TEST_MULTIPLE_THREADS_FILE, tmpdir
     ) as core_file:
-        threads = list(
-            get_process_threads_for_core(core_file, python_executable, method=method)
-        )
+        with xfail_on_expected_exceptions(method):
+            threads = list(
+                get_process_threads_for_core(
+                    core_file, python_executable, method=method
+                )
+            )
 
     # THEN
 

@@ -13,6 +13,7 @@ from typing import Tuple
 import pytest
 
 from pystack._pystack import StackMethod
+from pystack.errors import NotEnoughInformation
 
 TIMEOUT = 30
 
@@ -125,6 +126,36 @@ def generate_core_file(
             process.terminate()
             process.kill()
             process.wait(timeout=TIMEOUT)
+
+
+@contextlib.contextmanager
+def xfail_on_expected_exceptions(
+    method: StackMethod,
+) -> Generator[None, None, None]:
+    """Turn a NotEnoughInformation exception for the HEAP method into an XFAIL.
+
+    The HEAP method is known to be flaky in some cases:
+
+        - In Python 3.10 and earlier with the default glibc malloc,
+          a PyThreadState should exist on the heap that points to the
+          interpreter state.
+        - For Python 3.11 and later, the PyThreadState for the main thread is
+          statically allocated, so we would find a useful PyThreadState on the
+          heap only for multithreaded programs.
+        - For musl libc, its "mallocng" malloc uses the brk heap only for
+          metadata, and always puts user data on anonymous mappings, so we'd
+          never find a useful PyThreadstate on the heap segment.
+
+    We want to keep running tests for the HEAP method to ensure it doesn't
+    break in unexpected ways, but we'll just imperatively xfail if we see the
+    failure condition that we know can happen.
+    """
+    try:
+        yield
+    except NotEnoughInformation:
+        if method == StackMethod.HEAP:
+            pytest.xfail("Could not find interpreter state on brk heap")
+        raise
 
 
 def python_has_inlined_eval_frames(major: int, minor: int) -> bool:
