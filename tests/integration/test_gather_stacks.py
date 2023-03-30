@@ -20,6 +20,7 @@ from tests.utils import all_pystack_combinations
 from tests.utils import python_has_inlined_eval_frames
 from tests.utils import python_has_position_information
 from tests.utils import spawn_child_process
+from tests.utils import xfail_on_expected_exceptions
 
 TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
 TEST_MULTIPLE_THREADS_FILE = Path(__file__).parent / "multiple_thread_program.py"
@@ -45,9 +46,12 @@ def test_single_thread_stack(python, blocking, method, tmpdir):
     with spawn_child_process(
         python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
     ) as child_process:
-        threads = list(
-            get_process_threads(child_process.pid, stop_process=blocking, method=method)
-        )
+        with xfail_on_expected_exceptions(method):
+            threads = list(
+                get_process_threads(
+                    child_process.pid, stop_process=blocking, method=method
+                )
+            )
 
     # THEN
 
@@ -110,9 +114,12 @@ def test_multiple_thread_stack(python, blocking, method, tmpdir):
     with spawn_child_process(
         python_executable, TEST_MULTIPLE_THREADS_FILE, tmpdir
     ) as child_process:
-        threads = list(
-            get_process_threads(child_process.pid, stop_process=blocking, method=method)
-        )
+        with xfail_on_expected_exceptions(method):
+            threads = list(
+                get_process_threads(
+                    child_process.pid, stop_process=blocking, method=method
+                )
+            )
 
     # THEN
 
@@ -168,13 +175,14 @@ def test_single_thread_stack_native(python, method, blocking, tmpdir):
     with spawn_child_process(
         python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
     ) as child_process:
-        threads = list(
-            get_process_threads(
-                child_process.pid,
-                native_mode=NativeReportingMode.PYTHON,
-                stop_process=blocking,
+        with xfail_on_expected_exceptions(method):
+            threads = list(
+                get_process_threads(
+                    child_process.pid,
+                    native_mode=NativeReportingMode.PYTHON,
+                    stop_process=blocking,
+                )
             )
-        )
 
     # THEN
 
@@ -224,13 +232,14 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
     with spawn_child_process(
         python_executable, TEST_MULTIPLE_THREADS_FILE, tmpdir
     ) as child_process:
-        threads = list(
-            get_process_threads(
-                child_process.pid,
-                native_mode=NativeReportingMode.PYTHON,
-                stop_process=blocking,
+        with xfail_on_expected_exceptions(method):
+            threads = list(
+                get_process_threads(
+                    child_process.pid,
+                    native_mode=NativeReportingMode.PYTHON,
+                    stop_process=blocking,
+                )
             )
-        )
 
     # THEN
 

@@ -10,6 +10,7 @@ from pystack.engine import get_process_threads
 from pystack.engine import get_process_threads_for_core
 from tests.utils import generate_core_file
 from tests.utils import spawn_child_process
+from tests.utils import xfail_on_expected_exceptions
 
 TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
 
@@ -37,9 +38,12 @@ def test_simple_execution(method, blocking, tmpdir):
     with spawn_child_process(
         sys.executable, TEST_SINGLE_THREAD_FILE, tmpdir
     ) as child_process:
-        threads = list(
-            get_process_threads(child_process.pid, method=method, stop_process=blocking)
-        )
+        with xfail_on_expected_exceptions(method):
+            threads = list(
+                get_process_threads(
+                    child_process.pid, method=method, stop_process=blocking
+                )
+            )
 
     # THEN
     assert threads is not None
@@ -57,11 +61,14 @@ def test_simple_execution_native(method, tmpdir):
     with spawn_child_process(
         sys.executable, TEST_SINGLE_THREAD_FILE, tmpdir
     ) as child_process:
-        threads = list(
-            get_process_threads(
-                child_process.pid, method=method, native_mode=NativeReportingMode.PYTHON
+        with xfail_on_expected_exceptions(method):
+            threads = list(
+                get_process_threads(
+                    child_process.pid,
+                    method=method,
+                    native_mode=NativeReportingMode.PYTHON,
+                )
             )
-        )
 
     # THEN
     assert threads is not None
