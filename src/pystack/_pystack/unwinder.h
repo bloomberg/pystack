@@ -39,6 +39,19 @@ class Frame
     bool isActivation;
 };
 
+inline bool
+operator==(const Frame& lhs, const Frame& rhs)
+{
+    return lhs.pc == rhs.pc && lhs.isActivation == rhs.isActivation;
+}
+
+inline bool
+operator!=(const Frame& lhs, const Frame& rhs)
+{
+    return !(lhs == rhs);
+}
+
+
 class ModuleCuDieRanges
 {
   public:

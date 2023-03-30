@@ -74,6 +74,47 @@ DIENameFromScope(Dwarf_Die* die)
     return name == nullptr ? std::nullopt : std::optional<std::string>(name);
 }
 
+static bool
+breakMuslCloneLoop(Dwfl_Frame* state, std::vector<Frame>& frames)
+{
+    // elfutils gets stuck when unwinding multithreaded code on musl libc,
+    // passing a frame for __clone to our callback over and over forever.
+    // Detect if we've gotten into this state and break out if so.
+
+    // clang-format off
+    if (frames.size() < 5
+        || frames[frames.size() - 2] != frames.back()
+        || frames[frames.size() - 3] != frames.back()
+        || frames[frames.size() - 4] != frames.back()
+        || frames[frames.size() - 5] != frames.back()
+        || (frames.size() > 5 && frames[frames.size() - 6] == frames.back()))
+    {
+        return false;  // Not at the start of a run of 5+ identical frames
+    }
+    // clang-format on
+
+    Dwfl* dwfl = dwfl_thread_dwfl(dwfl_frame_thread(state));
+    Dwarf_Addr pc = frames.back().pc;
+    Dwarf_Addr pc_adjusted = pc - (frames.back().isActivation ? 0 : 1);
+    Dwfl_Module* mod = dwfl_addrmodule(dwfl, pc_adjusted);
+    const char* mod_name =
+            dwfl_module_info(mod, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr);
+    if (!mod_name || !strstr(mod_name, "ld-musl")) {
+        return false;  // We don't seem to be in musl libc
+    }
+
+    // Found the same PC 5 times in a row inside musl libc. Assume we're stuck,
+    // so remove the last 4 and tell our callback to bail.
+    GElf_Sym sym;
+    GElf_Off offset;
+    const char* raw_symname = dwfl_module_addrinfo(mod, pc, &offset, &sym, nullptr, nullptr, nullptr);
+    LOG(DEBUG) << std::hex << std::showbase << "Breaking out of (infinite?) unwind loop @ " << pc
+               << " in symbol " << (raw_symname ?: "???") << " in module " << mod_name;
+
+    frames.erase(frames.end() - 4, frames.end());
+    return true;
+}
+
 static int
 frameCallback(Dwfl_Frame* state, void* arg)
 {
@@ -84,6 +125,10 @@ frameCallback(Dwfl_Frame* state, void* arg)
         return -1;
     }
     frames->emplace_back(pc, isActivation);
+
+    if (breakMuslCloneLoop(state, *frames)) {
+        return DWARF_CB_ABORT;
+    }
     return DWARF_CB_OK;
 }
 
