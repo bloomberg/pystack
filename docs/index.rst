@@ -1,46 +1,48 @@
-Pystack
+PyStack
 =======
 
-Pystack is a tool that uses forbidden magic to allow you to inspect the stack frame of a remote Python process to know what it is doing.
+PyStack is a tool that uses forbidden magic to let you inspect the stack frames of a running Python
+process or a Python core dump, to learn easily and quickly what it is doing (or what it was doing
+when it crashed) without having to interpret nasty CPython internals.
 
-What Pystack can do
+What PyStack can do
 -------------------
 
-Pystack has the following amazing features:
+PyStack has the following amazing features:
 
-- 💻 Works with both live processes and core files.
-- 🧵 It can tell you if a thread has the Python GIL, if is waiting for it or if
-  is currently dropping it.
-- 🗑️ It can tell you if a given thread is garbage collecting.
-- 🐍 Obtain the merged Python/native traceback to better debug and analyze
-  extension modules and native code. This means that you will obtain the native
-  stack trace (C/C++ function calls) but when the interpreter calls a Python
-  function, the Python name, file and line number will be shown at that point
-  instead of the internal C code that the interpreter uses to do such call.
-- 📈 It can show inlined and overloaded native function calls.
-- 🔍 It can show values of local variables and function arguments of Python
-  stack frames.
-- 🔍 Automatic demangling of symbols.
-- 🔒 Is always safe to use in running processes: Pystack does not modify or
-  execute any code in the running process at all: it just read some segments of
-  its memory and the ELF files referenced by the memory maps.
-- ⚡ It can perform a Python stack analysis without stopping the process at all.
-- 🚀 Is super fast! It can analyze core files 10x faster than other
-  general-purpose tools like gdb.
-- 🎯 Works with aggressively optimized binaries for the Python interpreters.
-- 🔍 Works with binaries that do not have symbols or DWARF information (Python
-  stack only).
-- 💼 Self-contained: it does not depend on external tools or programs other than
-  the Python interpreter used to run Pystack itself.
+- 💻 Works with both running processes and core dump files.
+- 🧵 Shows if each thread currently holds the Python GIL, is waiting to acquire it, or is
+  currently dropping it.
+- 🗑️ Shows if a thread is running a garbage collection cycle.
+- 🐍 Optionally shows native function calls, as well as Python ones. In this mode, PyStack prints
+  the native stack trace (C/C++/Rust function calls), except that the calls to Python callables are
+  replaced with frames showing the Python code being executed, instead of showing the internal C
+  code the interpreter used to make the call.
+- 🔍 Automatically demangles symbols shown in the native stack.
+- 📈 Includes calls to inlined functions in the native stack whenever enough debug information is
+  available.
+- 🔍 Optionally shows the values of local variables and function arguments in Python stack frames.
+- 🔒 Safe to use on running processes. PyStack does not modify any memory or execute any code in
+  a process that is running. It simply attaches just long enough to read some of the process's memory.
+- ⚡ Optionally, it can perform a Python stack analysis without pausing the process at all. This
+  minimizes impact to the debugged process, at the cost of potentially failing due to data races.
+- 🚀 Super fast! It can analyze core files 10x faster than general-purpose tools like GDB.
+- 🎯 Even works with aggressively optimized Python interpreter binaries.
+- 🔍 Even works with Python interpreters' binaries that do not have symbols or debug information
+  (Python stack only).
+- 💥 Tolerates memory corruption well. Even if the process crashed due to memory corruption, PyStack
+  can usually reconstruct the stack.
+- 💼 Self-contained: it does not depend on external tools or programs other than the Python
+  interpreter used to run PyStack itself.
 
 Contents
 --------
 
 .. toctree::
 
-   customizing_the_reports
    process
    corefile
+   customizing_the_reports
 
 
 Indices and tables
