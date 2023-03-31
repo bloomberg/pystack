@@ -338,37 +338,34 @@ AbstractProcessManager::getStringFromAddress(remote_addr_t addr) const
     ssize_t len;
     remote_addr_t data_addr;
 
-    switch (py_v->py_unicode.version) {
-        case 2:
-            LOG(DEBUG) << std::hex << std::showbase
-                       << "Handling unicode object of version 2 from address " << addr;
-            copyObjectFromProcess(addr, &string);
+    if (PYTHON_MAJOR_VERSION == 2) {
+        LOG(DEBUG) << std::hex << std::showbase << "Handling unicode object of version 2 from address "
+                   << addr;
+        copyObjectFromProcess(addr, &string);
 
-            len = string.ob_base.ob_size;
-            buffer.resize(len);
-            data_addr = (remote_addr_t)((char*)addr + offsetof(Python2::_PyStringObject, ob_sval));
-            LOG(DEBUG) << std::hex << std::showbase
-                       << "Copying ASCII data for unicode object from address " << data_addr;
-            copyMemoryFromProcess(data_addr, len, buffer.data());
-            break;
-        case 3:
-            LOG(DEBUG) << std::hex << std::showbase
-                       << "Handling unicode object of version 3 from address " << addr;
-            copyObjectFromProcess(addr, &unicode);
-            if (unicode._base._base.state.kind != 1u) {
-                throw InvalidRemoteObject();
-            }
-            if (unicode._base._base.state.compact != 1u) {
-                throw InvalidRemoteObject();
-            }
-            len = unicode._base._base.length;
-            buffer.resize(len);
+        len = string.ob_base.ob_size;
+        buffer.resize(len);
+        data_addr = (remote_addr_t)((char*)addr + offsetof(Python2::_PyStringObject, ob_sval));
+        LOG(DEBUG) << std::hex << std::showbase << "Copying ASCII data for unicode object from address "
+                   << data_addr;
+        copyMemoryFromProcess(data_addr, len, buffer.data());
+    } else {
+        LOG(DEBUG) << std::hex << std::showbase << "Handling unicode object of version 3 from address "
+                   << addr;
+        copyObjectFromProcess(addr, &unicode);
+        if (unicode._base._base.state.kind != 1u) {
+            throw InvalidRemoteObject();
+        }
+        if (unicode._base._base.state.compact != 1u) {
+            throw InvalidRemoteObject();
+        }
+        len = unicode._base._base.length;
+        buffer.resize(len);
 
-            data_addr = ((remote_addr_t)((char*)addr + sizeof(PyASCIIObject)));
-            LOG(DEBUG) << std::hex << std::showbase
-                       << "Copying ASCII data for unicode object from address " << data_addr;
-            copyMemoryFromProcess(data_addr, len, buffer.data());
-            break;
+        data_addr = ((remote_addr_t)((char*)addr + sizeof(PyASCIIObject)));
+        LOG(DEBUG) << std::hex << std::showbase << "Copying ASCII data for unicode object from address "
+                   << data_addr;
+        copyMemoryFromProcess(data_addr, len, buffer.data());
     }
     return std::string(buffer.begin(), buffer.end());
 }
@@ -381,7 +378,7 @@ AbstractProcessManager::getBytesFromAddress(remote_addr_t addr) const
     std::vector<char> buffer;
     remote_addr_t data_addr;
 
-    if (py_v->py_bytes.version == 2) {
+    if (PYTHON_MAJOR_VERSION == 2) {
         LOG(DEBUG) << std::hex << std::showbase << "Handling bytes object of version 2 from address "
                    << addr;
         Python2::_PyStringObject string;
