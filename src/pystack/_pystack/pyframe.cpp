@@ -23,22 +23,22 @@ FrameObject::FrameObject(
     LOG(DEBUG) << "Copying frame number " << frame_no;
     LOG(DEBUG) << std::hex << std::showbase << "Copying frame struct from address " << addr;
 
-    manager->copyMemoryFromProcess(addr, py_v->py_frame.size, &frame);
-    remote_addr_t py_code_addr = versionedFrameField<remote_addr_t, &py_frame_v::o_code>(frame);
+    manager->copyMemoryFromProcess(addr, manager->offsets().py_frame.size, &frame);
+    remote_addr_t py_code_addr = manager->versionedFrameField<remote_addr_t, &py_frame_v::o_code>(frame);
 
     LOG(DEBUG) << std::hex << std::showbase << "Attempting to construct code object from address "
                << py_code_addr;
 
     uintptr_t last_instruction;
-    if (PYTHON_MAJOR_VERSION > 3 || (PYTHON_MAJOR_VERSION == 3 && PYTHON_MINOR_VERSION >= 11)) {
-        last_instruction = versionedFrameField<uintptr_t, &py_frame_v::o_lasti>(frame);
+    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
+        last_instruction = manager->versionedFrameField<uintptr_t, &py_frame_v::o_lasti>(frame);
     } else {
-        last_instruction = versionedFrameField<int, &py_frame_v::o_lasti>(frame);
+        last_instruction = manager->versionedFrameField<int, &py_frame_v::o_lasti>(frame);
     }
     d_code = std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
 
     d_addr = addr;
-    d_prev_addr = versionedFrameField<remote_addr_t, &py_frame_v::o_back>(frame);
+    d_prev_addr = manager->versionedFrameField<remote_addr_t, &py_frame_v::o_back>(frame);
     LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << d_prev_addr;
     d_frame_no = frame_no;
     d_prev = nullptr;
@@ -51,8 +51,8 @@ FrameObject::FrameObject(
         d_prev->d_next = this;
     }
     this->d_is_entry = true;
-    if (PYTHON_MAJOR_VERSION > 3 || (PYTHON_MAJOR_VERSION == 3 && PYTHON_MINOR_VERSION >= 11)) {
-        this->d_is_entry = versionedFrameField<bool, &py_frame_v::o_is_entry>(frame);
+    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
+        this->d_is_entry = manager->versionedFrameField<bool, &py_frame_v::o_is_entry>(frame);
     }
 }
 
@@ -63,7 +63,7 @@ FrameObject::resolveLocalVariables()
 
     const size_t n_arguments = d_code->NArguments();
     const size_t n_locals = d_code->Varnames().size();
-    const remote_addr_t locals_addr = d_addr + py_v->py_frame.o_localsplus;
+    const remote_addr_t locals_addr = d_addr + d_manager->offsets().py_frame.o_localsplus;
 
     if (n_locals < n_arguments) {
         throw std::runtime_error("Found more arguments than local variables");

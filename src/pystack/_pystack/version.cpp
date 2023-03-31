@@ -262,19 +262,17 @@ python_v python_v3_11 = {
 
 const auto LATEST_VERSION = &python_v3_10;
 
-void
-setVersion(int major, int minor)
+const python_v*
+getCPythonOffsets(int major, int minor)
 {
-    PYTHON_MAJOR_VERSION = major;
-    PYTHON_MINOR_VERSION = minor;
     switch (major) {
         // ---- Python 2 ------------------------------------------------------------
         case 2:
             if (minor == 7) {
-                py_v = &python_v2;
+                return &python_v2;
             } else {
-                py_v = &python_v2;
                 warnAboutUnsuportedVersion(major, minor);
+                return &python_v2;
             }
             break;
 
@@ -286,50 +284,50 @@ setVersion(int major, int minor)
                 case 1:
                 case 2:
                     warnAboutUnsuportedVersion(major, minor);
-                    py_v = &python_v3_3;
+                    return &python_v3_3;
                     break;
 
                     // 3.3
                 case 3:
-                    py_v = &python_v3_3;
+                    return &python_v3_3;
                     break;
 
                     // 3.4, 3.5
                 case 4:
                 case 5:
-                    py_v = &python_v3_4;
+                    return &python_v3_4;
                     break;
 
                     // 3.6
                 case 6:
-                    py_v = &python_v3_6;
+                    return &python_v3_6;
                     break;
 
                     // 3.7
                 case 7:
-                    py_v = &python_v3_7;
+                    return &python_v3_7;
                     break;
 
                     // 3.8
                 case 8:
-                    py_v = &python_v3_8;
+                    return &python_v3_8;
                     break;
 
                 case 9:
-                    py_v = &python_v3_9;
+                    return &python_v3_9;
                     break;
 
                 case 10:
-                    py_v = &python_v3_10;
+                    return &python_v3_10;
                     break;
 
                 case 11:
-                    py_v = &python_v3_11;
+                    return &python_v3_11;
                     break;
 
                 default:
-                    py_v = LATEST_VERSION;
                     warnAboutUnsuportedVersion(major, minor);
+                    return LATEST_VERSION;
             }
             break;
         default:
