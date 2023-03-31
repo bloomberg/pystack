@@ -15,6 +15,7 @@
 #include "native_frame.h"
 #include "pycompat.h"
 #include "unwinder.h"
+#include "version.h"
 
 namespace pystack {
 
@@ -61,7 +62,66 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     remote_addr_t scanHeap() const;
     InterpreterStatus isInterpreterActive() const;
     std::pair<int, int> findPythonVersion() const;
+
     void setPythonVersion(const std::pair<int, int>& version);
+    int majorVersion() const;
+    int minorVersion() const;
+    const python_v& offsets() const;
+
+    template<typename T, typename U, auto PMD0, auto PMD1>
+    inline auto& versionedField(const U& py_obj) const
+    {
+        offset_t offset = d_py_v->*PMD0.*PMD1;
+        return (*((T*)(((char*)&py_obj) + offset)));
+    }
+
+    template<typename T, auto PMD1>
+    inline auto& versionedThreadField(const PyThreadState& py_thread) const
+    {
+        return versionedField<T, PyThreadState, &python_v::py_thread, PMD1>(py_thread);
+    }
+
+    template<typename T, auto PMD1>
+    inline auto& versionedInterpreterStateField(const PyInterpreterState& py_is) const
+    {
+        return versionedField<T, PyInterpreterState, &python_v::py_is, PMD1>(py_is);
+    }
+
+    template<typename T, auto PMD1>
+    inline auto& versionedGcStatesField(const GCRuntimeState& py_gc) const
+    {
+        return versionedField<T, GCRuntimeState, &python_v::py_gc, PMD1>(py_gc);
+    }
+
+    template<typename T, auto PMD1>
+    inline auto& versionedFrameField(const PyFrameObject& py_frame) const
+    {
+        return versionedField<T, PyFrameObject, &python_v::py_frame, PMD1>(py_frame);
+    }
+
+    template<typename T, auto PMD1>
+    inline auto& versionedCodeField(const PyCodeObject& py_code) const
+    {
+        return versionedField<T, PyCodeObject, &python_v::py_code, PMD1>(py_code);
+    }
+
+    template<auto PMD1>
+    inline auto versionedCodeOffset() const
+    {
+        return d_py_v->py_code.*PMD1;
+    }
+
+    template<typename T, auto PMD1>
+    inline auto& versionedRuntimeField(const PyRuntimeState& py_runtime) const
+    {
+        return versionedField<T, PyRuntimeState, &python_v::py_runtime, PMD1>(py_runtime);
+    }
+
+    template<typename T, auto PMD1>
+    inline auto& versionedTypeField(const PyTypeObject& py_type) const
+    {
+        return versionedField<T, PyTypeObject, &python_v::py_type, PMD1>(py_type);
+    }
 
   protected:
     // Data members
@@ -74,6 +134,9 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     std::unique_ptr<AbstractUnwinder> d_unwinder;
     mutable std::unordered_map<std::string, remote_addr_t> d_symbol_cache;
     std::shared_ptr<Analyzer> d_analyzer;
+    int d_major{};
+    int d_minor{};
+    const python_v* d_py_v{};
 
     // Methods
     bool isValidInterpreterState(remote_addr_t addr) const;

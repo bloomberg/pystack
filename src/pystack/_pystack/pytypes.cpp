@@ -241,11 +241,11 @@ getDictEntries(
         std::vector<Python3::PyDictKeyEntry>& valid_entries)
 {
     auto keys_addr = reinterpret_cast<remote_addr_t>(dict.ma_keys);
-    assert(PYTHON_MAJOR_VERSION == 3);
+    assert(manager->majorVersion() == 3);
     ssize_t dk_size = 0;
     int dk_kind = 0;
 
-    if (PYTHON_MINOR_VERSION <= 10) {
+    if (manager->minorVersion() <= 10) {
         Python3_3::PyDictKeysObject keys;
         manager->copyObjectFromProcess(keys_addr, &keys);
         num_items = keys.dk_nentries;
@@ -281,7 +281,7 @@ getDictEntries(
     }
 
     offset_t dk_indices_offset = 0;
-    if (PYTHON_MINOR_VERSION <= 10) {
+    if (manager->minorVersion() <= 10) {
         dk_indices_offset = offsetof(Python3_3::PyDictKeysObject, dk_indices);
     } else {
         dk_indices_offset = offsetof(Python3_11::PyDictKeysObject, dk_indices);
@@ -344,8 +344,8 @@ DictObject::DictObject(std::shared_ptr<const AbstractProcessManager> manager, re
     // For now, the layout that we use here only allows us to get Python3.6+ dictionaries
     // as dictionaries before that have much more variability and are much harder to get.
 
-    if (PYTHON_MAJOR_VERSION > 2) {
-        if (PYTHON_MINOR_VERSION < 6) {
+    if (d_manager->majorVersion() > 2) {
+        if (d_manager->minorVersion() < 6) {
             d_invalid = true;
             return;
         }
@@ -514,11 +514,11 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
 
     PyTypeObject cls;
     LOG(DEBUG) << std::hex << std::showbase << "Copying typeobject from address " << obj.ob_type;
-    manager->copyMemoryFromProcess((remote_addr_t)obj.ob_type, py_v->py_type.size, &cls);
+    manager->copyMemoryFromProcess((remote_addr_t)obj.ob_type, manager->offsets().py_type.size, &cls);
 
-    d_flags = versionedTypeField<unsigned long, &py_type_v::o_tp_flags>(cls);
+    d_flags = manager->versionedTypeField<unsigned long, &py_type_v::o_tp_flags>(cls);
 
-    remote_addr_t name_addr = versionedTypeField<remote_addr_t, &py_type_v::o_tp_name>(cls);
+    remote_addr_t name_addr = manager->versionedTypeField<remote_addr_t, &py_type_v::o_tp_name>(cls);
     try {
         d_classname = manager->getCStringFromAddress(name_addr);
     } catch (RemoteMemCopyError& ex) {
@@ -619,7 +619,7 @@ Object::objectType() const
 
 
     if (subclass_flags == Pystack_TPFLAGS_BYTES_SUBCLASS) {
-        return PYTHON_MAJOR_VERSION > 2 ? ObjectType::BYTES : ObjectType::STRING;
+        return d_manager->majorVersion() > 2 ? ObjectType::BYTES : ObjectType::STRING;
     } else if (subclass_flags == Pystack_TPFLAGS_UNICODE_SUBCLASS) {
         return ObjectType::STRING;
     } else if (subclass_flags == Pystack_TPFLAGS_INT_SUBCLASS) {
@@ -652,7 +652,7 @@ Object::toConcreteObject() const
     try {
         switch (objectType()) {
             case Object::ObjectType::STRING:
-                if (PYTHON_MAJOR_VERSION < 3) {
+                if (d_manager->majorVersion() < 3) {
                     return normalizeBytesObjectRepresentation(
                             d_manager->getStringFromAddress(d_addr),
                             "");
@@ -690,7 +690,7 @@ Object::toConcreteObject() const
 std::string
 Object::guessClassName(PyTypeObject& type) const
 {
-    remote_addr_t tp_repr = versionedTypeField<remote_addr_t, &py_type_v::o_tp_repr>(type);
+    remote_addr_t tp_repr = d_manager->versionedTypeField<remote_addr_t, &py_type_v::o_tp_repr>(type);
     if (tp_repr == d_manager->findSymbol("float_repr")) {
         return "float";
     }

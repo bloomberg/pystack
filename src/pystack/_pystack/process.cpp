@@ -338,7 +338,7 @@ AbstractProcessManager::getStringFromAddress(remote_addr_t addr) const
     ssize_t len;
     remote_addr_t data_addr;
 
-    if (PYTHON_MAJOR_VERSION == 2) {
+    if (d_major == 2) {
         LOG(DEBUG) << std::hex << std::showbase << "Handling unicode object of version 2 from address "
                    << addr;
         copyObjectFromProcess(addr, &string);
@@ -378,7 +378,7 @@ AbstractProcessManager::getBytesFromAddress(remote_addr_t addr) const
     std::vector<char> buffer;
     remote_addr_t data_addr;
 
-    if (PYTHON_MAJOR_VERSION == 2) {
+    if (d_major == 2) {
         LOG(DEBUG) << std::hex << std::showbase << "Handling bytes object of version 2 from address "
                    << addr;
         Python2::_PyStringObject string;
@@ -493,9 +493,30 @@ AbstractProcessManager::findPythonVersion() const
     return {major, minor};
 }
 
-void AbstractProcessManager::setPythonVersion(const std::pair<int, int>& version)
+void
+AbstractProcessManager::setPythonVersion(const std::pair<int, int>& version)
 {
-    setVersion(version.first, version.second);
+    d_py_v = getCPythonOffsets(version.first, version.second);
+    // Note: getCPythonOffsets can throw. Don't set these if it does.
+    d_major = version.first;
+    d_minor = version.second;
+}
+
+int
+AbstractProcessManager::majorVersion() const
+{
+    return d_major;
+}
+
+int
+AbstractProcessManager::minorVersion() const
+{
+    return d_minor;
+}
+
+const python_v& AbstractProcessManager::offsets() const
+{
+    return *d_py_v;
 }
 
 remote_addr_t
