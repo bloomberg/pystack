@@ -42,16 +42,6 @@ struct py_thread_v
     offset_t o_thread_id;
 };
 
-struct py_unicode_v
-{
-    int version;
-};
-
-struct py_bytes_v
-{
-    int version;
-};
-
 struct py_runtime_v
 {
     ssize_t size;
@@ -94,8 +84,6 @@ struct python_v
     py_frame_v py_frame;
     py_thread_v py_thread;
     py_is_v py_is;
-    py_unicode_v py_unicode;
-    py_bytes_v py_bytes;
     py_runtime_v py_runtime;
     py_gc_v py_gc;
 };

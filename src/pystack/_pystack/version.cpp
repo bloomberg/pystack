@@ -138,18 +138,6 @@ py_gc()
     };
 }
 
-constexpr py_unicode_v
-py_unicode(int version)
-{
-    return {version};
-}
-
-constexpr py_bytes_v
-py_bytes(int version)
-{
-    return {version};
-}
-
 template<class T>
 constexpr py_runtime_v
 py_runtime()
@@ -178,8 +166,6 @@ python_v python_v2 = {
         py_frame<Python2::PyFrameObject>(),
         py_thead_h<Python2::PyThreadState>(),
         py_is<Python2::PyInterpreterState>(),
-        py_unicode(2),
-        py_bytes(2),
 };
 
 // ---- Python 3.3 ------------------------------------------------------------
@@ -190,8 +176,6 @@ python_v python_v3_3 = {
         py_frame<Python2::PyFrameObject>(),
         py_thead_h<Python2::PyThreadState>(),
         py_is<Python2::PyInterpreterState>(),
-        py_unicode(3),
-        py_bytes(3),
 };
 
 // ---- Python 3.4 ------------------------------------------------------------
@@ -202,8 +186,6 @@ python_v python_v3_4 = {
         py_frame<Python2::PyFrameObject>(),
         py_thread<Python3_4::PyThreadState>(),
         py_is<Python3_5::PyInterpreterState>(),
-        py_unicode(3),
-        py_bytes(3),
 };
 
 // ---- Python 3.6 ------------------------------------------------------------
@@ -214,8 +196,6 @@ python_v python_v3_6 = {
         py_frame<Python2::PyFrameObject>(),
         py_thread<Python3_4::PyThreadState>(),
         py_is<Python3_5::PyInterpreterState>(),
-        py_unicode(3),
-        py_bytes(3),
 };
 
 // ---- Python 3.7 ------------------------------------------------------------
@@ -226,8 +206,6 @@ python_v python_v3_7 = {
         py_frame<Python3_7::PyFrameObject>(),
         py_thread<Python3_7::PyThreadState>(),
         py_is<Python3_7::PyInterpreterState>(),
-        py_unicode(3),
-        py_bytes(3),
         py_runtime<Python3_7::PyRuntimeState>(),
         py_gc<Python3_7::_gc_runtime_state>(),
 };
@@ -240,8 +218,6 @@ python_v python_v3_8 = {
         py_frame<Python3_7::PyFrameObject>(),
         py_thread<Python3_7::PyThreadState>(),
         py_is<Python3_8::PyInterpreterState>(),
-        py_unicode(3),
-        py_bytes(3),
         py_runtime<Python3_8::PyRuntimeState>(),
         py_gc<Python3_8::_gc_runtime_state>(),
 };
@@ -254,8 +230,6 @@ python_v python_v3_9 = {
         py_frame<Python3_7::PyFrameObject>(),
         py_thread<Python3_7::PyThreadState>(),
         py_is<Python3_9::PyInterpreterState>(),
-        py_unicode(3),
-        py_bytes(3),
         py_runtime<Python3_9::PyRuntimeState>(),
         py_gc<Python3_8::_gc_runtime_state>(),
 };
@@ -268,8 +242,6 @@ python_v python_v3_10 = {
         py_frame<Python3_10::PyFrameObject>(),
         py_thread<Python3_7::PyThreadState>(),
         py_is<Python3_9::PyInterpreterState>(),
-        py_unicode(3),
-        py_bytes(3),
         py_runtime<Python3_9::PyRuntimeState>(),
         py_gc<Python3_8::_gc_runtime_state>(),
 };
@@ -282,8 +254,6 @@ python_v python_v3_11 = {
         py_framev311<Python3_11::PyFrameObject>(),
         py_threadv311<Python3_11::PyThreadState>(),
         py_isv311<Python3_11::PyInterpreterState>(),
-        py_unicode(3),
-        py_bytes(3),
         py_runtime<Python3_11::PyRuntimeState>(),
         py_gc<Python3_8::_gc_runtime_state>(),
 };
