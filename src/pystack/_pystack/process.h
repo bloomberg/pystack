@@ -61,6 +61,7 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     remote_addr_t scanHeap() const;
     InterpreterStatus isInterpreterActive() const;
     std::pair<int, int> findPythonVersion() const;
+    void setPythonVersion(const std::pair<int, int>& version);
 
   protected:
     // Data members

@@ -37,7 +37,6 @@ from _pystack.pyframe cimport FrameObject
 from _pystack.pythread cimport NativeThread
 from _pystack.pythread cimport Thread
 from _pystack.pythread cimport getThreadFromInterpreterState
-from _pystack.version cimport setVersion
 from libcpp.memory cimport make_shared
 from libcpp.memory cimport make_unique
 from libcpp.memory cimport shared_ptr
@@ -293,8 +292,6 @@ cdef class ProcessManager:
         self.python_version = python_version
         self.virtual_maps = memory_maps
         self.map_info = map_info
-        python_major, python_minor = python_version
-        setVersion(python_major, python_minor)
 
     @classmethod
     def create_from_pid(cls, int pid, bint stop_process):
@@ -315,6 +312,7 @@ cdef class ProcessManager:
         python_version = native_manager.get().findPythonVersion()
         if python_version == (-1, -1):
             python_version = get_python_version_for_process(pid, map_info)
+        native_manager.get().setPythonVersion(python_version)
 
         cdef ProcessManager new_manager = cls(
             pid, python_version, virtual_maps, map_info
@@ -365,6 +363,7 @@ cdef class ProcessManager:
         python_version = native_manager.get().findPythonVersion()
         if python_version == (-1, -1):
             python_version = get_python_version_for_core(core_file, executable, map_info)
+        native_manager.get().setPythonVersion(python_version)
         cdef ProcessManager new_manager = cls(
             pid, python_version, virtual_maps, map_info
         )

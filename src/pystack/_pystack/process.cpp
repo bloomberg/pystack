@@ -493,6 +493,11 @@ AbstractProcessManager::findPythonVersion() const
     return {major, minor};
 }
 
+void AbstractProcessManager::setPythonVersion(const std::pair<int, int>& version)
+{
+    setVersion(version.first, version.second);
+}
+
 remote_addr_t
 AbstractProcessManager::findInterpreterStateFromElfData() const
 {
