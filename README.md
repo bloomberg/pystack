@@ -44,6 +44,8 @@ PyStack has the following amazing features:
 - 🎯 Even works with aggressively optimized Python interpreter binaries.
 - 🔍 Even works with Python interpreters' binaries that do not have symbols or debug information
   (Python stack only).
+- 💥 Tolerates memory corruption well. Even if the process crashed due to memory corruption, PyStack
+  can usually reconstruct the stack.
 - 💼 Self-contained: it does not depend on external tools or programs other than the Python
   interpreter used to run PyStack itself.
 
@@ -179,7 +181,7 @@ In most cases, you just need to provide the location of the core to use PyStack 
 
 ```shell
 $ pystack core ./the_core_file
-Using executable found in the core file: /opt/bb/bin/python3.8
+Using executable found in the core file: /usr/bin/python3.8
 
 Core file information:
 state: t zombie: True niceness: 0
