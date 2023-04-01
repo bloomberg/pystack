@@ -53,30 +53,6 @@ parse_permissions(long flags)
     return perms;
 }
 
-#if defined(BLOOMBERG_PYSTACK)
-static char*
-locateLibraryCallback(char* path, void* arg)
-{
-    assert(arg != nullptr);
-    CoreFileAnalyzer* analyzer = reinterpret_cast<CoreFileAnalyzer*>(arg);
-    if (!analyzer->d_executable || !analyzer->d_lib_search_path) {
-        if (!fs::exists(path)) {
-            analyzer->d_missing_modules.emplace_back(path);
-        }
-        return path;
-    }
-
-    std::string located_path = analyzer->locateLibrary(path);
-    if (!fs::exists(located_path)) {
-        analyzer->d_missing_modules.emplace_back(located_path);
-    }
-
-    char* the_name = strdup(located_path.c_str());
-    free(path);
-    return the_name;
-}
-#endif
-
 CoreFileAnalyzer::CoreFileAnalyzer(
         std::string corefile,
         std::optional<std::string> executable,
@@ -118,10 +94,6 @@ CoreFileAnalyzer::CoreFileAnalyzer(
 
     const char* the_executable = d_executable.has_value() ? d_executable.value().c_str() : nullptr;
 
-#if defined(BLOOMBERG_PYSTACK)
-    dwfl_set_path_root_solver(d_dwfl.get(), locateLibraryCallback, reinterpret_cast<void*>(this));
-#endif
-
     if (dwfl_core_file_report(d_dwfl.get(), d_elf.get(), the_executable) < 0
         || dwfl_report_end(d_dwfl.get(), nullptr, nullptr) != 0)
     {
@@ -129,6 +101,8 @@ CoreFileAnalyzer::CoreFileAnalyzer(
                 "Failed to analyze DWARF information for the core file. '" + d_filename
                 + "' doesn't look like a valid core file.");
     }
+
+    resolveLibraries();
 
     int result = dwfl_core_file_attach(d_dwfl.get(), d_elf.get());
     if (result < 0) {
@@ -142,6 +116,121 @@ CoreFileAnalyzer::CoreFileAnalyzer(
 CoreFileAnalyzer::~CoreFileAnalyzer()
 {
     close(d_fd);
+}
+
+void
+CoreFileAnalyzer::removeModuleIf(std::function<bool(Dwfl_Module*)> predicate)
+{
+    using Predicate = decltype(predicate);
+    struct CallbackArgs
+    {
+        Dwfl* dwfl;
+        Predicate& predicate;
+    } callback_args = {d_dwfl.get(), predicate};
+
+    // Remove all modules, except for any that the callback re-adds.
+    dwfl_report_begin(d_dwfl.get());
+
+    int rc = dwfl_report_end(
+            d_dwfl.get(),
+            [](Dwfl_Module* mod, void*, const char* name, Dwarf_Addr start, void* arg) -> int {
+                auto& callback_args = *static_cast<CallbackArgs*>(arg);
+                if (!callback_args.predicate(mod)) {
+                    Dwarf_Addr end;
+                    dwfl_module_info(mod, nullptr, nullptr, &end, nullptr, nullptr, nullptr, nullptr);
+                    if (!dwfl_report_module(callback_args.dwfl, name, start, end)) {
+                        throw ElfAnalyzerError(
+                                std::string("Unexpected error retaining DWARF module: ")
+                                + dwfl_errmsg(dwfl_errno()));
+                    }
+                }
+                return 0;
+            },
+            &callback_args);
+
+    if (0 != rc) {
+        throw ElfAnalyzerError(
+                std::string("Unexpected error while filtering DWARF modules: ")
+                + dwfl_errmsg(dwfl_errno()));
+    }
+}
+
+void
+CoreFileAnalyzer::resolveLibraries()
+{
+    struct RemappedModule
+    {
+        std::string modname;
+        std::string path;
+        GElf_Addr addr;
+    };
+    std::vector<RemappedModule> remapped_modules;
+
+    LOG(DEBUG) << "Searching for missing and mismapped modules";
+    removeModuleIf([&](Dwfl_Module* mod) -> bool {
+        Dwarf_Addr start, end;
+        const char* path;
+        const char* modname =
+                dwfl_module_info(mod, nullptr, &start, &end, nullptr, nullptr, &path, nullptr);
+        if (!path) {
+            path = modname;
+        }
+
+        std::string located_path;
+        bool searched;
+        if (!d_executable || !d_lib_search_path) {
+            located_path = path;
+            searched = false;
+        } else {
+            located_path = locateLibrary(path);
+            searched = true;
+        }
+        bool located_path_exists = fs::exists(located_path);
+
+        if (!located_path_exists) {
+            LOG(DEBUG) << "Adding " << path << " as a missing module "
+                       << (searched ? "despite" : "without") << " a search";
+            d_missing_modules.emplace_back(located_path);
+        }
+
+        if (located_path_exists && located_path != path) {
+            std::string filename = std::filesystem::path(located_path).filename().string();
+            remapped_modules.push_back({filename, located_path, start});
+            LOG(DEBUG) << "Dropping module " << path << " spanning from " << std::hex << std::showbase
+                       << start << " to " << end << " so that it can be remapped from " << located_path;
+            return true;
+        } else {
+            LOG(DEBUG) << "Retaining module " << path << " spanning from " << std::hex << std::showbase
+                       << start << " to " << end;
+            return false;
+        }
+    });
+
+    LOG(DEBUG) << "Re-adding " << remapped_modules.size()
+               << " mismapped modules with corrected locations";
+    for (const auto& module : remapped_modules) {
+        if (!dwfl_report_elf(
+                    d_dwfl.get(),
+                    module.modname.c_str(),
+                    module.path.c_str(),
+                    -1,
+                    module.addr,
+                    false))
+        {
+            LOG(ERROR) << "Failed to report module " << module.modname << ": "
+                       << dwfl_errmsg(dwfl_errno());
+            throw ElfAnalyzerError("Failed to report ELF modules for core file");
+        } else {
+            LOG(DEBUG) << "Reported module " << module.modname << " with path " << module.path
+                       << " starting at " << std::hex << std::showbase << module.addr;
+        }
+    }
+
+    LOG(DEBUG) << "Completing reporting of modules";
+    if (dwfl_report_end(d_dwfl.get(), nullptr, nullptr) != 0) {
+        throw ElfAnalyzerError(
+                std::string("Unexpected error from dwfl_report_end: ") + dwfl_errmsg(dwfl_errno()));
+    }
 }
 
 std::string

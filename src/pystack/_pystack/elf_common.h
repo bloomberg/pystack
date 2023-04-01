@@ -72,6 +72,10 @@ class CoreFileAnalyzer : public Analyzer
     int d_pid;
     elf_unique_ptr d_elf;
     std::vector<std::string> d_missing_modules{};
+
+private:
+    void removeModuleIf(std::function<bool(Dwfl_Module*)> predicate);
+    void resolveLibraries();
 };
 
 class ProcessAnalyzer : public Analyzer

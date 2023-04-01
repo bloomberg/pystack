@@ -107,7 +107,7 @@ def test_single_thread_stack_for_relocated_core(
         for frame in thread.native_frames
         if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL
     ]
-    assert len(eval_frames) >= 4
+    assert len(eval_frames) == sum(frame.is_entry for frame in frames)
     assert all("?" not in frame.symbol for frame in eval_frames)
     assert all(frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path)
 
