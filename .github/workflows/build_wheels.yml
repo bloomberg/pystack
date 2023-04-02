@@ -96,7 +96,6 @@ jobs:
 
 
   test_in_alpine:
-      needs: [build_wheels, build_sdist]
       runs-on: ubuntu-latest
       strategy:
         fail-fast: false
@@ -107,13 +106,19 @@ jobs:
 
       steps:
         - uses: actions/checkout@v3
-        - uses: actions/download-artifact@v3
-          with:
-            name: artifact
-            path: dist
         - name: Set up dependencies
           run: |
-              apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb elfutils elfutils-dev musl-dbg python3-dbg
+              apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
+        - name: Build elfutils
+          run: |
+            apk add --update argp-standalone bison bsd-compat-headers bzip2-dev flex-dev libtool linux-headers musl-fts-dev musl-libintl musl-legacy-error musl-obstack-dev xz-dev zlib-dev zstd-dev
+            cd /
+            curl  https://sourceware.org/elfutils/ftp/0.189/elfutils-0.189.tar.bz2 > ./elfutils.tar.bz2
+            tar -xvf elfutils.tar.bz2
+            cd elfutils-0.189
+            CFLAGS='-w -DFNM_EXTMATCH=0' ./configure --prefix=/usr --disable-libdebuginfod --disable-debuginfod --with-zstd
+            make install
+            cd "$GITHUB_WORKSPACE"
         - name: Install Python dependencies
           run: |
             python3 -m venv venv
