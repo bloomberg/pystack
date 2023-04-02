@@ -32,11 +32,15 @@ class UnwinderError : public std::exception
 class Frame
 {
   public:
-    Frame(Dwarf_Addr pc, bool isActivation)
+    Frame(Dwarf_Addr pc, bool isActivation, std::optional<Dwarf_Word> stackPointer)
     : pc(pc)
-    , isActivation(isActivation){};
+    , isActivation(isActivation)
+    , stackPointer(stackPointer)
+    {
+    }
     Dwarf_Addr pc;
     bool isActivation;
+    std::optional<Dwarf_Word> stackPointer;
 };
 
 class ModuleCuDieRanges
