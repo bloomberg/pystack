@@ -81,9 +81,40 @@ frameCallback(Dwfl_Frame* state, void* arg)
     Dwarf_Addr pc;
     bool isActivation;
     if (!dwfl_frame_pc(state, &pc, &isActivation)) {
+        LOG(DEBUG) << "dwfl_frame_pc failed";
         return -1;
     }
-    frames->emplace_back(pc, isActivation);
+
+    // These platform specific magic numbers are part of the platform ABI.
+    // For any platform not handled below we never look up the value of the
+    // stack pointer register, and so never return DWARF_CB_ABORT.
+    std::optional<Dwarf_Word> stackPointer;
+    std::optional<unsigned int> stackPointerRegNo;
+
+#if defined(__linux__) && defined(__x86_64__)
+    // https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
+    // Figure 3.36: DWARF Register Number Mapping
+    stackPointerRegNo = 7;
+#elif defined(__linux__) && defined(__aarch64__)
+    // https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi.html#DW-REG
+    stackPointerRegNo = 31;
+#endif
+
+    if (stackPointerRegNo) {
+        stackPointer.emplace(0);
+        if (0 != dwfl_frame_reg(state, stackPointerRegNo.value(), &stackPointer.value())) {
+            throw UnwinderError("Invalid register number!");
+        }
+    }
+
+    if (!frames->empty() && pc == frames->back().pc && isActivation == frames->back().isActivation
+        && stackPointer && stackPointer == frames->back().stackPointer)
+    {
+        LOG(DEBUG) << std::hex << std::showbase << "Breaking out of (infinite?) unwind loop @ " << pc;
+        return DWARF_CB_ABORT;
+    }
+
+    frames->emplace_back(pc, isActivation, stackPointer);
     return DWARF_CB_OK;
 }
 
