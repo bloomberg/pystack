@@ -17,7 +17,7 @@
 > Print the stack trace of a running Python process, or of a Python core dump.
 
 PyStack is a tool that uses forbidden magic to let you inspect the stack frames of a running Python
-process or a Python core dump, to learn easily and quickly what it is doing (or what it was doing
+process or a Python core dump, helping you quickly and easily learn what it's doing (or what it was doing
 when it crashed) without having to interpret nasty CPython internals.
 
 # What PyStack can do
