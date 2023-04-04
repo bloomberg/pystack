@@ -119,7 +119,7 @@ CoreFileAnalyzer::~CoreFileAnalyzer()
 }
 
 void
-CoreFileAnalyzer::removeModuleIf(std::function<bool(Dwfl_Module*)> predicate)
+CoreFileAnalyzer::removeModuleIf(std::function<bool(Dwfl_Module*)> predicate) const
 {
     using Predicate = decltype(predicate);
     struct CallbackArgs
@@ -131,7 +131,7 @@ CoreFileAnalyzer::removeModuleIf(std::function<bool(Dwfl_Module*)> predicate)
     // Remove all modules, except for any that the callback re-adds.
     dwfl_report_begin(d_dwfl.get());
 
-    int rc = dwfl_report_end(
+    int const rc = dwfl_report_end(
             d_dwfl.get(),
             [](Dwfl_Module* mod, void*, const char* name, Dwarf_Addr start, void* arg) -> int {
                 auto& callback_args = *static_cast<CallbackArgs*>(arg);
@@ -167,7 +167,7 @@ CoreFileAnalyzer::resolveLibraries()
     std::vector<RemappedModule> remapped_modules;
 
     LOG(DEBUG) << "Searching for missing and mismapped modules";
-    removeModuleIf([&](Dwfl_Module* mod) -> bool {
+    removeModuleIf([this, &remapped_modules](Dwfl_Module* mod) -> bool {
         Dwarf_Addr start, end;
         const char* path;
         const char* modname =
@@ -185,7 +185,7 @@ CoreFileAnalyzer::resolveLibraries()
             located_path = locateLibrary(path);
             searched = true;
         }
-        bool located_path_exists = fs::exists(located_path);
+        bool const located_path_exists = fs::exists(located_path);
 
         if (!located_path_exists) {
             LOG(DEBUG) << "Adding " << path << " as a missing module "
@@ -194,7 +194,7 @@ CoreFileAnalyzer::resolveLibraries()
         }
 
         if (located_path_exists && located_path != path) {
-            std::string filename = std::filesystem::path(located_path).filename().string();
+            std::string const filename = std::filesystem::path(located_path).filename().string();
             remapped_modules.push_back({filename, located_path, start});
             LOG(DEBUG) << "Dropping module " << path << " spanning from " << std::hex << std::showbase
                        << start << " to " << end << " so that it can be remapped from " << located_path;
@@ -236,10 +236,10 @@ CoreFileAnalyzer::resolveLibraries()
 std::string
 CoreFileAnalyzer::locateLibrary(const std::string& lib) const
 {
-    LOG(DEBUG) << "Searching for module: " << lib;
-    if (!d_lib_search_path || fs::exists(lib)) {
+    if (!d_lib_search_path) {
         return lib;
     }
+    LOG(DEBUG) << "Searching for module: " << lib;
     std::string dir_to_consider;
     const fs::path target{lib};
     std::stringstream stream{d_lib_search_path.value()};
