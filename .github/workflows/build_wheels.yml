@@ -85,7 +85,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install -r requirements-test.txt
-          python3 -m pip install dist/*cp310*.whl
+          python3 -m pip install dist/*cp310*manylinux*.whl
       - name: Disable ptrace security restrictions
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
@@ -96,6 +96,7 @@ jobs:
 
 
   test_in_alpine:
+      needs: [build_wheels, build_sdist]
       runs-on: ubuntu-latest
       strategy:
         fail-fast: false
@@ -106,28 +107,22 @@ jobs:
 
       steps:
         - uses: actions/checkout@v3
+        - uses: actions/download-artifact@v3
+          with:
+            name: artifact
+            path: dist
         - name: Set up dependencies
           run: |
               apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
-        - name: Build elfutils
-          run: |
-            apk add --update argp-standalone bison bsd-compat-headers bzip2-dev flex-dev libtool linux-headers musl-fts-dev musl-libintl musl-legacy-error musl-obstack-dev xz-dev zlib-dev zstd-dev
-            cd /
-            curl  https://sourceware.org/elfutils/ftp/0.189/elfutils-0.189.tar.bz2 > ./elfutils.tar.bz2
-            tar -xvf elfutils.tar.bz2
-            cd elfutils-0.189
-            CFLAGS='-w -DFNM_EXTMATCH=0' ./configure --prefix=/usr --disable-libdebuginfod --disable-debuginfod --with-zstd
-            make install
-            cd "$GITHUB_WORKSPACE"
         - name: Install Python dependencies
           run: |
             python3 -m venv venv
             venv/bin/python3 -m pip install --upgrade pip
             venv/bin/python3 -m pip install -r requirements-test.txt
-            venv/bin/python3 -m pip install .
+            venv/bin/python3 -m pip install dist/*cp310*musllinux*.whl
         - name: Run pytest
           env:
-            PYTHON_TEST_VERSION: "3.9"
+            PYTHON_TEST_VERSION: "3.10"
           run: venv/bin/python3 -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_wheels_in_fedora:
@@ -159,7 +154,7 @@ jobs:
         run: |
           python3 -m pip install --upgrade pip
           python3 -m pip install -r requirements-test.txt
-          python3 -m pip install dist/*cp311*.whl
+          python3 -m pip install dist/*cp311*manylinux*.whl
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "3.11"
@@ -195,7 +190,7 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           python -m pip install -r requirements-test.txt
-          python -m pip install dist/*cp310*.whl
+          python -m pip install dist/*cp310*manylinux*.whl
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "3.10"
@@ -233,7 +228,7 @@ jobs:
             python3 -m venv venv
             venv/bin/python3 -m pip install --upgrade pip
             venv/bin/python3 -m pip install -r requirements-test.txt
-            venv/bin/python3 -m pip install dist/*cp39*.whl
+            venv/bin/python3 -m pip install dist/*cp39*manylinux*.whl
         - name: Run pytest
           env:
             PYTHON_TEST_VERSION: "3.9"
