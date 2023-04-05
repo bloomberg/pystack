@@ -27,7 +27,6 @@ directory = "news"
 
 [tool.cibuildwheel]
 build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*"]
-skip = "*musllinux*"
 manylinux-x86_64-image = "manylinux2014"
 manylinux-i686-image = "manylinux2014"
 
@@ -40,5 +39,42 @@ before-all = [
   "tar -xf elfutils.tar.bz2",
   "cd elfutils-$VERS",
   "CFLAGS='-w' ./configure --enable-libdebuginfod=dummy --disable-debuginfod --prefix=/usr --libdir=/usr/lib64",
+  "make install"
+]
+
+# Override the default linux before-all for musl linux
+[[tool.cibuildwheel.overrides]]
+select = "*-musllinux*"
+before-all = [
+  # Remove gettext-dev, which conficts with the musl-libintl, which is a build
+  # dependency of elfutils.
+  "apk del gettext-dev glib-dev",
+
+  # Build musl-fts from source. This is a build dependency of elfutils, but
+  # isn't in the Alpine repos of the musllinux_1_1 image. The build steps come
+  # from https://git.alpinelinux.org/aports/tree/main/musl-fts/APKBUILD
+  # Setting PATH before calling boostrap.sh fixes an automake failure. I think
+  # the failure may be caused by a different pkg-config in /usr/local/bin.
+  "cd /",
+  "apk add --update automake autoconf libtool",
+  "VERS=1.2.7",
+  "curl -L https://github.com/void-linux/musl-fts/archive/refs/tags/v$VERS.tar.gz > ./musl-fts.tar.gz",
+  "tar -xf musl-fts.tar.gz",
+  "cd musl-fts-$VERS",
+  "PATH=/usr/bin:/bin ./bootstrap.sh",
+  "CFLAGS=-fPIC ./configure --prefix=/usr",
+  "make install",
+
+  # Build the latest elfutils from source. The build steps come from
+  # https://git.alpinelinux.org/aports/tree/main/elfutils, and the need to
+  # set the FNM_EXTMATCH macro to get the build to succeed is seen here:
+  # https://git.alpinelinux.org/aports/tree/main/elfutils/musl-macros.patch
+  "cd /",
+  "apk add --update argp-standalone bison bsd-compat-headers bzip2-dev flex-dev libtool linux-headers musl-libintl musl-obstack-dev xz-dev zlib-dev zstd-dev",
+  "VERS=0.189",
+  "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
+  "tar -xf elfutils.tar.bz2",
+  "cd elfutils-$VERS",
+  "CFLAGS='-w -DFNM_EXTMATCH=0' ./configure --prefix=/usr --disable-nls --disable-libdebuginfod --disable-debuginfod --with-zstd",
   "make install"
 ]
