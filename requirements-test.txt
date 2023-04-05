@@ -1,3 +1,4 @@
+pyinstaller
 pytest
 pytest-cov
 pytest-xdist
