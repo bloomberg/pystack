@@ -3,7 +3,6 @@ import subprocess
 import sys
 from pathlib import Path
 
-import pytest
 from pytest import LogCaptureFixture
 
 from pystack.engine import CoreFileAnalyzer
@@ -16,18 +15,6 @@ from tests.utils import generate_core_file
 CORE_FILE_PATHS = Path(__file__).parent / "corefiles"
 TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
 TEST_MULTIPLE_THREADS_FILE = Path(__file__).parent / "multiple_thread_program.py"
-
-try:
-    import pypungi
-
-    pypungi_missing = False
-except ImportError:
-    pypungi_missing = True
-
-pytestmark = pytest.mark.skipif(
-    pypungi_missing,
-    reason="pypungi is not installed, skipping tests that require it",
-)
 
 
 def test_single_thread_stack_for_relocated_core(
@@ -42,24 +29,33 @@ def test_single_thread_stack_for_relocated_core(
     # GIVEN
 
     target_bundle = Path(tmpdir / "bundle")
-    subprocess.check_call([sys.executable, "-m", "pypungi", "-o", str(target_bundle)])
-    python_executable = Path(target_bundle / "bin" / "python")
+    subprocess.check_call(
+        [
+            sys.executable,
+            "-m",
+            "PyInstaller",
+            "-n",
+            "app",
+            "--distpath",
+            str(target_bundle),
+            TEST_SINGLE_THREAD_FILE,
+        ]
+    )
+    executable = Path(target_bundle / "app" / "app")
     relocated_bundle = Path(tmpdir / "relocated_bundle")
-    python_binary = Path(relocated_bundle / "python" / "bin" / "python")
+    relocated_executable = Path(relocated_bundle / "app" / "app")
     caplog.set_level(logging.WARNING)
 
     # WHEN
-    with generate_core_file(
-        python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
-    ) as core_file:
+    with generate_core_file(Path("env"), executable, tmpdir) as core_file:
         target_bundle.rename(relocated_bundle)
         binary_dependencies = ":".join(
-            {str(file.parent) for file in relocated_bundle.glob("**/*.so")}
+            {str(file.parent) for file in relocated_bundle.glob("**/*.so*")}
         )
         threads = list(
             get_process_threads_for_core(
                 core_file,
-                python_binary,
+                relocated_executable,
                 library_search_path=binary_dependencies,
                 method=StackMethod.SYMBOLS,
             )
@@ -73,13 +69,15 @@ def test_single_thread_stack_for_relocated_core(
 
     # Check that we have a bunch of shared libs that we cannot locate without the search path
 
-    core_map_analyzer_no_search_path = CoreFileAnalyzer(str(core_file), python_binary)
+    core_map_analyzer_no_search_path = CoreFileAnalyzer(
+        str(core_file), relocated_executable
+    )
     assert core_map_analyzer_no_search_path.missing_modules()
 
     # Check that all shared libs are located with the search path
 
     core_map_analyzer_search_path = CoreFileAnalyzer(
-        str(core_file), python_binary, binary_dependencies
+        str(core_file), relocated_executable, binary_dependencies
     )
     assert not core_map_analyzer_search_path.missing_modules()
 
@@ -91,8 +89,8 @@ def test_single_thread_stack_for_relocated_core(
     frames = list(thread.frames)
     assert (len(frames)) == 4
 
-    filenames = {frame.code.filename for frame in frames}
-    assert filenames == {str(TEST_SINGLE_THREAD_FILE)}
+    filenames = {Path(frame.code.filename).name for frame in frames}
+    assert filenames == {str(Path(TEST_SINGLE_THREAD_FILE).name)}
 
     functions = [frame.code.scope for frame in frames]
     assert functions == ["<module>", "first_func", "second_func", "third_func"]
@@ -110,59 +108,6 @@ def test_single_thread_stack_for_relocated_core(
     assert len(eval_frames) == sum(frame.is_entry for frame in frames)
     assert all("?" not in frame.symbol for frame in eval_frames)
     assert all(frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path)
-
-
-def test_missing_shared_libraries(tmpdir: Path) -> None:
-    """Generate a core file for a process with a single thread, relocate
-    the files that were used to generate the core file and check
-    that we can correctly list the missing shared libraries.
-    """
-
-    # WHEN
-    target_bundle = Path(tmpdir / "bundle")
-    subprocess.check_call([sys.executable, "-m", "pypungi", "-o", str(target_bundle)])
-    python_executable = Path(target_bundle / "bin" / "python")
-    relocated_bundle = Path(tmpdir / "relocated_bundle")
-    python_binary = Path(relocated_bundle / "python" / "bin" / "python")
-
-    with generate_core_file(
-        python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
-    ) as core_file:
-        target_bundle.rename(relocated_bundle)
-
-    # THEN
-
-    core_map_analyzer_no_search_path = CoreFileAnalyzer(str(core_file), python_binary)
-    assert core_map_analyzer_no_search_path.missing_modules()
-
-
-def test_missing_shared_libraries_with_search_path(tmpdir: Path) -> None:
-    """Generate a core file for a process with a single thread, relocate
-    the files that were used to generate the core file and check
-    that we can find all shared libraries when providing the search path.
-    """
-
-    # WHEN
-    target_bundle = Path(tmpdir / "bundle")
-    subprocess.check_call([sys.executable, "-m", "pypungi", "-o", str(target_bundle)])
-    python_executable = Path(target_bundle / "bin" / "python")
-    relocated_bundle = Path(tmpdir / "relocated_bundle")
-    python_binary = Path(relocated_bundle / "python" / "bin" / "python")
-
-    with generate_core_file(
-        python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
-    ) as core_file:
-        target_bundle.rename(relocated_bundle)
-
-    # THEN
-
-    binary_dependencies = ":".join(
-        {str(file.parent) for file in relocated_bundle.glob("**/*.so")}
-    )
-    core_map_analyzer_search_path = CoreFileAnalyzer(
-        str(core_file), python_binary, binary_dependencies
-    )
-    assert not core_map_analyzer_search_path.missing_modules()
 
 
 def test_invalid_library_path_with_regular_files(tmpdir: Path) -> None:
