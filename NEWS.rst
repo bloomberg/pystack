@@ -4,3 +4,8 @@ file is managed by towncrier. You *may* edit previous change logs to
 fix problems like typo corrections or such.
 
 .. towncrier release notes start
+
+memray 1.0.0 (2023-04-06)
+-------------------------
+
+-  Initial release.
