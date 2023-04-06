@@ -5,6 +5,7 @@ import os
 import pathlib
 import shutil
 import subprocess
+import sys
 import time
 from typing import Generator
 from typing import Iterable
@@ -34,7 +35,9 @@ Interpreter = collections.namedtuple("Interpreter", "version path has_symbols")
 
 def find_all_available_pythons() -> Iterable[Interpreter]:
     test_version = os.getenv("PYTHON_TEST_VERSION")
-    if test_version is not None:
+    if test_version == "auto":
+        versions = [(sys.version_info[:2], sys.executable)]
+    elif test_version is not None:
         major, minor = test_version.split(".")
         versions = [((int(major), int(minor)), f"python{test_version}")]
     else:
