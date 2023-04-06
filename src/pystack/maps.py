@@ -69,6 +69,17 @@ class VirtualMap:
     def size(self) -> int:
         return self.end - self.start
 
+    def __repr__(self):
+        start = f"0x{self.start:016x}"
+        end = f"0x{self.end:016x}"
+        filesize = f"0x{self.filesize:x}"
+        offset = f"0x{self.offset:x}"
+        return (
+            f"VirtualMap({start=!s}, {end=!s}, {filesize=!s}, {offset=!s},"
+            f" device={self.device!r}, flags={self.flags!r}, inode={self.inode!r},"
+            f" path={str(self.path)!r})"
+        )
+
 
 @dataclasses.dataclass
 class MemoryRange:
@@ -118,7 +129,6 @@ def generate_maps_for_process(pid: int) -> Iterable[VirtualMap]:
 def generate_maps_from_core_data(
     mapped_files: RawCoreMapList, memory_maps: RawCoreMapList
 ) -> Iterable[VirtualMap]:
-
     memory_map_ranges = {(map["start"], map["end"]) for map in memory_maps}
     missing_mapped_files = [
         map
