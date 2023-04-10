@@ -342,19 +342,13 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
     if args.lib_search_path:
         lib_search_path = args.lib_search_path
     if args.lib_search_root:
-        # We use a dictionary instead of a set to preserve the order of insertion while only
-        # keeping unique path entries in the resulting path
-        so_files = {
-            str(file.parent): None
-            for file in pathlib.Path(args.lib_search_root).glob("**/*.so")
-        }
-        so_files.update(
-            {
-                str(file.parent): None
-                for file in pathlib.Path(args.lib_search_root).glob("**/*.so.*")
-            }
-        )
-        lib_search_path = ":".join(so_files)
+        library_dirs = set()
+        for pattern in {"**/*.so", "**/*.so.*"}:
+            library_dirs.update(
+                str(file.parent)
+                for file in pathlib.Path(args.lib_search_root).glob(pattern)
+            )
+        lib_search_path = ":".join(sorted(library_dirs))
     LOGGER.info("Using library search path: %s", lib_search_path)
 
     corefile_analyzer = CoreFileAnalyzer(corefile, executable, lib_search_path)
