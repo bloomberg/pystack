@@ -531,10 +531,16 @@ cdef object _construct_os_threads(
 cdef remote_addr_t _get_interpreter_state_addr(
     AbstractProcessManager *manager, object method, int core=False
 ) except*:
-    cdef remote_addr_t head
+    cdef remote_addr_t head = 0
 
     if method in {StackMethod.AUTO, StackMethod.ALL, StackMethod.ELF_DATA}:
-        head = manager.findInterpreterStateFromElfData()
+        try:
+            head = manager.findInterpreterStateFromElfData()
+        except Exception as exc:
+            LOGGER.warning(
+                "Unexpected error using ELF data to find PyInterpreterState: %s",
+                exc,
+            )
         if head:
             LOGGER.info(
                 "Address of PyInterpreterState found using ELF data at 0x%0.2X", head
@@ -542,8 +548,13 @@ cdef remote_addr_t _get_interpreter_state_addr(
             return head
 
     if method in {StackMethod.AUTO, StackMethod.ALL, StackMethod.SYMBOLS}:
-        # Try to get the address from symbols
-        head = manager.findInterpreterStateFromSymbols()
+        try:
+            head = manager.findInterpreterStateFromSymbols()
+        except Exception as exc:
+            LOGGER.warning(
+                "Unexpected error using symbols to find PyInterpreterState: %s",
+                exc,
+            )
         if head:
             LOGGER.info(
                 "Address of PyInterpreterState found using symbols at 0x%0.2X", head
@@ -551,8 +562,13 @@ cdef remote_addr_t _get_interpreter_state_addr(
             return head
 
     if method in {StackMethod.AUTO, StackMethod.ALL, StackMethod.BSS}:
-        # Try to fetch the bss section
-        head = manager.scanBSS()
+        try:
+            head = manager.scanBSS()
+        except Exception as exc:
+            LOGGER.warning(
+                "Unexpected error scanning BSS to find PyInterpreterState: %s",
+                exc,
+            )
         if head:
             LOGGER.info(
                 "Address of PyInterpreterState found scanning the .bss section at 0x%0.2X",
@@ -561,7 +577,13 @@ cdef remote_addr_t _get_interpreter_state_addr(
             return head
 
     if core and method in {StackMethod.ALL, StackMethod.ANONYMOUS_MAPS}:
-        head = manager.scanAllAnonymousMaps()
+        try:
+            head = manager.scanAllAnonymousMaps()
+        except Exception as exc:
+            LOGGER.warning(
+                "Unexpected error scanning anonymous maps to find PyInterpreterState: %s",
+                exc,
+            )
         if head:
             LOGGER.info(
                 "Address of PyInterpreterState found scanning anonymous maps at 0x%0.2X",
@@ -570,8 +592,13 @@ cdef remote_addr_t _get_interpreter_state_addr(
             return head
 
     if not core and method in {StackMethod.ALL, StackMethod.HEAP}:
-        # Try to fetch the heap
-        head = manager.scanHeap()
+        try:
+            head = manager.scanHeap()
+        except Exception as exc:
+            LOGGER.warning(
+                "Unexpected error scanning heap to find PyInterpreterState: %s",
+                exc,
+            )
         if head:
             LOGGER.info(
                 "Address of PyInterpreterState found scanning the heap at 0x%0.2X", head
