@@ -63,7 +63,9 @@ Check your package manager on how to install these dependencies (e.g.,
 `apt-get install libdw-dev libelf-dev` in Debian-based systems). Note that you may need to tell the
 compiler where to find the header and library files of the dependencies for the build to
 succeed. Check your distribution's documentation to determine the location of the header and
-library files or for more detailed information.
+library files or for more detailed information. When building on Alpine Linux (or any other
+distribution that doesn't use glibc) you'll need elfutils 0.188 or newer. You may need to build this
+from source if your distribution's package manager doesn't have it.
 
 Once you have these binary dependencies installed, you can clone the repository and follow the
 typical build process for Python libraries:
