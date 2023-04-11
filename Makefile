@@ -116,8 +116,6 @@ bump_version:
 	                            --list $(RELEASE) \
 	                            | tail -1 \
 	                            | sed s,"^.*=",,))
-	./tools/bump_changelog.sh $(NEW_VERSION)
-	git add debian/changelog
 	git commit --amend --no-edit
 
 .PHONY: gen_news
