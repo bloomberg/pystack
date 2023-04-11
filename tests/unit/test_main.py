@@ -688,7 +688,7 @@ def test_process_core_with_search_root():
     get_process_threads_mock.assert_called_with(
         Path("corefile"),
         Path("executable"),
-        library_search_path="foo:bar",
+        library_search_path="bar:foo",
         native_mode=NativeReportingMode.OFF,
         locals=False,
         method=StackMethod.AUTO,
