@@ -85,20 +85,37 @@ frameCallback(Dwfl_Frame* state, void* arg)
         return -1;
     }
 
+    std::optional<Dwarf_Word> stackPointer;
+    // Unwinding through musl libc with elfutils can get stuck returning the
+    // same PC in a loop forever.
+    //
+    //   https://sourceware.org/bugzilla/show_bug.cgi?id=30272
+    //   https://marc.info/?l=musl&m=168053842303968&w=2
+    //
+    // We can work around this by asking elfutils what the stack pointer is for
+    // each frame and breaking out on our own if two different frames report
+    // the same stack pointer. As an optimization (and to avoid a hard
+    // dependency on a very recent version of elfutils), only do this check
+    // when PyStack isn't built against glibc. This isn't entirely correct, as
+    // it means that a PyStack built against glibc can fail to collect stacks
+    // for Python interpreters built against musl libc, but it's unlikely that
+    // users will encounter that. If they do the simple work around is to
+    // run PyStack using the same interpreter they want to get stacks for.
+
+#if _ELFUTILS_VERSION >= 188 or (defined(__linux__) && !defined(__GLIBC__))
+
     // These platform specific magic numbers are part of the platform ABI.
     // For any platform not handled below we never look up the value of the
     // stack pointer register, and so never return DWARF_CB_ABORT.
-    std::optional<Dwarf_Word> stackPointer;
     std::optional<unsigned int> stackPointerRegNo;
-
-#if defined(__linux__) && defined(__x86_64__)
+#    if defined(__x86_64__)
     // https://refspecs.linuxbase.org/elf/x86_64-abi-0.99.pdf
     // Figure 3.36: DWARF Register Number Mapping
     stackPointerRegNo = 7;
-#elif defined(__linux__) && defined(__aarch64__)
+#    elif defined(__aarch64__)
     // https://refspecs.linuxfoundation.org/ELF/ppc64/PPC-elf64abi.html#DW-REG
     stackPointerRegNo = 31;
-#endif
+#    endif
 
     if (stackPointerRegNo) {
         stackPointer.emplace(0);
@@ -113,6 +130,7 @@ frameCallback(Dwfl_Frame* state, void* arg)
         LOG(DEBUG) << std::hex << std::showbase << "Breaking out of (infinite?) unwind loop @ " << pc;
         return DWARF_CB_ABORT;
     }
+#endif
 
     frames->emplace_back(pc, isActivation, stackPointer);
     return DWARF_CB_OK;
