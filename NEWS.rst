@@ -5,6 +5,12 @@ fix problems like typo corrections or such.
 
 .. towncrier release notes start
 
+pystack 1.0.1 (2023-04-11)
+==========================
+
+No significant changes.
+
+
 memray 1.0.0 (2023-04-06)
 -------------------------
 
