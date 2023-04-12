@@ -94,13 +94,15 @@ frameCallback(Dwfl_Frame* state, void* arg)
     //
     // We can work around this by asking elfutils what the stack pointer is for
     // each frame and breaking out on our own if two different frames report
-    // the same stack pointer. As an optimization (and to avoid a hard
-    // dependency on a very recent version of elfutils), only do this check
-    // when PyStack isn't built against glibc. This isn't entirely correct, as
-    // it means that a PyStack built against glibc can fail to collect stacks
-    // for Python interpreters built against musl libc, but it's unlikely that
-    // users will encounter that. If they do the simple work around is to
-    // run PyStack using the same interpreter they want to get stacks for.
+    // the same stack pointer. When PyStack is built with glibc and not built
+    // with a recent enough version of elfutils for us to do this check, we
+    // skip it. This isn't entirely correct, as it means that a PyStack built
+    // with glibc and an old elfutils can fail to collect stacks for Python
+    // interpreters built against musl libc, but it avoids a hard dependency on
+    // a newer version of elfutils than most distros have available. It's
+    // unlikely that users will encounter problems, but if they do, the simple
+    // work around is to install PyStack using the same interpreter they want
+    // to get stacks for, or to build with a more recent version of elfutils.
 
 #if _ELFUTILS_VERSION >= 188 or (defined(__linux__) && !defined(__GLIBC__))
 
