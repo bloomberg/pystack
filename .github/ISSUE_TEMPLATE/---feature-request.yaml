@@ -23,7 +23,7 @@ body:
     label: Describe the solution you'd like
     description: A clear and concise description of what you want to happen. Add any considered drawbacks.
     placeholder: |
-      I would love if Memray could [...]
+      I would love if PyStack could [...]
   validations:
     required: True
 - type: textarea
