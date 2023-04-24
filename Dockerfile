@@ -34,6 +34,7 @@ RUN apt-get update \
     gdb \
     valgrind \
     lcov \
+    file \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
