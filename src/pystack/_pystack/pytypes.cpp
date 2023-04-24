@@ -617,7 +617,6 @@ Object::objectType() const
 
     const long subclass_flags = d_flags & subclass_mask;
 
-
     if (subclass_flags == Pystack_TPFLAGS_BYTES_SUBCLASS) {
         return d_manager->majorVersion() > 2 ? ObjectType::BYTES : ObjectType::STRING;
     } else if (subclass_flags == Pystack_TPFLAGS_UNICODE_SUBCLASS) {

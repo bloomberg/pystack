@@ -514,7 +514,8 @@ AbstractProcessManager::minorVersion() const
     return d_minor;
 }
 
-const python_v& AbstractProcessManager::offsets() const
+const python_v&
+AbstractProcessManager::offsets() const
 {
     return *d_py_v;
 }
