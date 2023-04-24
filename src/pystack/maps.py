@@ -69,7 +69,7 @@ class VirtualMap:
     def size(self) -> int:
         return self.end - self.start
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         start = f"0x{self.start:016x}"
         end = f"0x{self.end:016x}"
         filesize = f"0x{self.filesize:x}"
