@@ -1,5 +1,4 @@
 PYTHON ?= python
-CLANG_FORMAT ?= clang-format
 
 # Doc generation variables
 UPSTREAM_GIT_REMOTE ?= origin
