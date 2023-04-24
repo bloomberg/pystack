@@ -47,9 +47,8 @@ ccoverage:  ## Run the test suite, with C++ code coverage
 	$(MAKE) check
 	gcov -i build/*/src/pystack/_pystack -i -d
 	lcov --capture --directory .  --output-file pystack.info
-	lcov --extract pystack.info '*/src/pystack/*' --output-file pystack.info
+	lcov --extract pystack.info '*/src/pystack/_pystack/*' --output-file pystack.info
 	genhtml pystack.info --output-directory pystack-coverage
-	find . | grep -E '(\.gcda|\.gcno|\.gcov\.json\.gz)' | xargs rm -rf
 
 .PHONY: format
 format:  ## Autoformat all files
