@@ -139,7 +139,8 @@ PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager,
     }
 
     d_addr = addr;
-    remote_addr_t candidate_next_addr = manager->versionedThreadField<remote_addr_t, &py_thread_v::o_next>(ts);
+    remote_addr_t candidate_next_addr =
+            manager->versionedThreadField<remote_addr_t, &py_thread_v::o_next>(ts);
     d_next_addr = candidate_next_addr == addr ? (remote_addr_t) nullptr : candidate_next_addr;
 
     d_pthread_id = manager->versionedThreadField<unsigned long, &py_thread_v::o_thread_id>(ts);
@@ -217,7 +218,8 @@ PyThread::getFrameAddr(
 {
     if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
         Python3_11::CFrame cframe;
-        remote_addr_t cframe_addr = manager->versionedThreadField<remote_addr_t, &py_thread_v::o_frame>(ts);
+        remote_addr_t cframe_addr =
+                manager->versionedThreadField<remote_addr_t, &py_thread_v::o_frame>(ts);
         if (!manager->isAddressValid(cframe_addr)) {
             return reinterpret_cast<remote_addr_t>(nullptr);
         }
@@ -288,8 +290,7 @@ PyThread::calculateGilStatus(const std::shared_ptr<const AbstractProcessManager>
             static const size_t MAX_RUNTIME_OFFSET = 2048;
             for (void** raddr = (void**)pyruntime;
                  (void*)raddr < (void*)(pyruntime + MAX_RUNTIME_OFFSET);
-                 raddr++)
-            {
+                 raddr++) {
                 manager->copyObjectFromProcess((remote_addr_t)raddr, &thread_addr);
                 if (thread_addr == d_addr && ++hits == 2) {
                     LOG(DEBUG) << "GIL status correctly determined: HELD";
@@ -376,7 +377,8 @@ getThreadFromInterpreterState(
     PyInterpreterState is;
     manager->copyObjectFromProcess(addr, &is);
 
-    auto thread_addr = manager->versionedInterpreterStateField<remote_addr_t, &py_is_v::o_tstate_head>(is);
+    auto thread_addr =
+            manager->versionedInterpreterStateField<remote_addr_t, &py_is_v::o_tstate_head>(is);
     return std::make_shared<PyThread>(manager, thread_addr);
 }
 
