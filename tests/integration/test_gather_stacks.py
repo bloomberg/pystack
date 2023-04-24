@@ -145,7 +145,6 @@ def test_multiple_thread_stack(python, blocking, method, tmpdir):
     assert not main_thread.native_frames
 
     for thread in other_threads:
-
         frames = [
             frame for frame in thread.frames if "threading" not in frame.code.filename
         ]
@@ -281,7 +280,6 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
         assert any(frame.path and "?" not in frame.path for frame in eval_frames)
 
     for thread in other_threads:
-
         frames = [
             frame for frame in thread.frames if "threading" not in frame.code.filename
         ]
@@ -317,7 +315,6 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
 
 
 def test_gather_stack_with_heap_fails_if_no_heap(tmpdir):
-
     # GIVEN / WHEN
 
     with spawn_child_process(
@@ -334,7 +331,6 @@ def test_gather_stack_with_heap_fails_if_no_heap(tmpdir):
                 the_data.append(line)
         data = "".join(the_data)
         with patch("builtins.open", mock_open(read_data=data)):
-
             # THEN
 
             with pytest.raises(NotEnoughInformation):
@@ -377,7 +373,6 @@ def test_gather_stack_with_bss_fails_if_no_bss(tmpdir):
 
 
 def test_gather_stack_auto_works_if_no_bss(tmpdir):
-
     # GIVEN / WHEN
 
     with spawn_child_process(
@@ -424,7 +419,6 @@ def test_gather_stack_auto_works_if_no_bss(tmpdir):
 
 
 def test_gather_stack_auto_works_if_no_heap(tmpdir):
-
     # GIVEN / WHEN
 
     with spawn_child_process(
@@ -470,7 +464,6 @@ def test_gather_stack_auto_works_if_no_heap(tmpdir):
 
 @ALL_PYTHONS
 def test_thread_registered_with_python_but_with_no_python_calls(python, tmpdir):
-
     # GIVEN
 
     _, python_executable = python

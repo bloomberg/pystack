@@ -67,7 +67,6 @@ def test_core_version_detection_using_bss_section(python, tmpdir):
 
 @ALL_PYTHONS
 def test_detection_of_interpreter_shutdown(python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 
@@ -89,7 +88,6 @@ def test_detection_of_interpreter_shutdown(python, tmpdir):
 
 @ALL_PYTHONS
 def test_detection_of_interpreter_active(python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 

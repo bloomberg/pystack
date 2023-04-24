@@ -210,7 +210,6 @@ def test_multiple_thread_stack_native(
     assert all(frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path)
 
     for thread in other_threads:
-
         frames = [
             frame for frame in thread.frames if "threading" not in frame.code.filename
         ]
@@ -528,7 +527,6 @@ def test_extract_psinfo_with_long_name():
 
 
 def test_core_analizer_raises_when_an_invalid_core_is_provided(tmpdir: Path) -> None:
-
     # GIVEN
 
     not_a_core = __file__

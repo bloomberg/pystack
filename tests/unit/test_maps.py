@@ -40,7 +40,6 @@ def test_simple_maps_no_such_pid():
     # GIVEN
 
     with patch("builtins.open", side_effect=FileNotFoundError()):
-
         # WHEN / THEN
         with pytest.raises(ProcessNotFound):
             list(generate_maps_for_process(1))

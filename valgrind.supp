@@ -51,7 +51,7 @@
 }
 
 # When dynamically loading the Python extension that contains
-# libdwfl's symbols, an initializer installed by libdwfl 
+# libdwfl's symbols, an initializer installed by libdwfl
 # tries to dlopen an optional library (libdebuginfod) for
 # preparing some internal state and this confuses valgrind (this
 # call list is not used by any code in our library).

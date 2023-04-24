@@ -115,7 +115,6 @@ def test_gc_status_is_reported_when_no_garbage_collecting_in_core(python, tmpdir
 def test_gc_status_is_reported_when_garbage_collecting_in_process_no_native(
     python, tmpdir
 ):
-
     # GIVEN
 
     (major_version, minor_version), python_executable = python

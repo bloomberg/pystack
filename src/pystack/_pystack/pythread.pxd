@@ -35,4 +35,3 @@ cdef extern from "pythread.h" namespace "pystack":
         GCStatus isGCCollecting()
         void populateNativeStackTrace(shared_ptr[AbstractProcessManager] manager) except+
     shared_ptr[Thread] getThreadFromInterpreterState(shared_ptr[AbstractProcessManager] manager, remote_addr_t addr) except+
-

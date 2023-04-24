@@ -4,9 +4,9 @@ from typing import Any
 from typing import Dict
 from typing import Iterable
 from typing import List
+from typing import Optional
 from typing import Tuple
 from typing import Union
-from typing import Optional
 
 from .types import PyThread
 

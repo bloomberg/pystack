@@ -16,7 +16,6 @@ TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
 
 @ALL_PYTHONS
 def test_gil_status_one_thread_among_many_holds_the_gil(python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 

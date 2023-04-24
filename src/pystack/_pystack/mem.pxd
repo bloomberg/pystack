@@ -30,10 +30,9 @@ cdef extern from "mem.h" namespace "pystack":
         VirtualMap(uintptr_t start, uintptr_t end, unsigned long filesize,
                    cppstring flags, unsigned long offset, cppstring permissions,
                    unsigned long inode, cppstring pathname)
-    
+
     cdef cppclass MemoryMapInformation:
         MemoryMapInformation()
         void setMainMap(const VirtualMap& bss)
         void setBss(const VirtualMap& bss)
         void setHeap(const VirtualMap& heap)
-

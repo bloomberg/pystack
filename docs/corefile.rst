@@ -315,6 +315,6 @@ analyzing raw memory but will normally be slower and it will take a time
 proportional to the core file size, as all the memory needs to be analysed to
 do that.
 
-.. tip:: 
+.. tip::
     When using ``--exhaustive`` make sure you have the core file in a fast
     file-system (not NFS or docker mount points) to speed up the analysis.

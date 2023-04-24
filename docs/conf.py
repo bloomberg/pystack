@@ -13,7 +13,7 @@ extensions = [
     "sphinx.ext.todo",
     "sphinx.ext.viewcode",
     # third-party extensions
-    'sphinxarg.ext',
+    "sphinxarg.ext",
 ]
 
 # General information about the project.

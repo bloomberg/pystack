@@ -64,7 +64,6 @@ MAX_OUTPUT_LEN = 80
 @ALL_PYTHONS
 @ALL_SOURCES
 def test_common_types(generate_threads, argument, python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 
@@ -122,7 +121,6 @@ first_func()
 @ALL_PYTHONS
 @ALL_SOURCES
 def test_bytes(generate_threads, python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 
@@ -178,7 +176,6 @@ first_func()
 @ALL_PYTHONS
 @ALL_SOURCES
 def test_bytes_with_binary_data(generate_threads, python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 
@@ -234,7 +231,6 @@ first_func()
 @ALL_PYTHONS
 @ALL_SOURCES
 def test_split_dict(generate_threads, python, tmpdir):
-
     # GIVE
     _, python_executable = python
 
@@ -302,7 +298,6 @@ first_func()
 @ALL_PYTHONS
 @ALL_SOURCES
 def test_dict_with_dummy_entries(generate_threads, python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 
@@ -380,7 +375,6 @@ first_func()
 @ALL_PYTHONS
 @ALL_SOURCES
 def test_gigantic_integer(generate_threads, python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 
@@ -435,7 +429,6 @@ first_func()
 @ALL_PYTHONS
 @ALL_SOURCES
 def test_custom_object(generate_threads, python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 
@@ -516,7 +509,6 @@ first_func()
 @ALL_PYTHONS
 @ALL_SOURCES
 def test_output_limiting(generate_threads, argument, python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 
@@ -575,7 +567,6 @@ first_func()
 @ALL_PYTHONS
 @ALL_SOURCES
 def test_locals_not_resolved(generate_threads, python, tmpdir):
-
     # GIVEN
     _, python_executable = python
 
