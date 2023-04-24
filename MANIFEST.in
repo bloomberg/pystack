@@ -4,6 +4,8 @@ exclude src/pystack/*.h
 include pyproject.toml
 include Makefile
 include src/pystack/py.typed
+include .pre-commit-config.yaml
+
 recursive-include src/pystack/_pystack/ *
 recursive-include src/pystack *.py
 recursive-include src/pystack *.pyx *.pxd
