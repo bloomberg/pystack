@@ -1,0 +1,29 @@
+name: Lint and docs
+
+on: [push, pull_request]
+
+jobs:
+  lint_and_docs:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -qy libdw-dev libelf-dev
+          npm install -g prettier
+      - name: Install Python dependencies
+        run: |
+          python3 -m pip install -r requirements-extra.txt
+      - name: Install Package
+        run: |
+          python3 -m pip install -e .
+      - name: Lint sources
+        run: |
+          make lint
+      - name: Build docs
+        run: |
+          make docs
