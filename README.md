@@ -241,7 +241,7 @@ contributions that you make are licensed under the same terms. For us to be able
 your contributions, we will need explicit confirmation from you that you are able and willing to
 provide them under these terms, and the mechanism we use to do this is called a Developer's
 Certificate of Origin [(DCO)](https://github.com/bloomberg/.github/blob/main/DCO.md). This is
-similar to the process used by the Linux(R) kernel, Samba, and many other major open source
+similar to the process used by the Linux kernel, Samba, and many other major open source
 projects.
 
 To participate under these terms, all that you must do is include a line like the following as the
