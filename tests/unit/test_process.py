@@ -118,7 +118,6 @@ def test_get_python_version_for_process_fallback_bss():
     ) as binary_regexp_mock, patch(
         "subprocess.check_output"
     ) as subprocess_mock:
-
         scan_bss_mock.return_value = (3, 8)
         major, minor = get_python_version_for_process(0, mapinfo)
 
@@ -251,7 +250,6 @@ def test_get_python_version_for_core_fallback_bss():
     ) as binary_regexp_mock, patch(
         "subprocess.check_output"
     ) as subprocess_mock:
-
         scan_bss_mock.return_value = (3, 8)
         major, minor = get_python_version_for_core("corefile", "executable", mapinfo)
 

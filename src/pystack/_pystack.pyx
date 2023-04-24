@@ -153,14 +153,14 @@ cdef CppMemoryMapInformation _pymapinfo_to_mapinfo(map_info: MemoryMapInformatio
     interpreter_map = (
         map_info.libpython if map_info.libpython is not None else map_info.python
     )
-    cdef CppMemoryMapInformation cppmap_info 
+    cdef CppMemoryMapInformation cppmap_info
     assert(interpreter_map is not None)
     cppmap_info.setMainMap(_pymap_to_map(interpreter_map))
     if map_info.bss:
         cppmap_info.setBss(_pymap_to_map(map_info.bss))
     if map_info.heap:
         cppmap_info.setHeap(_pymap_to_map(map_info.heap))
-    
+
     return cppmap_info
 
 
@@ -204,7 +204,7 @@ cdef shared_ptr[NativeCoreFileAnalyzer] get_core_analyzer(
 
 cdef class CoreFileAnalyzer:
     cdef shared_ptr[CoreFileExtractor] _core_analyzer
-    cdef object ignored_libs 
+    cdef object ignored_libs
 
     def __cinit__(self, core_file, executable=None, lib_search_path=None):
         self.ignored_libs = frozenset(("ld-linux", "linux-vdso"))
@@ -238,7 +238,7 @@ cdef class CoreFileAnalyzer:
     @intercept_runtime_errors(EngineError)
     def extract_ps_info(self) -> Dict[str, Any]:
         return self._core_analyzer.get().extractPSInfo()
-    
+
     cdef _is_ignored_lib(self, object path):
         return any(prefix in str(path) for prefix in self.ignored_libs)
 

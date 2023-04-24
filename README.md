@@ -17,16 +17,16 @@
 > Print the stack trace of a running Python process, or of a Python core dump.
 
 PyStack is a tool that uses forbidden magic to let you inspect the stack frames of a running Python
-process or a Python core dump, helping you quickly and easily learn what it's doing (or what it was doing
-when it crashed) without having to interpret nasty CPython internals.
+process or a Python core dump, helping you quickly and easily learn what it's doing (or what it was
+doing when it crashed) without having to interpret nasty CPython internals.
 
 # What PyStack can do
 
 PyStack has the following amazing features:
 
 - 💻 Works with both running processes and core dump files.
-- 🧵 Shows if each thread currently holds the Python GIL, is waiting to acquire it, or is
-  currently dropping it.
+- 🧵 Shows if each thread currently holds the Python GIL, is waiting to acquire it, or is currently
+  dropping it.
 - 🗑️ Shows if a thread is running a garbage collection cycle.
 - 🐍 Optionally shows native function calls, as well as Python ones. In this mode, PyStack prints
   the native stack trace (C/C++/Rust function calls), except that the calls to Python callables are
@@ -36,22 +36,24 @@ PyStack has the following amazing features:
 - 📈 Includes calls to inlined functions in the native stack whenever enough debug information is
   available.
 - 🔍 Optionally shows the values of local variables and function arguments in Python stack frames.
-- 🔒 Safe to use on running processes. PyStack does not modify any memory or execute any code in
-  a process that is running. It simply attaches just long enough to read some of the process's memory.
+- 🔒 Safe to use on running processes. PyStack does not modify any memory or execute any code in a
+  process that is running. It simply attaches just long enough to read some of the process's
+  memory.
 - ⚡ Optionally, it can perform a Python stack analysis without pausing the process at all. This
   minimizes impact to the debugged process, at the cost of potentially failing due to data races.
 - 🚀 Super fast! It can analyze core files 10x faster than general-purpose tools like GDB.
 - 🎯 Even works with aggressively optimized Python interpreter binaries.
 - 🔍 Even works with Python interpreters' binaries that do not have symbols or debug information
   (Python stack only).
-- 💥 Tolerates memory corruption well. Even if the process crashed due to memory corruption, PyStack
-  can usually reconstruct the stack.
+- 💥 Tolerates memory corruption well. Even if the process crashed due to memory corruption,
+  PyStack can usually reconstruct the stack.
 - 💼 Self-contained: it does not depend on external tools or programs other than the Python
   interpreter used to run PyStack itself.
 
 ## Building from source
 
-If you wish to build PyStack from source, you need the following binary dependencies in your system:
+If you wish to build PyStack from source, you need the following binary dependencies in your
+system:
 
 - libdw
 - libelf
@@ -61,11 +63,11 @@ package.
 
 Check your package manager on how to install these dependencies (e.g.,
 `apt-get install libdw-dev libelf-dev` in Debian-based systems). Note that you may need to tell the
-compiler where to find the header and library files of the dependencies for the build to
-succeed. Check your distribution's documentation to determine the location of the header and
-library files or for more detailed information. When building on Alpine Linux (or any other
-distribution that doesn't use glibc) you'll need elfutils 0.188 or newer. You may need to build this
-from source if your distribution's package manager doesn't have it.
+compiler where to find the header and library files of the dependencies for the build to succeed.
+Check your distribution's documentation to determine the location of the header and library files
+or for more detailed information. When building on Alpine Linux (or any other distribution that
+doesn't use glibc) you'll need elfutils 0.188 or newer. You may need to build this from source if
+your distribution's package manager doesn't have it.
 
 Once you have these binary dependencies installed, you can clone the repository and follow the
 typical build process for Python libraries:
@@ -119,11 +121,11 @@ commands:
 ## Analyzing running processes
 
 The `remote` command is used to analyze the status of a running (remote) process. The analysis is
-always done in a safe and non-intrusive way, as no code is loaded in the memory space of the process
-under analysis and no memory is modified in the remote process. This makes analysis using PyStack a
-great option even for those services and applications that are running in environments where the running process
-must not be impacted in any way (other than being temporarily paused, though `--no-block` can avoid
-even that). There are several options available:
+always done in a safe and non-intrusive way, as no code is loaded in the memory space of the
+process under analysis and no memory is modified in the remote process. This makes analysis using
+PyStack a great option even for those services and applications that are running in environments
+where the running process must not be impacted in any way (other than being temporarily paused,
+though `--no-block` can avoid even that). There are several options available:
 
 ```shell
 usage: pystack remote [-h] [-v] [--no-color] [--no-block] [--native] [--native-all] [--locals] [--exhaustive] [--self] pid
@@ -162,9 +164,9 @@ Traceback for thread 112 [] (most recent call last):
 The `core` subcommand is used to analyze the status of a core dump file. Analyzing core files is
 very similar to analyzing processes but there are some differences, as the core file does not
 contain the totality of the memory that was valid when the program was live. In most cases, this
-makes no difference, as PyStack will try to adapt automatically. However, in some cases, you will need to
-specify extra command line options to help PyStack locate the information it needs. When analyzing
-cores, there are several options available:
+makes no difference, as PyStack will try to adapt automatically. However, in some cases, you will
+need to specify extra command line options to help PyStack locate the information it needs. When
+analyzing cores, there are several options available:
 
 ```shell
 usage: pystack core [-h] [-v] [--no-color] [--native] [--native-all] [--locals] [--exhaustive] [--lib-search-path LIB_SEARCH_PATH | --lib-search-root LIB_SEARCH_ROOT] core [executable]
@@ -187,7 +189,8 @@ options:
                         Root directory to search recursively for shared libraries loaded into the core.
 ```
 
-In most cases, you just need to provide the location of the core to use PyStack with core dump files:
+In most cases, you just need to provide the location of the core to use PyStack with core dump
+files:
 
 ```shell
 $ pystack core ./the_core_file
@@ -245,12 +248,11 @@ answered as quickly as we can.
 ## Contribution Licensing
 
 Since this project is distributed under the terms of an [open source license](LICENSE),
-contributions that you make are licensed under the same terms. For us to be able to accept
-your contributions, we will need explicit confirmation from you that you are able and willing to
-provide them under these terms, and the mechanism we use to do this is called a Developer's
-Certificate of Origin [(DCO)](https://github.com/bloomberg/.github/blob/main/DCO.md). This is
-similar to the process used by the Linux kernel, Samba, and many other major open source
-projects.
+contributions that you make are licensed under the same terms. For us to be able to accept your
+contributions, we will need explicit confirmation from you that you are able and willing to provide
+them under these terms, and the mechanism we use to do this is called a Developer's Certificate of
+Origin [(DCO)](https://github.com/bloomberg/.github/blob/main/DCO.md). This is similar to the
+process used by the Linux kernel, Samba, and many other major open source projects.
 
 To participate under these terms, all that you must do is include a line like the following as the
 last line of the commit message for each commit in your contribution:

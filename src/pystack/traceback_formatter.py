@@ -88,7 +88,6 @@ def format_thread(thread: PyThread, native: bool) -> Iterable[str]:
 def _format_merged_stacks(
     thread: PyThread, current_frame: Optional[PyFrame]
 ) -> Iterable[str]:
-
     for frame in thread.native_frames:
         if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL:
             assert current_frame is not None

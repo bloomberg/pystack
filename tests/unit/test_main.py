@@ -457,7 +457,6 @@ def test_process_core_default_without_executable_and_executable_does_not_exist(c
 
 
 def test_process_core_executable_not_elf_file(capsys):
-
     # GIVEN
 
     argv = ["pystack", "core", "corefile", "executable"]
@@ -550,7 +549,6 @@ def test_process_core_native(argument, mode):
     ), patch(
         "pystack.__main__.is_elf", return_value=True
     ):
-
         get_process_threads_mock.return_value = threads
         main()
 

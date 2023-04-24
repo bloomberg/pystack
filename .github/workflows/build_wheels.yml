@@ -14,7 +14,6 @@ concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
-
 jobs:
   build_wheels:
     name: Wheel for Linux-${{ matrix.cibw_python }}-${{ matrix.cibw_arch }}
@@ -23,8 +22,8 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        cibw_python: [ "cp37-*", "cp38-*", "cp39-*", "cp310-*", "cp311-*"]
-        cibw_arch: [ "x86_64" ]
+        cibw_python: ["cp37-*", "cp38-*", "cp39-*", "cp310-*", "cp311-*"]
+        cibw_arch: ["x86_64"]
 
     steps:
       - uses: actions/checkout@v3
@@ -61,7 +60,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: [ "3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
+        python_version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
@@ -94,36 +93,35 @@ jobs:
           PYTHON_TEST_VERSION: ${{ matrix.python_version }}
         run: python3 -m pytest tests -k 'not 2.7' -n auto -vvv
 
-
   test_in_alpine:
-      needs: [build_wheels, build_sdist]
-      runs-on: ubuntu-latest
-      strategy:
-        fail-fast: false
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
 
-      container:
-        image: alpine
-        options: --cap-add=SYS_PTRACE
+    container:
+      image: alpine
+      options: --cap-add=SYS_PTRACE
 
-      steps:
-        - uses: actions/checkout@v3
-        - uses: actions/download-artifact@v3
-          with:
-            name: artifact
-            path: dist
-        - name: Set up dependencies
-          run: |
-              apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
-        - name: Install Python dependencies
-          run: |
-            python3 -m venv venv
-            venv/bin/python3 -m pip install --upgrade pip
-            venv/bin/python3 -m pip install -r requirements-test.txt
-            venv/bin/python3 -m pip install --find-links=dist/ --only-binary=pystack pystack
-        - name: Run pytest
-          env:
-            PYTHON_TEST_VERSION: "auto"
-          run: venv/bin/python3 -m pytest tests -k 'not 2.7' -n auto -vvv
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+      - name: Set up dependencies
+        run: |
+          apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
+      - name: Install Python dependencies
+        run: |
+          python3 -m venv venv
+          venv/bin/python3 -m pip install --upgrade pip
+          venv/bin/python3 -m pip install -r requirements-test.txt
+          venv/bin/python3 -m pip install --find-links=dist/ --only-binary=pystack pystack
+      - name: Run pytest
+        env:
+          PYTHON_TEST_VERSION: "auto"
+        run: venv/bin/python3 -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_wheels_in_fedora:
     needs: [build_wheels, build_sdist]
@@ -143,13 +141,13 @@ jobs:
           path: dist
       - name: Set up dependencies
         run: |
-            dnf install -y \
-              gdb \
-              g++ \
-              file \
-              python3 \
-              python3-devel \
-              python3-debug
+          dnf install -y \
+            gdb \
+            g++ \
+            file \
+            python3 \
+            python3-devel \
+            python3-debug
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
@@ -178,14 +176,14 @@ jobs:
           path: dist
       - name: Set up dependencies
         run: |
-            pacman -Sy --noconfirm \
-              gdb \
-              gcc \
-              file \
-              python \
-              python-pip \
-              python-setuptools \
-              python-wheel
+          pacman -Sy --noconfirm \
+            gdb \
+            gcc \
+            file \
+            python \
+            python-pip \
+            python-setuptools \
+            python-wheel
       - name: Install Python dependencies
         run: |
           python -m pip install --upgrade pip
@@ -197,42 +195,42 @@ jobs:
         run: python -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_wheels_in_debian:
-      needs: [build_wheels, build_sdist]
-      runs-on: ubuntu-latest
-      strategy:
-        fail-fast: false
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
 
-      container:
-        image: debian
-        options: --cap-add=SYS_PTRACE
+    container:
+      image: debian
+      options: --cap-add=SYS_PTRACE
 
-      steps:
-        - uses: actions/checkout@v3
-        - uses: actions/download-artifact@v3
-          with:
-            name: artifact
-            path: dist
-        - name: Set up dependencies
-          run: |
-            apt-get update
-            apt-get install -qy \
-              gdb \
-              file \
-              python3-dev \
-              python3-pip \
-              python3-venv \
-              python3-dbg \
-              python3-distutils
-        - name: Install Python dependencies
-          run: |
-            python3 -m venv venv
-            venv/bin/python3 -m pip install --upgrade pip
-            venv/bin/python3 -m pip install -r requirements-test.txt
-            venv/bin/python3 -m pip install --find-links=dist/ --only-binary=pystack pystack
-        - name: Run pytest
-          env:
-            PYTHON_TEST_VERSION: "auto"
-          run: venv/bin/python3 -m pytest tests -k 'not 2.7' -n auto -vvv
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+      - name: Set up dependencies
+        run: |
+          apt-get update
+          apt-get install -qy \
+            gdb \
+            file \
+            python3-dev \
+            python3-pip \
+            python3-venv \
+            python3-dbg \
+            python3-distutils
+      - name: Install Python dependencies
+        run: |
+          python3 -m venv venv
+          venv/bin/python3 -m pip install --upgrade pip
+          venv/bin/python3 -m pip install -r requirements-test.txt
+          venv/bin/python3 -m pip install --find-links=dist/ --only-binary=pystack pystack
+      - name: Run pytest
+        env:
+          PYTHON_TEST_VERSION: "auto"
+        run: venv/bin/python3 -m pytest tests -k 'not 2.7' -n auto -vvv
 
   upload_pypi:
     needs: [build_wheels, build_sdist, test_wheels]
