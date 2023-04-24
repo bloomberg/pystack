@@ -7,29 +7,6 @@ from setuptools import Extension
 from Cython.Build import cythonize
 
 install_requires = []
-docs_requires = [
-    "bump2version",
-    "recommonmark",
-    "sphinx",
-    "furo",
-    "sphinx-autobuild",
-    "sphinx-argparse",
-    "towncrier",
-]
-
-lint_requires = [
-    "black",
-    "flake8",
-    "isort",
-    "mypy",
-]
-
-test_requires = [
-    "Cython",
-    "pytest",
-    "pytest-xdist",
-    "pytest-cov",
-]
 
 
 TEST_BUILD = False
@@ -136,12 +113,6 @@ setup(
     ),
     install_requires=install_requires,
     include_package_data=True,
-    extras_require={
-        "test": test_requires,
-        "docs": docs_requires,
-        "lint": lint_requires,
-        "dev": test_requires + lint_requires + docs_requires,
-    },
     entry_points={
         "console_scripts": ["pystack=pystack.__main__:main"],
     },

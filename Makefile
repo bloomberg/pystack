@@ -32,7 +32,7 @@ install-sdist: dist  ## Install from source distribution
 
 .PHONY: test-install
 test-install:  ## Install with test dependencies
-	$(ENV) CYTHON_TEST_MACROS=1 $(PIP_INSTALL) -e .[test]
+	$(ENV) CYTHON_TEST_MACROS=1 $(PIP_INSTALL) -e . -r requirements-test.txt
 
 .PHONY: check
 check:  ## Run the test suite
