@@ -102,8 +102,10 @@ gh-pages:  ## Publish documentation on BBGitHub Pages
 
 .PHONY: clean
 clean:  ## Clean any built/generated artifacts
-	find . | grep -E '(\.o|\.so|\.gcda|\.gcno|\.gcov\.json\.gz)' | xargs rm -rf
+	find . | grep -E '(\.o|\.gcda|\.gcno|\.gcov\.json\.gz)' | xargs rm -rf
 	find . | grep -E '(__pycache__|\.pyc|\.pyo)' | xargs rm -rf
+	rm -rf build
+	rm -f src/pystack/_pystack.*.so
 	rm -f pystack.info
 	rm -rf pystack-coverage
 
