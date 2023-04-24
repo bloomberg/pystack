@@ -1,19 +1,11 @@
 PYTHON ?= python
 CLANG_FORMAT ?= clang-format
-PRETTIER ?= prettier --no-editorconfig
 
 # Doc generation variables
 UPSTREAM_GIT_REMOTE ?= origin
 DOCSBUILDDIR := docs/_build
 HTMLDIR := $(DOCSBUILDDIR)/html
-PKG_CONFIG_PATH ?= /opt/bb/lib64/pkgconfig
-PIP_INSTALL=PKG_CONFIG_PATH="$(PKG_CONFIG_PATH)" $(PYTHON) -m pip install
-
-markdown_files := '**/*.md'
-cpp_files := $(shell find src/pystack/_pystack -name \*.cpp -o -name \*.h)
-python_files := $(shell find src tests -name \*.py -not -path '*/\.*')
-mypy_files := $(shell find src tests -name \*.pyi -not -path '*/\.*')
-cython_files := $(shell find src tests -name \*.pyx -or -name \*.pxd -not -path '*/\.*')
+PIP_INSTALL=$(PYTHON) -m pip install
 
 # Use this to inject arbitrary commands before the make targets (e.g. docker)
 ENV :=
@@ -60,27 +52,15 @@ ccoverage:  ## Run the test suite, with C++ code coverage
 	genhtml pystack.info --output-directory pystack-coverage
 	find . | grep -E '(\.gcda|\.gcno|\.gcov\.json\.gz)' | xargs rm -rf
 
-.PHONY: format-markdown
-format-markdown:  ## Autoformat markdown files
-	$(PRETTIER) --write $(markdown_files)
-
 .PHONY: format
-format: format-markdown  ## Autoformat all files
-	$(PYTHON) -m isort $(python_files) $(cython_files)
-	$(PYTHON) -m black $(python_files) $(mypy_files)
-	$(CLANG_FORMAT) -i $(cpp_files)
-
-.PHONY: lint-markdown
-lint-markdown:  ## Lint markdown files
-	$(PRETTIER) --check $(markdown_files)
+format:  ## Autoformat all files
+	$(PYTHON) -m pre_commit run --all-files
 
 .PHONY: lint
-lint: lint-markdown  ## Lint all files
-	$(PYTHON) -m isort --check $(python_files) $(cython_files)
-	$(PYTHON) -m flake8 $(python_files)
-	$(PYTHON) -m black --check $(python_files) $(mypy_files)
+lint:  ## Lint all files
+	$(PYTHON) -m pre_commit run --all-files
 	$(PYTHON) -m mypy src/pystack --strict --ignore-missing-imports
-	$(CLANG_FORMAT) --Werror --dry-run $(cpp_files)
+	$(PYTHON) -m mypy tests --ignore-missing-imports
 
 .PHONY: docs
 docs:  ## Generate documentation
@@ -88,7 +68,7 @@ docs:  ## Generate documentation
 	$(MAKE) -C docs html
 
 .PHONY: gh-pages
-gh-pages:  ## Publish documentation on BBGitHub Pages
+gh-pages:  ## Publish documentation on GitHub Pages
 	$(eval GIT_REMOTE := $(shell git remote get-url $(UPSTREAM_GIT_REMOTE)))
 	$(eval COMMIT_HASH := $(shell git rev-parse HEAD))
 	touch $(HTMLDIR)/.nojekyll
