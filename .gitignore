@@ -77,6 +77,8 @@ coverage.xml
 .hypothesis/
 .pytest_cache/
 cover/
+pystack-coverage
+pystack.info
 
 # Translations
 *.mo

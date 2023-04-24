@@ -1,42 +1,60 @@
-name: Tests
+name: Coverage
+
+permissions:
+  pull-requests: write
 
 on:
   push:
-    branches:
-      - main
   pull_request:
-    branches:
-      - main
+    paths-ignore:
+      - "docs/**"
+      - "CONTRIBUTING.md"
+  release:
+    types:
+      - published
+  schedule:
+    # At 12:00 on every day-of-month
+    - cron: "0 12 */1 * *"
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.head_ref || github.run_id }}
   cancel-in-progress: true
 
 jobs:
-  test_with_coverage:
-    name: "Test with coverage"
-    runs-on: ubuntu-latest
+  cpp_coverage:
+    name: "C++ coverage"
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
     steps:
       - uses: actions/checkout@v3
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
           python-version: "3.10"
-      - name: Disable ptrace security restrictions
-        run: |
-          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
       - name: Set up dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -qy libdw-dev libelf-dev gdb
+          sudo apt-get install -qy \
+            gdb \
+            lcov \
+            libdw-dev \
+            libelf-dev \
+            python3.10-dev \
+            python3.10-dbg
       - name: Install Python dependencies
         run: |
-          pip install --upgrade pip
-          pip install -U pip wheel setuptools cython
-          pip install -r requirements-test.txt
-          pip install -e .
-      - name: Run coverage
-        env:
-          CYTHON_TEST_MACROS: 1
+          python3 -m pip install --upgrade pip cython
+          make test-install
+      - name: Disable ptrace security restrictions
         run: |
-          make pycoverage
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      - name: Compute C++ coverage
+        run: |
+          make ccoverage
+      - name: Upload coverage report to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: pystack.info
+          flags: cpp
