@@ -6,7 +6,7 @@
 #include <unistd.h>
 
 #pragma GCC push_options
-#pragma GCC optimize ("O0")
+#pragma GCC optimize("O0")
 
 void*
 os_thread(void*)
@@ -14,7 +14,8 @@ os_thread(void*)
     sleep(10000);
 }
 
-pthread_t start_os_thread()
+pthread_t
+start_os_thread()
 {
     pthread_t thread;
     int ret = pthread_create(&thread, NULL, &os_thread, NULL);
@@ -23,7 +24,8 @@ pthread_t start_os_thread()
     return ret;
 }
 
-void cancel_os_thread(pthread_t tid)
+void
+cancel_os_thread(pthread_t tid)
 {
     pthread_join(tid, NULL);
 }
@@ -49,7 +51,7 @@ sleep10(PyObject*, PyObject*)
     Py_BEGIN_ALLOW_THREADS ret = pthread_join(thread, NULL);
     Py_END_ALLOW_THREADS
 
-    assert(0 == ret);
+            assert(0 == ret);
     cancel_os_thread(tid);
     Py_RETURN_NONE;
 }
