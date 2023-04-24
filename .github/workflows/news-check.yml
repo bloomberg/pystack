@@ -20,4 +20,6 @@ jobs:
         with:
           file-pattern: "news/*.rst"
           skip-label: "skip news"
-          failure-message: "Missing a news file in ${file-pattern}; please add one or apply the ${skip-label} label to the pull request"
+          failure-message:
+            "Missing a news file in ${file-pattern}; please add one or apply the ${skip-label}
+            label to the pull request"
