@@ -24,7 +24,7 @@ sleep10(PyObject*, PyObject*)
     Py_BEGIN_ALLOW_THREADS ret = pthread_join(thread, NULL);
     Py_END_ALLOW_THREADS
 
-    assert(0 == ret);
+            assert(0 == ret);
     Py_RETURN_NONE;
 }
 
