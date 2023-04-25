@@ -42,7 +42,7 @@ check:  ## Run the test suite
 pycoverage:  ## Run the test suite, with Python code coverage
 	$(PYTHON) -m pytest -vvv --log-cli-level=info -s --color=yes \
 				--cov=pystack --cov-config=pyproject.toml --cov-report=term \
-				--cov-append $(PYTEST_ARGS) tests --cov-fail-under=97
+				--cov-append $(PYTEST_ARGS) tests --cov-fail-under=100
 
 .PHONY: valgrind
 valgrind:  ## Run valgrind, with the correct configuration

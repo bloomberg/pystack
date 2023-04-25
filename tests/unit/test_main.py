@@ -1043,6 +1043,25 @@ def test_format_failureinfo_information_with_signal():
     assert result == "The process died due receiving signal SIGBUS sent by pid 1"
 
 
+def test_format_failureinfo_information_with_signal_no_sender_pid():
+    # GIVEN
+    info = {
+        "si_signo": 7,
+        "si_errno": 0,
+        "si_code": 0,
+        "sender_uid": 0,
+        "failed_addr": 0,
+    }
+
+    # WHEN
+    with patch("os.environ", {"NO_COLOR": 1}):
+        result = format_failureinfo_information(info)
+
+    # THEN
+
+    assert result == "The process died due receiving signal SIGBUS"
+
+
 def test_format_failureinfo_information_with_no_info():
     # GIVEN
     info = {
@@ -1179,6 +1198,7 @@ def test_core_file_missing_build_ids_are_logged(caplog, native):
         core_analyzer_test().extract_build_ids.return_value = [
             ("A", "1", "2"),
             ("B", "3", "4"),
+            ("C", "5", "5"),
         ]
         with caplog.at_level(logging.WARNING):
             main()
