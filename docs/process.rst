@@ -3,11 +3,11 @@
 Analyzing processes
 *******************
 
-The `remote` command is used to analyze the status of a running (remote) process. The analysis is
+The ``remote`` command is used to analyze the status of a running (remote) process. The analysis is
 always done in a safe and non-intrusive way, as no code is loaded in the memory space of the process
 under analysis and no memory is modified in the remote process. This makes analysis using PyStack a
 great option even for those services and applications that are running in environments where the running process
-must not be impacted in any way (other than being temporarily paused, though `--no-block` can avoid
+must not be impacted in any way (other than being temporarily paused, though ``--no-block`` can avoid
 even that). There are several options available:
 
 .. argparse::
