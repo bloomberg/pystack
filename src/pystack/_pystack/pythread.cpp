@@ -290,7 +290,8 @@ PyThread::calculateGilStatus(const std::shared_ptr<const AbstractProcessManager>
             static const size_t MAX_RUNTIME_OFFSET = 2048;
             for (void** raddr = (void**)pyruntime;
                  (void*)raddr < (void*)(pyruntime + MAX_RUNTIME_OFFSET);
-                 raddr++) {
+                 raddr++)
+            {
                 manager->copyObjectFromProcess((remote_addr_t)raddr, &thread_addr);
                 if (thread_addr == d_addr && ++hits == 2) {
                     LOG(DEBUG) << "GIL status correctly determined: HELD";
