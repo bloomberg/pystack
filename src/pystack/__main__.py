@@ -10,6 +10,7 @@ from typing import Any
 from typing import Dict
 from typing import NoReturn
 from typing import Optional
+from typing import Set
 
 from pystack.errors import InvalidPythonProcess
 from pystack.process import is_elf
@@ -342,7 +343,7 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
     if args.lib_search_path:
         lib_search_path = args.lib_search_path
     if args.lib_search_root:
-        library_dirs = set()
+        library_dirs: Set[str] = set()
         for pattern in {"**/*.so", "**/*.so.*"}:
             library_dirs.update(
                 str(file.parent)

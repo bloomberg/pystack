@@ -9,6 +9,7 @@ import sys
 import time
 from typing import Generator
 from typing import Iterable
+from typing import List
 from typing import Tuple
 
 import pytest
@@ -34,9 +35,10 @@ Interpreter = collections.namedtuple("Interpreter", "version path has_symbols")
 
 
 def find_all_available_pythons() -> Iterable[Interpreter]:
+    versions: List[Tuple[Tuple[int, int], str]]
     test_version = os.getenv("PYTHON_TEST_VERSION")
     if test_version == "auto":
-        versions = [(sys.version_info[:2], sys.executable)]
+        versions = [((sys.version_info[0], sys.version_info[1]), sys.executable)]
     elif test_version is not None:
         major, minor = test_version.split(".")
         versions = [((int(major), int(minor)), f"python{test_version}")]
@@ -189,6 +191,7 @@ def generate_all_pystack_combinations(
             StackMethod.ELF_DATA,
         )
 
+    blocking_methods: Tuple[bool, ...]
     if native or corefile:
         blocking_methods = (True,)
     else:

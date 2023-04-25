@@ -179,7 +179,9 @@ def test_multiple_thread_stack_native(
 
     assert len(threads) == 4
     main_thread = next(
-        thread for thread in threads if "threading" not in thread.frame.code.filename
+        thread
+        for thread in threads
+        if thread.frame and "threading" not in thread.frame.code.filename
     )
     other_threads = [thread for thread in threads if thread != main_thread]
 
@@ -533,7 +535,7 @@ def test_core_analizer_raises_when_an_invalid_core_is_provided(tmpdir: Path) -> 
 
     # WHEN / THEN
     with pytest.raises(EngineError):
-        list(get_process_threads_for_core(not_a_core, sys.executable))
+        list(get_process_threads_for_core(Path(not_a_core), Path(sys.executable)))
 
 
 def test_get_build_ids_from_core(tmpdir: Path) -> None:
@@ -542,7 +544,7 @@ def test_get_build_ids_from_core(tmpdir: Path) -> None:
 
     # WHEN
     with generate_core_file(
-        python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
+        Path(python_executable), TEST_SINGLE_THREAD_FILE, tmpdir
     ) as core_file:
         # NOTE: `extract_build_ids` can fail if no executable is provided, but
         # pystack always provides an executable when calling extract_build_ids,

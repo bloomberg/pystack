@@ -24,6 +24,14 @@ package = "pystack"
 package_dir = "src"
 filename = "NEWS.rst"
 directory = "news"
+type = [
+  { name = "Features",                  directory = "feature", showcontent = true },
+  { name = "Deprecations and Removals", directory = "removal", showcontent = true },
+  { name = "Bug Fixes",                 directory = "bugfix",  showcontent = true },
+  { name = "Improved Documentation",    directory = "doc",     showcontent = true },
+  { name = "Miscellaneous",             directory = "misc",    showcontent = true },
+]
+underlines = "-~"
 
 [tool.cibuildwheel]
 build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*"]

@@ -73,7 +73,7 @@ class CoreFileAnalyzer : public Analyzer
     elf_unique_ptr d_elf;
     std::vector<std::string> d_missing_modules{};
 
-private:
+  private:
     void removeModuleIf(std::function<bool(Dwfl_Module*)> predicate) const;
     void resolveLibraries();
 };
