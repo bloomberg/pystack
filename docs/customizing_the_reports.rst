@@ -88,7 +88,7 @@ Locals
 
 In some scenarios knowing the stack trace is not enough to understand the internal state of the program. For instance, a given
 function can do very different things depending on the provided arguments or different code paths can be taken depending on the
-value of some local variable. In these cases, you can use `--locals` to obtain a simple string representation of the local variables
+value of some local variable. In these cases, you can use ``--locals`` to obtain a simple string representation of the local variables
 in the different frames as well as the function arguments::
 
     $ pystack remote 117 --locals

@@ -3,7 +3,7 @@
 Analyzing core dumps
 ********************
 
-The `core` subcommand is used to analyze the status of a core dump file. Analyzing core files is
+The ``core`` subcommand is used to analyze the status of a core dump file. Analyzing core files is
 very similar to analyzing processes but there are some differences, as the core file does not
 contain the totality of the memory that was valid when the program was live. In most cases, this
 makes no difference, as PyStack will try to adapt automatically. However, in some cases, you will need to
