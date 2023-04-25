@@ -16,7 +16,8 @@ if __name__ == "__main__":
     t = threading.Thread(target=time.sleep, args=(1000,))
     t.start()
     a = A()
-    x = [a]
+    x = []
+    x.append(a)
     x.append(x)
     del a
     del x
