@@ -48,6 +48,7 @@ RUN python3.10 -m venv /venv \
 ENV PYTHON=python3.10 \
     VIRTUAL_ENV="/venv" \
     PATH="/venv/bin:$PATH" \
-    PYTHONDONTWRITEBYTECODE=1
+    PYTHONDONTWRITEBYTECODE=1 \
+    TZ=UTC
 
 WORKDIR /src
