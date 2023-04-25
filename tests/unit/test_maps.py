@@ -8,6 +8,8 @@ from pystack.errors import MissingExecutableMaps
 from pystack.errors import ProcessNotFound
 from pystack.errors import PystackError
 from pystack.maps import VirtualMap
+from pystack.maps import _get_base_map
+from pystack.maps import _get_bss
 from pystack.maps import generate_maps_for_process
 from pystack.maps import parse_maps_file_for_binary
 
@@ -1097,4 +1099,169 @@ ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]
         flags="rw-p",
         inode=0,
         path=Path("[heap]"),
+    )
+
+
+def test_get_base_map_path_existing():
+    # GIVEN
+    maps = [
+        VirtualMap(
+            start=140728765599744,
+            end=140728765603840,
+            filesize=4096,
+            offset=0,
+            device="00:00",
+            flags="r-xp",
+            inode=0,
+            path=None,
+        ),
+        VirtualMap(
+            start=18446744073699065856,
+            end=18446744073699069952,
+            filesize=4096,
+            offset=0,
+            device="00:00",
+            flags="--xp",
+            inode=0,
+            path=Path("/usr/lib/libc-2.31.so"),
+        ),
+    ]
+
+    # WHEN
+    base_map = _get_base_map(maps)
+
+    # THEN
+    assert base_map == maps[1]
+
+
+def test_get_base_map_path_not_existing():
+    # GIVEN
+    maps = [
+        VirtualMap(
+            start=140728765599744,
+            end=140728765603840,
+            filesize=4096,
+            offset=0,
+            device="00:00",
+            flags="r-xp",
+            inode=0,
+            path=None,
+        ),
+        VirtualMap(
+            start=18446744073699065856,
+            end=18446744073699069952,
+            filesize=4096,
+            offset=0,
+            device="00:00",
+            flags="--xp",
+            inode=0,
+            path=None,
+        ),
+    ]
+
+    # WHEN
+    base_map = _get_base_map(maps)
+
+    # THEN
+    assert base_map == maps[0]
+
+
+def test_get_bss_base_map_no_path():
+    # GIVEN
+    map_no_path = VirtualMap(
+        start=18446744073699065856,
+        end=18446744073699069952,
+        filesize=4096,
+        offset=0,
+        device="00:00",
+        flags="--xp",
+        inode=0,
+        path=None,
+    )
+
+    # WHEN
+    with patch("pystack.maps._get_base_map", return_value=map_no_path):
+        bss = _get_bss("elf_maps", "load_point")
+
+    # THEN
+    assert bss is None
+
+
+def test_get_bss_no_matching_map():
+    # GIVEN
+    libpython = VirtualMap(
+        start=140728765587456,
+        end=140728765599744,
+        filesize=4096,
+        offset=0,
+        device="00:00",
+        flags="r--p",
+        inode=0,
+        path=Path("/some/path/to/libpython.so"),
+    )
+
+    libpyhon_bss = VirtualMap(
+        start=18446744073699065856,
+        end=18446744073699069952,
+        filesize=4096,
+        offset=0,
+        device="00:00",
+        flags="r-xp",
+        inode=0,
+        path=None,
+    )
+    maps = [libpython, libpyhon_bss]
+
+    # WHEN
+    with patch("pystack._pystack.get_bss_info") as mock_get_bss_info:
+        mock_get_bss_info.return_value = {"corrected_addr": 100000000}
+        bss = _get_bss(maps, libpython.start)
+
+    # THEN
+    assert bss is None
+
+
+def test_get_bss_found_matching_map():
+    # GIVEN
+    libpython = VirtualMap(
+        start=140728765587456,
+        end=140728765599744,
+        filesize=4096,
+        offset=0,
+        device="00:00",
+        flags="r--p",
+        inode=0,
+        path=Path("/some/path/to/libpython.so"),
+    )
+
+    libpyhon_bss = VirtualMap(
+        start=18446744073699065856,
+        end=18446744073699069952,
+        filesize=4096,
+        offset=0,
+        device="00:00",
+        flags="r-xp",
+        inode=0,
+        path=None,
+    )
+    maps = [libpython, libpyhon_bss]
+
+    # WHEN
+    with patch("pystack._pystack.get_bss_info") as mock_get_bss_info:
+        mock_get_bss_info.return_value = {
+            "corrected_addr": libpyhon_bss.start - libpython.start,
+            "size": libpyhon_bss.filesize,
+        }
+        bss = _get_bss(maps, libpython.start)
+
+    # THEN
+    assert bss == VirtualMap(
+        start=libpyhon_bss.start,
+        end=libpyhon_bss.end,
+        filesize=libpyhon_bss.filesize,
+        offset=libpyhon_bss.offset,
+        device="",
+        flags="",
+        inode=0,
+        path=None,
     )

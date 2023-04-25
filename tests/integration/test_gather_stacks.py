@@ -12,6 +12,7 @@ from pystack.engine import StackMethod
 from pystack.engine import get_process_threads
 from pystack.errors import NotEnoughInformation
 from pystack.maps import MAPS_REGEXP
+from pystack.process import get_thread_name
 from pystack.types import LocationInfo
 from pystack.types import NativeFrame
 from pystack.types import frame_type
@@ -585,6 +586,14 @@ def test_get_thread_name(tmpdir):
     # THEN
 
     assert "thread_foo" in {thread.name for thread in threads}
+
+
+def test_get_thread_name_oserror():
+    # WHEN
+    thread_name = get_thread_name(pid=0, tid=0)
+
+    # THEN
+    assert thread_name is None
 
 
 @ALL_PYTHONS

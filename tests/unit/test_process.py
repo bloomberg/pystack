@@ -261,6 +261,34 @@ def test_get_python_version_for_core_fallback_bss():
     subprocess_mock.assert_not_called()
 
 
+def test_get_python_version_for_core_fallback_no_bss():
+    # GIVEN
+    mapinfo = Mock()
+    mapinfo.bss = None
+
+    # WHEN
+    with patch(
+        "pystack.process.scan_core_bss_for_python_version"
+    ) as scan_bss_mock, patch(
+        "pystack.process.LIBPYTHON_REGEXP"
+    ) as libpython_regexp_mock, patch(
+        "pystack.process.BINARY_REGEXP"
+    ) as binary_regexp_mock, patch(
+        "subprocess.check_output"
+    ) as subprocess_mock:
+        match = Mock()
+        match.group.side_effect = [3, 8]
+        libpython_regexp_mock.match.return_value = match
+        major, minor = get_python_version_for_core("corefile", "executable", mapinfo)
+
+    # THEN
+    assert (major, minor) == (3, 8)
+    scan_bss_mock.assert_not_called()
+    libpython_regexp_mock.match.assert_called_once()
+    binary_regexp_mock.assert_not_called()
+    subprocess_mock.assert_not_called()
+
+
 def test_get_python_version_for_core_fallback_libpython_regexp():
     # GIVEN
     mapinfo = Mock()

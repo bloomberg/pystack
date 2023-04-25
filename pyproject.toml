@@ -97,7 +97,6 @@ source = [
 branch = true
 parallel = true
 omit = [
-  "tests/*",
   "*__init__.py",
 ]
 

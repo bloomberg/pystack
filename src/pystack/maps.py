@@ -196,7 +196,7 @@ def _get_bss(elf_maps: List[VirtualMap], load_point: int) -> Optional[VirtualMap
         return None
     try:
         from ._pystack import get_bss_info
-    except ImportError:
+    except ImportError:  # pragma: no cover
         return None
     bss_info = get_bss_info(binary_map.path)
     if not bss_info:
