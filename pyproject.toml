@@ -78,3 +78,21 @@ before-all = [
   "CFLAGS='-w -DFNM_EXTMATCH=0' ./configure --prefix=/usr --disable-nls --disable-libdebuginfod --disable-debuginfod --with-zstd",
   "make install"
 ]
+
+[tool.coverage.run]
+plugins = [
+  "Cython.Coverage",
+]
+source = [
+  "src/pystack",
+]
+branch = true
+parallel = true
+omit = [
+  "tests/*",
+  "*__init__.py",
+]
+
+[tool.coverage.report]
+skip_covered = true
+show_missing = true
