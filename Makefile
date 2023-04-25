@@ -1,4 +1,6 @@
 PYTHON ?= python
+DOCKER_IMAGE ?= pystack
+DOCKER_SRC_DIR ?= /src
 
 # Doc generation variables
 UPSTREAM_GIT_REMOTE ?= origin
@@ -24,6 +26,30 @@ install-sdist: dist  ## Install from source distribution
 .PHONY: test-install
 test-install:  ## Install with test dependencies
 	$(ENV) CYTHON_TEST_MACROS=1 $(PIP_INSTALL) -e . -r requirements-test.txt
+
+.PHONY: docker-build
+docker-build:  ## Build the Docker image
+	docker build -t $(DOCKER_IMAGE) .
+
+.PHONY: docker-rm
+docker-rm:  ## Remove the Docker image
+	docker kill pystack || true
+	docker rmi $(DOCKER_IMAGE)
+
+.PHONY: docker-shell
+docker-shell: docker-build ## Run a shell in the Docker image
+	## If container exists, run bash in it
+	@if docker ps -a | grep -q pystack; then \
+		docker start pystack && docker exec -it pystack /bin/bash; \
+	fi
+	## Run the container
+	@docker run -it --name pystack --rm \
+		--privileged \
+		--rm \
+		-v $(PWD):$(DOCKER_SRC_DIR) \
+		-w $(DOCKER_SRC_DIR) \
+		$(DOCKER_IMAGE) \
+		/bin/bash
 
 .PHONY: check
 check:  ## Run the test suite
