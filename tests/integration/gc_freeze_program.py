@@ -1,3 +1,4 @@
+# type: ignore
 import gc
 import sys
 import threading
