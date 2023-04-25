@@ -215,7 +215,8 @@ CoreFileAnalyzer::resolveLibraries()
                     module.path.c_str(),
                     -1,
                     module.addr,
-                    false)) {
+                    false))
+        {
             LOG(ERROR) << "Failed to report module " << module.modname << ": "
                        << dwfl_errmsg(dwfl_errno());
             throw ElfAnalyzerError("Failed to report ELF modules for core file");
