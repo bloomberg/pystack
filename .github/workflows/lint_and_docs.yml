@@ -26,5 +26,5 @@ jobs:
           make lint
       - name: Build docs
         run: |
-          towncrier build --version 99.99 --name pystack
+          towncrier build --version 99.99 --name pystack --keep
           make docs
