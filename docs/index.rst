@@ -44,6 +44,12 @@ Contents
    corefile
    customizing_the_reports
 
+.. toctree::
+   :hidden:
+   :caption: Project Information
+
+   changelog
+
 
 Indices and tables
 ------------------
