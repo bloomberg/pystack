@@ -109,8 +109,15 @@ clean:  ## Clean any built/generated artifacts
 	rm -f pystack.info
 	rm -rf pystack-coverage
 
+
+.PHONY: check_release_env
+check_release_env:
+ifndef RELEASE
+	$(error RELEASE is undefined. Please set it to either ["major", "minor", "patch"])
+endif
+
 .PHONY: bump_version
-bump_version:
+bump_version: check_release_env
 	bump2version $(RELEASE)
 		$(eval NEW_VERSION := $(shell bump2version \
 	                            --allow-dirty \
@@ -121,7 +128,7 @@ bump_version:
 	git commit --amend --no-edit
 
 .PHONY: gen_news
-gen_news:
+gen_news: check_release_env
 	$(eval CURRENT_VERSION := $(shell bump2version \
 	                            --allow-dirty \
 	                            --dry-run \
@@ -131,7 +138,7 @@ gen_news:
 	$(PYEXEC) towncrier build --version $(CURRENT_VERSION) --name pystack
 
 .PHONY: release
-release: bump_version gen_news  ## Prepare release
+release: check_release_env bump_version gen_news  ## Prepare release
 
 .PHONY: help
 help:  ## Print this message
