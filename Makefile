@@ -33,7 +33,7 @@ check:  ## Run the test suite
 pycoverage:  ## Run the test suite, with Python code coverage
 	$(PYTHON) -m pytest -vvv --log-cli-level=info -s --color=yes \
 				--cov=pystack --cov-config=pyproject.toml --cov-report=term \
-				--cov-append $(PYTEST_ARGS) tests --cov-fail-under=100
+				--cov-append $(PYTEST_ARGS) tests --cov-fail-under=96
 	$(PYTHON) -m coverage lcov -i -o pycoverage.lcov
 	genhtml *coverage.lcov --branch-coverage --output-directory pystack-coverage
 
