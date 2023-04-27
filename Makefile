@@ -34,6 +34,8 @@ pycoverage:  ## Run the test suite, with Python code coverage
 	$(PYTHON) -m pytest -vvv --log-cli-level=info -s --color=yes \
 				--cov=pystack --cov-config=pyproject.toml --cov-report=term \
 				--cov-append $(PYTEST_ARGS) tests --cov-fail-under=100
+	$(PYTHON) -m coverage lcov -i -o pycoverage.lcov
+	genhtml *coverage.lcov --branch-coverage --output-directory pystack-coverage
 
 .PHONY: valgrind
 valgrind:  ## Run valgrind, with the correct configuration
@@ -46,9 +48,9 @@ ccoverage:  ## Run the test suite, with C++ code coverage
 	CFLAGS="$(CFLAGS) -O0 -pg --coverage" $(MAKE) build
 	$(MAKE) check
 	gcov -i build/*/src/pystack/_pystack -i -d
-	lcov --capture --directory .  --output-file pystack.info
-	lcov --extract pystack.info '*/src/pystack/_pystack/*' --output-file pystack.info
-	genhtml pystack.info --output-directory pystack-coverage
+	lcov --capture --directory .  --output-file cppcoverage.lcov
+	lcov --extract cppcoverage.lcov '*/src/pystack/_pystack/*' --output-file cppcoverage.lcov
+	genhtml *coverage.lcov --branch-coverage --output-directory pystack-coverage
 
 .PHONY: format
 format:  ## Autoformat all files
@@ -84,7 +86,7 @@ clean:  ## Clean any built/generated artifacts
 	find . | grep -E '(__pycache__|\.pyc|\.pyo)' | xargs rm -rf
 	rm -rf build
 	rm -f src/pystack/_pystack.*.so
-	rm -f pystack.info
+	rm -f {cpp,py}coverage.lcov
 	rm -rf pystack-coverage
 
 

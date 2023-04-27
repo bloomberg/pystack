@@ -78,7 +78,7 @@ coverage.xml
 .pytest_cache/
 cover/
 pystack-coverage
-pystack.info
+*coverage.lcov
 
 # Translations
 *.mo
