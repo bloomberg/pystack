@@ -57,13 +57,13 @@ jobs:
         with:
           path: dist/*.tar.gz
 
-  test_wheels:
+  test_attaching_to_old_interpreters:
     needs: [build_wheels, build_sdist]
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.6", "3.7", "3.8", "3.9", "3.10", "3.11"]
+        python_version: ["2.7", "3.6"]
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
@@ -73,16 +73,15 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v4
         with:
-          python-version: "3.10"
+          python-version: "3.11"
       - name: Set up dependencies
         run: |
           sudo add-apt-repository ppa:deadsnakes/ppa
           sudo apt-get update
           sudo apt-get install -qy \
             gdb \
-            python${{matrix.python_version}}-dev \
-            python${{matrix.python_version}}-dbg \
-            python${{matrix.python_version}}-distutils
+            python2.7-dev python2.7-dbg \
+            python3.6-dev python3.6-dbg python3.6-distutils
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
@@ -94,7 +93,46 @@ jobs:
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: ${{ matrix.python_version }}
-        run: python3 -m pytest tests -k 'not 2.7' -n auto -vvv
+        run: python3 -m pytest tests -n auto -vvv
+
+  test_wheels:
+    needs: [build_wheels, build_sdist]
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ["3.7", "3.8", "3.9", "3.10", "3.11"]
+    steps:
+      - uses: actions/checkout@v3
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+          path: dist
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "${{matrix.python_version}}"
+      - name: Set up dependencies
+        run: |
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt-get update
+          sudo apt-get install -qy \
+            gdb \
+            python${{matrix.python_version}}-dev \
+            python${{matrix.python_version}}-dbg \
+            python${{matrix.python_version}}-distutils
+      - name: Install Python dependencies
+        run: |
+          python${{matrix.python_version}} -m pip install --upgrade pip
+          python${{matrix.python_version}} -m pip install -r requirements-test.txt
+          python${{matrix.python_version}} -m pip install --find-links=dist/ --only-binary=pystack pystack
+      - name: Disable ptrace security restrictions
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      - name: Run pytest
+        env:
+          PYTHON_TEST_VERSION: "auto"
+        run: python${{matrix.python_version}} -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_in_alpine:
     needs: [build_wheels, build_sdist]
