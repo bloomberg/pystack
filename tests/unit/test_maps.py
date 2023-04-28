@@ -525,7 +525,7 @@ def test_maps_for_binary_libpython_with_bss():
         path=Path("/some/path/to/libpython.so"),
     )
 
-    libpyhon_bss = VirtualMap(
+    libpython_bss = VirtualMap(
         start=18446744073699065856,
         end=18446744073699069952,
         filesize=4096,
@@ -550,7 +550,7 @@ def test_maps_for_binary_libpython_with_bss():
             path=Path("/usr/lib/libc-2.31.so"),
         ),
         libpython,
-        libpyhon_bss,
+        libpython_bss,
     ]
 
     # WHEN
@@ -561,7 +561,7 @@ def test_maps_for_binary_libpython_with_bss():
 
     assert mapinfo.python == python
     assert mapinfo.libpython == libpython
-    assert mapinfo.bss == libpyhon_bss
+    assert mapinfo.bss == libpython_bss
     assert mapinfo.heap is None
 
 
@@ -665,7 +665,7 @@ def test_maps_for_binary_libpython_with_bss_with_non_readable_segment():
         path=Path("/some/path/to/libpython.so"),
     )
 
-    libpyhon_bss = VirtualMap(
+    libpython_bss = VirtualMap(
         start=18446744073699065856,
         end=18446744073699069952,
         filesize=4096,
@@ -700,7 +700,7 @@ def test_maps_for_binary_libpython_with_bss_with_non_readable_segment():
             inode=0,
             path=None,
         ),
-        libpyhon_bss,
+        libpython_bss,
     ]
 
     # WHEN
@@ -711,7 +711,7 @@ def test_maps_for_binary_libpython_with_bss_with_non_readable_segment():
 
     assert mapinfo.python == python
     assert mapinfo.libpython == libpython
-    assert mapinfo.bss == libpyhon_bss
+    assert mapinfo.bss == libpython_bss
     assert mapinfo.heap is None
 
 
@@ -1200,7 +1200,7 @@ def test_get_bss_no_matching_map():
         path=Path("/some/path/to/libpython.so"),
     )
 
-    libpyhon_bss = VirtualMap(
+    libpython_bss = VirtualMap(
         start=18446744073699065856,
         end=18446744073699069952,
         filesize=4096,
@@ -1210,7 +1210,7 @@ def test_get_bss_no_matching_map():
         inode=0,
         path=None,
     )
-    maps = [libpython, libpyhon_bss]
+    maps = [libpython, libpython_bss]
 
     # WHEN
     with patch("pystack._pystack.get_bss_info") as mock_get_bss_info:
@@ -1234,7 +1234,7 @@ def test_get_bss_found_matching_map():
         path=Path("/some/path/to/libpython.so"),
     )
 
-    libpyhon_bss = VirtualMap(
+    libpython_bss = VirtualMap(
         start=18446744073699065856,
         end=18446744073699069952,
         filesize=4096,
@@ -1244,22 +1244,22 @@ def test_get_bss_found_matching_map():
         inode=0,
         path=None,
     )
-    maps = [libpython, libpyhon_bss]
+    maps = [libpython, libpython_bss]
 
     # WHEN
     with patch("pystack._pystack.get_bss_info") as mock_get_bss_info:
         mock_get_bss_info.return_value = {
-            "corrected_addr": libpyhon_bss.start - libpython.start,
-            "size": libpyhon_bss.filesize,
+            "corrected_addr": libpython_bss.start - libpython.start,
+            "size": libpython_bss.filesize,
         }
         bss = _get_bss(maps, libpython.start)
 
     # THEN
     assert bss == VirtualMap(
-        start=libpyhon_bss.start,
-        end=libpyhon_bss.end,
-        filesize=libpyhon_bss.filesize,
-        offset=libpyhon_bss.offset,
+        start=libpython_bss.start,
+        end=libpython_bss.end,
+        filesize=libpython_bss.filesize,
+        offset=libpython_bss.offset,
         device="",
         flags="",
         inode=0,
