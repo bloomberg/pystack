@@ -75,7 +75,8 @@ class VirtualMap:
         filesize = f"0x{self.filesize:x}"
         offset = f"0x{self.offset:x}"
         return (
-            f"VirtualMap({start=!s}, {end=!s}, {filesize=!s}, {offset=!s},"
+            f"VirtualMap(start={start!s}, end={end!s},"
+            f" filesize={filesize!s}, offset={offset!s},"
             f" device={self.device!r}, flags={self.flags!r}, inode={self.inode!r},"
             f" path={str(self.path)!r})"
         )
