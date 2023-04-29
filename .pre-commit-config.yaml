@@ -1,30 +1,20 @@
-default_install_hook_types: [pre-commit, pre-push]
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     rev: v4.4.0
     hooks:
       - id: check-added-large-files
-        stages: [pre-commit]
       - id: check-json
-        stages: [pre-commit]
       - id: check-merge-conflict
-        stages: [pre-commit]
       - id: check-toml
-        stages: [pre-commit]
       - id: check-yaml
-        stages: [pre-commit]
       - id: end-of-file-fixer
-        stages: [pre-commit]
       - id: trailing-whitespace
-        stages: [pre-commit]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
     hooks:
       - id: rst-directive-colons
-        stages: [pre-commit]
       - id: rst-inline-touching-normal
-        stages: [pre-commit]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
     rev: "v0.0.262"
@@ -37,20 +27,17 @@ repos:
     rev: 23.3.0
     hooks:
       - id: black
-        stages: [pre-commit]
 
   - repo: https://github.com/pycqa/isort
     rev: 5.12.0
     hooks:
       - id: isort
         exclude_types: [python]
-        stages: [pre-commit]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
     rev: v0.6.7
     hooks:
       - id: sphinx-lint
-        stages: [pre-commit]
 
   - repo: https://github.com/pre-commit/mirrors-prettier
     rev: v2.7.1
@@ -58,7 +45,6 @@ repos:
       - id: prettier
         args: [--no-editorconfig]
         exclude_types: [html]
-        stages: [pre-commit]
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
     rev: v16.0.2
@@ -66,10 +52,3 @@ repos:
       - id: clang-format
         args: [--Werror, -i]
         types_or: [c++, c, cuda]
-        stages: [pre-commit]
-
-  - repo: https://github.com/mgedmin/check-manifest
-    rev: "0.49"
-    hooks:
-      - id: check-manifest
-        stages: [pre-push]
