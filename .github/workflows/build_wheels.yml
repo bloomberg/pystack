@@ -18,32 +18,6 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  build_wheels:
-    name: Wheel for Linux-${{ matrix.cibw_python }}-${{ matrix.cibw_arch }}
-    runs-on: ${{ matrix.os }}
-    strategy:
-      fail-fast: false
-      matrix:
-        os: [ubuntu-latest]
-        cibw_python: ["cp37-*", "cp38-*", "cp39-*", "cp310-*", "cp311-*"]
-        cibw_arch: ["x86_64"]
-
-    steps:
-      - uses: actions/checkout@v3
-      - name: Disable ptrace security restrictions
-        run: |
-          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
-      - name: Build wheels
-        uses: pypa/cibuildwheel@v2.12.3
-        env:
-          CIBW_BUILD: ${{ matrix.cibw_python }}
-          CIBW_ARCHS_LINUX: ${{ matrix.cibw_arch }}
-          CIBW_PRERELEASE_PYTHONS: True
-
-      - uses: actions/upload-artifact@v3
-        with:
-          path: ./wheelhouse/*.whl
-
   build_sdist:
     name: Build source distribution
     runs-on: ubuntu-latest
@@ -57,8 +31,39 @@ jobs:
         with:
           path: dist/*.tar.gz
 
+  build_wheels:
+    needs: [build_sdist]
+    name: Wheel for Linux-${{ matrix.cibw_python }}-${{ matrix.cibw_arch }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest]
+        cibw_python: ["cp37-*", "cp38-*", "cp39-*", "cp310-*", "cp311-*"]
+        cibw_arch: ["x86_64"]
+
+    steps:
+      - name: Disable ptrace security restrictions
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      - uses: actions/download-artifact@v3
+        with:
+          name: artifact
+      - name: Extract sdist
+        run: |
+          tar zxvf *.tar.gz --strip-components=1
+      - name: Build wheels
+        uses: pypa/cibuildwheel@v2.12.3
+        env:
+          CIBW_BUILD: ${{ matrix.cibw_python }}
+          CIBW_ARCHS_LINUX: ${{ matrix.cibw_arch }}
+          CIBW_PRERELEASE_PYTHONS: True
+      - uses: actions/upload-artifact@v3
+        with:
+          path: ./wheelhouse/*.whl
+
   test_attaching_to_old_interpreters:
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels]
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -96,7 +101,7 @@ jobs:
         run: python3 -m pytest tests -n auto -vvv
 
   test_wheels:
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels]
     runs-on: ubuntu-20.04
     strategy:
       fail-fast: false
@@ -135,7 +140,7 @@ jobs:
         run: python${{matrix.python_version}} -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_in_alpine:
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -165,7 +170,7 @@ jobs:
         run: venv/bin/python3 -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_wheels_in_fedora:
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -200,7 +205,7 @@ jobs:
         run: python3 -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_wheels_in_arch:
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -236,7 +241,7 @@ jobs:
         run: python -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_wheels_in_debian:
-    needs: [build_wheels, build_sdist]
+    needs: [build_wheels]
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
@@ -274,7 +279,7 @@ jobs:
         run: venv/bin/python3 -m pytest tests -k 'not 2.7' -n auto -vvv
 
   upload_pypi:
-    needs: [build_wheels, build_sdist, test_wheels]
+    needs: [test_wheels]
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
