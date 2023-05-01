@@ -23,7 +23,9 @@ process used by the Linux kernel, Samba, and many other major open source projec
 To participate under these terms, all that you must do is include a line like the following as the
 last line of the commit message for each commit in your contribution:
 
-    Signed-Off-By: Random J. Developer <random@developer.example.org>
+```
+Signed-Off-By: Random J. Developer <random@developer.example.org>
+```
 
 The simplest way to accomplish this is to add `-s` or `--signoff` to your `git commit` command.
 
@@ -37,7 +39,7 @@ API contract. In addition to being useful for generating documentation, docstrin
 looking through the source code or using the [built-in help][builtin-help] system, and can be
 leveraged in autocompletion by IDEs.
 
-Please see [PEP 257][] for details on semantics and conventions associated with Python docstrings.
+Please see [PEP 257] for details on semantics and conventions associated with Python docstrings.
 
 ### Docstring style
 
@@ -82,13 +84,6 @@ of the PR.
 
 <!-- LINKS -->
 
-[pep 257]: https://www.python.org/dev/peps/pep-0257/ "Docstring Conventions"
-[pep 484]: https://www.python.org/dev/peps/pep-0484/ "Type Hints"
-[google-style]:
-  https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html
-  "Example Google Style Python Docstrings"
 [builtin-help]: https://docs.python.org/3/library/functions.html#help
-
-<!--
-vim: tw=99:spell
--->
+[google-style]: https://sphinxcontrib-napoleon.readthedocs.io/en/latest/example_google.html "Example Google Style Python Docstrings"
+[pep 257]: https://www.python.org/dev/peps/pep-0257/ "Docstring Conventions"
