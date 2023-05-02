@@ -105,9 +105,8 @@ source = [
 branch = true
 parallel = true
 omit = [
-  "*__init__.py",
+  "stringsource",
 ]
 
 [tool.coverage.report]
-skip_covered = true
 show_missing = true
