@@ -25,8 +25,7 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  cpp_coverage:
-    name: "C++"
+  coverage:
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -53,48 +52,23 @@ jobs:
       - name: Disable ptrace security restrictions
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
-      - name: Compute C++ coverage
-        run: |
-          make ccoverage
-      - name: Upload C++ report to Codecov
-        uses: codecov/codecov-action@v3
-        with:
-          token: ${{ secrets.CODECOV_TOKEN }}
-          files: cppcoverage.lcov
-          flags: cpp
-
-  python_cython_coverage:
-    name: "Python + Cython"
-    runs-on: ubuntu-22.04
-    steps:
-      - uses: actions/checkout@v3
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.10"
-      - name: Set up dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -qy \
-            gdb \
-            lcov \
-            libdw-dev \
-            libelf-dev
-      - name: Install Python dependencies
-        run: |
-          pip install --upgrade pip cython
-          make test-install
-      - name: Disable ptrace security restrictions
-        run: |
-          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
-      - name: Compute Python and Cython coverage
+      - name: Compute Python + Cython coverage
         env:
           CYTHON_TEST_MACROS: 1
         run: |
           make pycoverage
+      - name: Compute C++ coverage
+        run: |
+          make ccoverage
       - name: Upload {P,C}ython report to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: pycoverage.lcov
           flags: python_and_cython
+      - name: Upload C++ report to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: cppcoverage.lcov
+          flags: cpp
