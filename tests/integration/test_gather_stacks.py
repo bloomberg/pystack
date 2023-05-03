@@ -327,8 +327,7 @@ def test_gather_stack_with_heap_fails_if_no_heap(tmpdir):
         with open(f"/proc/{child_process.pid}/maps") as f:
             for line in f.readlines():
                 match = MAPS_REGEXP.match(line)
-                if not match:
-                    continue
+                assert match is not None
                 if match.group("pathname") and "[heap]" in match.group("pathname"):
                     line = line.replace("[heap]", "[mysterious_segment]")
                 the_data.append(line)
@@ -354,8 +353,7 @@ def test_gather_stack_with_bss_fails_if_no_bss(tmpdir):
         with open(f"/proc/{child_process.pid}/maps") as f:
             for line in f.readlines():
                 match = MAPS_REGEXP.match(line)
-                if not match:
-                    continue
+                assert match is not None
                 if not match.group("pathname"):
                     line = line.replace("\n", "[mysterious_segment]\n")
                 the_data.append(line)
@@ -385,8 +383,7 @@ def test_gather_stack_auto_works_if_no_bss(tmpdir):
         with open(f"/proc/{child_process.pid}/maps") as f:
             for line in f.readlines():
                 match = MAPS_REGEXP.match(line)
-                if not match:
-                    continue
+                assert match is not None
                 if not match.group("pathname"):
                     line = line.replace("\n", "[mysterious_segment]\n")
                 the_data.append(line)
@@ -431,8 +428,7 @@ def test_gather_stack_auto_works_if_no_heap(tmpdir):
         with open(f"/proc/{child_process.pid}/maps") as f:
             for line in f.readlines():
                 match = MAPS_REGEXP.match(line)
-                if not match:
-                    continue
+                assert match is not None
                 if match.group("pathname") and "[heap]" in match.group("pathname"):
                     line = line.replace("[heap]", "[mysterious_segment]")
                 the_data.append(line)
