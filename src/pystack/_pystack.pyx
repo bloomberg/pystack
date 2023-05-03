@@ -108,18 +108,13 @@ class intercept_runtime_errors:
 
 
 @intercept_runtime_errors(EngineError)
-def copy_memory_from_address(pid, address, size, blocking=False):
+def copy_memory_from_address(pid, address, size):
     cdef shared_ptr[AbstractRemoteMemoryManager] manager
     cdef int the_pid = pid
     cdef vector[int] tids
-    if blocking:
-        manager = <shared_ptr[AbstractRemoteMemoryManager]> (
-            make_shared[BlockingProcessMemoryManager](the_pid, tids)
-        )
-    else:
-        manager = <shared_ptr[AbstractRemoteMemoryManager]> (
-            make_shared[ProcessMemoryManager](the_pid)
-        )
+    manager = <shared_ptr[AbstractRemoteMemoryManager]> (
+        make_shared[ProcessMemoryManager](the_pid)
+    )
 
     cdef AbstractRemoteMemoryManager *manager_handle = manager.get()
 
