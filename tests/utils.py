@@ -252,3 +252,17 @@ ALL_PYTHONS_WITH_SYMBOLS = pytest.mark.parametrize(
     [python[:2] for python in AVAILABLE_PYTHONS if python.has_symbols],
     ids=[python[1].name for python in AVAILABLE_PYTHONS if python.has_symbols],
 )
+
+
+ALL_PYTHONS_THAT_SUPPORT_ELF_DATA = pytest.mark.parametrize(
+    "python",
+    [python[:2] for python in AVAILABLE_PYTHONS if python.version >= (3, 10)],
+    ids=[python[1].name for python in AVAILABLE_PYTHONS if python.version >= (3, 10)],
+)
+
+
+ALL_PYTHONS_THAT_DO_NOT_SUPPORT_ELF_DATA = pytest.mark.parametrize(
+    "python",
+    [python[:2] for python in AVAILABLE_PYTHONS if python.version < (3, 10)],
+    ids=[python[1].name for python in AVAILABLE_PYTHONS if python.version < (3, 10)],
+)

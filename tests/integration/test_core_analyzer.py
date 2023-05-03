@@ -17,6 +17,8 @@ from pystack.types import LocationInfo
 from pystack.types import NativeFrame
 from pystack.types import frame_type
 from tests.utils import ALL_PYTHONS
+from tests.utils import ALL_PYTHONS_THAT_DO_NOT_SUPPORT_ELF_DATA
+from tests.utils import ALL_PYTHONS_THAT_SUPPORT_ELF_DATA
 from tests.utils import PythonVersion
 from tests.utils import all_pystack_combinations
 from tests.utils import generate_core_file
@@ -94,31 +96,22 @@ def test_single_thread_stack(
     assert all(frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path)
 
 
-@ALL_PYTHONS
+@ALL_PYTHONS_THAT_SUPPORT_ELF_DATA
 def test_single_thread_stack_from_elf_data(python: PythonVersion, tmpdir: Path) -> None:
     # GIVEN
-
     (major_version, minor_version), python_executable = python
+    assert (major_version, minor_version) >= (3, 10)
 
     # WHEN
 
     with generate_core_file(
         python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
     ) as core_file:
-        if major_version >= 3 and minor_version >= 10:  # pragma: no cover
-            threads = list(
-                get_process_threads_for_core(
-                    core_file, python_executable, method=StackMethod.ELF_DATA
-                )
+        threads = list(
+            get_process_threads_for_core(
+                core_file, python_executable, method=StackMethod.ELF_DATA
             )
-        else:  # pragma: no cover
-            with pytest.raises(NotEnoughInformation):
-                threads = list(
-                    get_process_threads_for_core(
-                        core_file, python_executable, method=StackMethod.ELF_DATA
-                    )
-                )
-            return
+        )
 
     # THEN
 
@@ -150,6 +143,26 @@ def test_single_thread_stack_from_elf_data(python: PythonVersion, tmpdir: Path) 
         assert len(eval_frames) >= 4
     assert all("?" not in frame.symbol for frame in eval_frames)
     assert all(frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path)
+
+
+@ALL_PYTHONS_THAT_DO_NOT_SUPPORT_ELF_DATA
+def test_unavailability_of_elf_data(
+    python: PythonVersion, tmpdir: Path
+) -> None:  # pragma: no cover
+    # GIVEN
+    _, python_executable = python
+
+    # WHEN
+    with generate_core_file(
+        python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
+    ) as core_file:
+        # THEN
+        with pytest.raises(NotEnoughInformation):
+            list(
+                get_process_threads_for_core(
+                    core_file, python_executable, method=StackMethod.ELF_DATA
+                )
+            )
 
 
 @all_pystack_combinations(corefile=True)
