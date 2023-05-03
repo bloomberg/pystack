@@ -447,11 +447,6 @@ cdef object _construct_threads_from_interpreter_state(
     threads = []
 
     cdef shared_ptr[Thread] thread = getThreadFromInterpreterState(manager, head)
-
-    if not thread:
-        LOGGER.info("No active Python thread was found")
-        return None
-
     cdef Thread *current_thread = thread.get()
     while current_thread != NULL:
         LOGGER.info("Constructing new Python thread with tid %s", current_thread.Tid())
