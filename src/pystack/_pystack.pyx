@@ -86,9 +86,6 @@ class NativeReportingMode(enum.Enum):
 
 
 cdef api void log_with_python(const char* message, int level):
-    # Early return to avoid paying from the string conversion
-    if level < LOGGER.level:
-        return
     with contextlib.suppress(UnicodeDecodeError):
         LOGGER.log(level, message)
 
