@@ -37,6 +37,7 @@ from _pystack.pyframe cimport FrameObject
 from _pystack.pythread cimport NativeThread
 from _pystack.pythread cimport Thread
 from _pystack.pythread cimport getThreadFromInterpreterState
+from cpython.unicode cimport PyUnicode_Decode
 from libcpp.memory cimport make_shared
 from libcpp.memory cimport make_unique
 from libcpp.memory cimport shared_ptr
@@ -380,10 +381,7 @@ cdef class ProcessManager:
 ######################################
 
 cdef object _try_to_decode_string(const cppstring *the_string):
-    try:
-        return dereference(the_string)
-    except UnicodeDecodeError:
-        return "???"
+    return PyUnicode_Decode(the_string.c_str(), the_string.size(), NULL, "replace")
 
 cdef object _safe_cppmap_to_py(unordered_map[cppstring, cppstring] themap):
     cdef unordered_map[cppstring, cppstring] . iterator it = themap.begin()
