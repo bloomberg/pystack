@@ -218,10 +218,9 @@ def generate_all_pystack_combinations(
         if method == StackMethod.SYMBOLS and not python.has_symbols:
             continue
 
-        python_id = "bbpy" if "bbpy" in python.path.name else ""
         the_id = (
             f"method={method.name}, blocking={blocking}, "
-            f"python={python_id}{major_version}.{minor_version}"
+            f"python={major_version}.{minor_version}"
         )
 
         yield the_id, method, blocking, python[:2]
