@@ -106,6 +106,7 @@ branch = true
 parallel = true
 omit = [
   "stringsource",
+  "tests/integration/*program*.py",
 ]
 
 [tool.coverage.report]
