@@ -66,7 +66,9 @@ def find_all_available_pythons() -> Iterable[Interpreter]:
         if result.returncode != 0:
             continue
         assert result.stdout is not None
-        has_symbols = result.returncode == 0 and b" stripped" not in result.stdout
+        has_symbols = result.returncode == 0 and (
+            b" stripped" not in result.stdout or b"not stripped" in result.stdout
+        )
 
         yield Interpreter(version, pathlib.Path(location), has_symbols)
 
