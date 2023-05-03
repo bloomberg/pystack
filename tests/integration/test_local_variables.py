@@ -32,6 +32,13 @@ ALL_SOURCES = pytest.mark.parametrize(
 MAX_OUTPUT_LEN = 80
 
 
+def find_frame(frames, name):
+    for frame in frames:
+        if frame.code.scope == name:
+            return frame
+    assert False, f"Frame {name!r} not found in {frames}"  # pragma: no cover
+
+
 @pytest.mark.parametrize(
     "argument",
     [
@@ -102,18 +109,11 @@ first_func()
     frames = list(thread.frames)
     assert (len(frames)) == 3
 
-    first_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "first_func"), None
-    )
-    assert first_func_frame is not None
+    first_func_frame = find_frame(frames, "first_func")
     assert "the_local" in first_func_frame.locals
     assert eval(first_func_frame.locals["the_local"]) == argument
 
-    second_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "second_func"), None
-    )
-    assert second_func_frame is not None
-
+    second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" in second_func_frame.arguments
     assert eval(second_func_frame.arguments["the_argument"]) == argument
 
@@ -157,18 +157,11 @@ first_func()
     frames = list(thread.frames)
     assert (len(frames)) == 3
 
-    first_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "first_func"), None
-    )
-    assert first_func_frame is not None
+    first_func_frame = find_frame(frames, "first_func")
     assert "the_local" in first_func_frame.locals
     assert "Hello world" in first_func_frame.locals["the_local"]
 
-    second_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "second_func"), None
-    )
-    assert second_func_frame is not None
-
+    second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" in second_func_frame.arguments
     assert "Hello world" in second_func_frame.arguments["the_argument"]
 
@@ -212,18 +205,11 @@ first_func()
     frames = list(thread.frames)
     assert (len(frames)) == 3
 
-    first_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "first_func"), None
-    )
-    assert first_func_frame is not None
+    first_func_frame = find_frame(frames, "first_func")
     assert "the_local" in first_func_frame.locals
     assert first_func_frame.locals["the_local"] == "<BINARY>"
 
-    second_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "second_func"), None
-    )
-    assert second_func_frame is not None
-
+    second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" in second_func_frame.arguments
     assert second_func_frame.arguments["the_argument"] == "<BINARY>"
 
@@ -273,21 +259,14 @@ first_func()
     frames = list(thread.frames)
     assert (len(frames)) == 3
 
-    first_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "first_func"), None
-    )
-    assert first_func_frame is not None
+    first_func_frame = find_frame(frames, "first_func")
     assert "the_local" in first_func_frame.locals
     assert eval(first_func_frame.locals["the_local"]) == {
         "x": 1,
         "y": "barbaridad",
     }
 
-    second_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "second_func"), None
-    )
-    assert second_func_frame is not None
-
+    second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" in second_func_frame.arguments
     assert eval(second_func_frame.arguments["the_argument"]) == {
         "x": 1,
@@ -338,10 +317,7 @@ first_func()
     frames = list(thread.frames)
     assert (len(frames)) == 3
 
-    first_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "first_func"), None
-    )
-    assert first_func_frame is not None
+    first_func_frame = find_frame(frames, "first_func")
     assert "the_local" in first_func_frame.locals
     assert eval(first_func_frame.locals["the_local"]) == {
         1: 42,
@@ -354,11 +330,7 @@ first_func()
         9: 9,
     }
 
-    second_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "second_func"), None
-    )
-    assert second_func_frame is not None
-
+    second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" in second_func_frame.arguments
     assert eval(second_func_frame.arguments["the_argument"]) == {
         1: 42,
@@ -410,18 +382,11 @@ first_func()
     frames = list(thread.frames)
     assert (len(frames)) == 3
 
-    first_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "first_func"), None
-    )
-    assert first_func_frame is not None
+    first_func_frame = find_frame(frames, "first_func")
     assert "the_local" in first_func_frame.locals
     assert first_func_frame.locals["the_local"] == "<UNRESOLVED BIG INT>"
 
-    second_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "second_func"), None
-    )
-    assert second_func_frame is not None
-
+    second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" in second_func_frame.arguments
     assert second_func_frame.arguments["the_argument"] == "<UNRESOLVED BIG INT>"
 
@@ -469,19 +434,12 @@ first_func()
 
     repr_regex = re.compile(r"<(?:A|instance|\?\?\?) at 0[xX][0-9a-fA-F]+>")
 
-    first_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "first_func"), None
-    )
-    assert first_func_frame is not None
+    first_func_frame = find_frame(frames, "first_func")
     assert "the_local" in first_func_frame.locals
     argument_repr = first_func_frame.locals["the_local"]
     assert repr_regex.match(argument_repr)
 
-    second_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "second_func"), None
-    )
-    assert second_func_frame is not None
-
+    second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" in second_func_frame.arguments
     argument_repr = second_func_frame.arguments["the_argument"]
     assert repr_regex.match(argument_repr)
@@ -546,19 +504,12 @@ first_func()
     frames = list(thread.frames)
     assert (len(frames)) == 3
 
-    first_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "first_func"), None
-    )
-    assert first_func_frame is not None
+    first_func_frame = find_frame(frames, "first_func")
     assert "the_local" in first_func_frame.locals
     assert len(first_func_frame.locals["the_local"]) <= MAX_OUTPUT_LEN
     assert "..." in first_func_frame.locals["the_local"]
 
-    second_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "second_func"), None
-    )
-    assert second_func_frame is not None
-
+    second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" in second_func_frame.arguments
     assert len(second_func_frame.arguments["the_argument"]) <= MAX_OUTPUT_LEN
     assert "..." in second_func_frame.arguments["the_argument"]
@@ -602,15 +553,8 @@ first_func()
     frames = list(thread.frames)
     assert (len(frames)) == 3
 
-    first_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "first_func"), None
-    )
-    assert first_func_frame is not None
+    first_func_frame = find_frame(frames, "first_func")
     assert "the_local" not in first_func_frame.locals
 
-    second_func_frame = next(
-        (frame for frame in frames if frame.code.scope == "second_func"), None
-    )
-    assert second_func_frame is not None
-
+    second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" not in second_func_frame.arguments
