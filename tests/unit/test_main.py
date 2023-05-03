@@ -745,10 +745,8 @@ def test_process_core_corefile_does_not_exit():
 
     # WHEN
 
-    def does_exit(what):
-        if what == Path("corefile"):
-            return False
-        return True
+    def path_exists(what):
+        return what != Path("corefile")
 
     with patch(
         "pystack.__main__.get_process_threads_for_core"
@@ -757,7 +755,7 @@ def test_process_core_corefile_does_not_exit():
     ) as print_thread_mock, patch(
         "sys.argv", argv
     ), patch.object(
-        Path, "exists", does_exit
+        Path, "exists", path_exists
     ):
         # THEN
 
