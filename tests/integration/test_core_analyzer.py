@@ -86,9 +86,9 @@ def test_single_thread_stack(
         for frame in thread.native_frames
         if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL
     ]
-    if python_has_inlined_eval_frames(major_version, minor_version):
+    if python_has_inlined_eval_frames(major_version, minor_version):  # pragma: no cover
         assert len(eval_frames) == 1
-    else:
+    else:  # pragma: no cover
         assert len(eval_frames) >= 4
     assert all("?" not in frame.symbol for frame in eval_frames)
     assert all(frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path)
@@ -105,13 +105,13 @@ def test_single_thread_stack_from_elf_data(python: PythonVersion, tmpdir: Path) 
     with generate_core_file(
         python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
     ) as core_file:
-        if major_version >= 3 and minor_version >= 10:
+        if major_version >= 3 and minor_version >= 10:  # pragma: no cover
             threads = list(
                 get_process_threads_for_core(
                     core_file, python_executable, method=StackMethod.ELF_DATA
                 )
             )
-        else:
+        else:  # pragma: no cover
             with pytest.raises(NotEnoughInformation):
                 threads = list(
                     get_process_threads_for_core(
@@ -144,9 +144,9 @@ def test_single_thread_stack_from_elf_data(python: PythonVersion, tmpdir: Path) 
         for frame in thread.native_frames
         if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL
     ]
-    if python_has_inlined_eval_frames(major_version, minor_version):
+    if python_has_inlined_eval_frames(major_version, minor_version):  # pragma: no cover
         assert len(eval_frames) == 1
-    else:
+    else:  # pragma: no cover
         assert len(eval_frames) >= 4
     assert all("?" not in frame.symbol for frame in eval_frames)
     assert all(frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path)
@@ -204,9 +204,9 @@ def test_multiple_thread_stack_native(
         for frame in main_thread.native_frames
         if frame_type(frame, main_thread.python_version) == NativeFrame.FrameType.EVAL
     ]
-    if python_has_inlined_eval_frames(major_version, minor_version):
+    if python_has_inlined_eval_frames(major_version, minor_version):  # pragma: no cover
         assert len(eval_frames) == 1
-    else:
+    else:  # pragma: no cover
         assert len(eval_frames) >= 4
     assert all("?" not in frame.symbol for frame in eval_frames)
     assert all(frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path)
@@ -233,9 +233,11 @@ def test_multiple_thread_stack_native(
             for frame in thread.native_frames
             if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL
         ]
-        if python_has_inlined_eval_frames(major_version, minor_version):
+        if python_has_inlined_eval_frames(
+            major_version, minor_version
+        ):  # pragma: no cover
             assert len(eval_frames) == 2
-        else:
+        else:  # pragma: no cover
             assert len(eval_frames) >= 6
         assert all("?" not in frame.symbol for frame in eval_frames)
         assert all(
@@ -320,7 +322,7 @@ def test_inlined_python_calls(python, tmpdir):
     functions = [frame.code.scope for frame in frames]
     assert functions == ["<module>", "ham", "spam", "foo", "bar", "baz"]
 
-    if python_has_inlined_eval_frames(major_version, minor_version):
+    if python_has_inlined_eval_frames(major_version, minor_version):  # pragma: no cover
         module, ham, spam, foo, bar, baz = frames
         assert module.is_entry
         assert not ham.is_entry
@@ -328,7 +330,7 @@ def test_inlined_python_calls(python, tmpdir):
         assert foo.is_entry
         assert not bar.is_entry
         assert not baz.is_entry
-    else:
+    else:  # pragma: no cover
         assert all(frame.is_entry for frame in frames)
 
 
@@ -366,7 +368,9 @@ def test_position_information(python, tmpdir):
     ]
 
     positions = [frame.code.location for frame in frames]
-    if python_has_position_information(major_version, minor_version):
+    if python_has_position_information(
+        major_version, minor_version
+    ):  # pragma: no cover
         assert positions == [
             LocationInfo(lineno=32, end_lineno=32, column=0, end_column=13),
             LocationInfo(lineno=14, end_lineno=14, column=12, end_column=20),
@@ -374,7 +378,7 @@ def test_position_information(python, tmpdir):
             LocationInfo(lineno=20, end_lineno=22, column=4, end_column=5),
             LocationInfo(lineno=29, end_lineno=29, column=4, end_column=20),
         ]
-    else:
+    else:  # pragma: no cover
         assert positions == [
             LocationInfo(lineno=32, end_lineno=32, column=0, end_column=0),
             LocationInfo(lineno=14, end_lineno=14, column=0, end_column=0),
@@ -407,9 +411,9 @@ def test_no_frames_at_shutdown(python, tmpdir):
     (thread,) = threads
 
     frames = list(thread.frames)
-    if major_version > 2:
+    if major_version > 2:  # pragma: no cover
         assert not frames
-    else:
+    else:  # pragma: no cover
         assert len(frames) == 1
         (frame,) = frames
         assert frame.code.scope == "_run_exitfuncs"

@@ -132,7 +132,7 @@ def test_gc_status_is_reported_when_garbage_collecting_in_process_no_native(
     # THEN
 
     assert len(threads) == 2
-    if int(major_version) < 3 or int(minor_version) < 7:
+    if (int(major_version), int(minor_version)) < (3, 7):  # pragma: no cover
         assert {thread.is_gc_collecting for thread in threads} == {-1}
     else:
         assert {thread.is_gc_collecting for thread in threads} == {1}
@@ -154,7 +154,7 @@ def test_gc_status_is_reported_when_garbage_collecting_in_core_no_native(
     # THEN
 
     assert len(threads) == 2
-    if int(major_version) < 3 or int(minor_version) < 7:
+    if (int(major_version), int(minor_version)) < (3, 7):  # pragma: no cover
         assert {thread.is_gc_collecting for thread in threads} == {-1}
     else:
         assert {thread.is_gc_collecting for thread in threads} == {1}
