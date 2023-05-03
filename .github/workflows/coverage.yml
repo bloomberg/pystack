@@ -53,8 +53,6 @@ jobs:
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
       - name: Compute Python + Cython coverage
-        env:
-          CYTHON_TEST_MACROS: 1
         run: |
           make pycoverage
       - name: Compute C++ coverage
