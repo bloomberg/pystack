@@ -164,9 +164,7 @@ def xfail_on_expected_exceptions(
 
 
 def python_has_inlined_eval_frames(major: int, minor: int) -> bool:
-    if major > 3 or (major == 3 and minor >= 11):
-        return True
-    return False
+    return (major, minor) >= (3, 11)
 
 
 def python_has_position_information(major: int, minor: int) -> bool:
