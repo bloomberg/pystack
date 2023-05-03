@@ -34,7 +34,7 @@ ALL_VERSIONS = [
 Interpreter = collections.namedtuple("Interpreter", "version path has_symbols")
 
 
-def find_all_available_pythons() -> Iterable[Interpreter]:
+def find_all_available_pythons() -> Iterable[Interpreter]:  # pragma: no cover
     versions: List[Tuple[Tuple[int, int], str]]
     test_version = os.getenv("PYTHON_TEST_VERSION")
     if test_version == "auto":
@@ -175,7 +175,9 @@ def python_has_position_information(major: int, minor: int) -> bool:
 
 def generate_all_pystack_combinations(
     corefile=False, native=False
-) -> Iterable[Tuple[str, StackMethod, bool, Tuple[Tuple[int, int], pathlib.Path]]]:
+) -> Iterable[
+    Tuple[str, StackMethod, bool, Tuple[Tuple[int, int], pathlib.Path]]
+]:  # pragma: no cover
     if corefile:
         stack_methods = (
             StackMethod.SYMBOLS,
