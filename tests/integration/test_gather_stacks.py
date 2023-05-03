@@ -125,9 +125,9 @@ def test_multiple_thread_stack(python, blocking, method, tmpdir):
     # THEN
 
     assert len(threads) == 4
-    main_thread = next(
+    main_thread = [
         thread for thread in threads if "threading" not in thread.frame.code.filename
-    )
+    ][0]
     other_threads = [thread for thread in threads if thread != main_thread]
 
     frames = list(main_thread.frames)
@@ -244,9 +244,9 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
     # THEN
 
     assert len(threads) == 4
-    main_thread = next(
+    main_thread = [
         thread for thread in threads if "threading" not in thread.frame.code.filename
-    )
+    ][0]
     other_threads = [thread for thread in threads if thread != main_thread]
 
     frames = list(main_thread.frames)
@@ -496,7 +496,7 @@ def test_thread_registered_with_python_but_with_no_python_calls(python, tmpdir):
     main_frames = list(main_thread.frames)
     assert not main_frames
     assert main_thread.native_frames
-    assert any("sleepThread" in frame.symbol for frame in main_thread.native_frames)
+    assert any(["sleepThread" in frame.symbol for frame in main_thread.native_frames])
 
     frames = list(second_thread.frames)
     assert (len(frames)) == 2
@@ -538,7 +538,7 @@ def test_thread_registered_with_python_with_other_threads(tmpdir):
     main_frames = list(main_thread.frames)
     assert not main_frames
     assert main_thread.native_frames
-    assert any("sleepThread" in frame.symbol for frame in main_thread.native_frames)
+    assert any(["sleepThread" in frame.symbol for frame in main_thread.native_frames])
 
     frames = list(second_thread.frames)
     assert (len(frames)) == 2
@@ -556,8 +556,10 @@ def test_thread_registered_with_python_with_other_threads(tmpdir):
     assert len(native_frames) >= 5
     symbols = {frame.symbol for frame in native_frames}
     assert any(
-        expected_symbol in symbols
-        for expected_symbol in {"sleep", "__nanosleep", "nanosleep"}
+        [
+            expected_symbol in symbols
+            for expected_symbol in {"sleep", "__nanosleep", "nanosleep"}
+        ]
     )
 
 
