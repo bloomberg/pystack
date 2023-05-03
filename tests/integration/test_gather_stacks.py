@@ -213,10 +213,10 @@ def test_single_thread_stack_native(python, method, blocking, tmpdir):
     else:  # pragma: no cover
         assert len(eval_frames) >= 4
     assert all("?" not in frame.symbol for frame in eval_frames)
-    if any(frame.linenumber == 0 for frame in eval_frames):
+    if any(frame.linenumber == 0 for frame in eval_frames):  # pragma: no cover
         assert all(frame.linenumber == 0 for frame in eval_frames)
         assert all(frame.path == "???" in frame.path for frame in eval_frames)
-    else:
+    else:  # pragma: no cover
         assert all(frame.linenumber != 0 for frame in eval_frames)
         assert any(frame.path and "?" not in frame.path for frame in eval_frames)
 
@@ -273,10 +273,10 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
     else:  # pragma: no cover
         assert len(eval_frames) >= 4
     assert all("?" not in frame.symbol for frame in eval_frames)
-    if any(frame.linenumber == 0 for frame in eval_frames):
+    if any(frame.linenumber == 0 for frame in eval_frames):  # pragma: no cover
         assert all(frame.linenumber == 0 for frame in eval_frames)
         assert all(frame.path == "???" in frame.path for frame in eval_frames)
-    else:
+    else:  # pragma: no cover
         assert all(frame.linenumber != 0 for frame in eval_frames)
         assert any(frame.path and "?" not in frame.path for frame in eval_frames)
 
@@ -309,10 +309,10 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
         else:  # pragma: no cover
             assert len(eval_frames) == 6
         assert all("?" not in frame.symbol for frame in eval_frames)
-        if any(frame.linenumber == 0 for frame in eval_frames):
+        if any(frame.linenumber == 0 for frame in eval_frames):  # pragma: no cover
             assert all(frame.linenumber == 0 for frame in eval_frames)
             assert all(frame.path == "???" in frame.path for frame in eval_frames)
-        else:
+        else:  # pragma: no cover
             assert all(frame.linenumber != 0 for frame in eval_frames)
             assert any(frame.path and "?" not in frame.path for frame in eval_frames)
 
