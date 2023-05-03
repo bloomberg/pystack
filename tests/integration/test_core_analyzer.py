@@ -178,11 +178,11 @@ def test_multiple_thread_stack_native(
     # THEN
 
     assert len(threads) == 4
-    main_thread = next(
+    main_thread = [
         thread
         for thread in threads
         if thread.frame and "threading" not in thread.frame.code.filename
-    )
+    ][0]
     other_threads = [thread for thread in threads if thread != main_thread]
 
     frames = list(main_thread.frames)
@@ -272,7 +272,7 @@ def test_thread_registered_with_python_with_other_threads(tmpdir):
     main_frames = list(main_thread.frames)
     assert not main_frames
     assert main_thread.native_frames
-    assert any("sleepThread" in frame.symbol for frame in main_thread.native_frames)
+    assert any(["sleepThread" in frame.symbol for frame in main_thread.native_frames])
 
     frames = list(second_thread.frames)
     assert (len(frames)) == 2
@@ -290,8 +290,10 @@ def test_thread_registered_with_python_with_other_threads(tmpdir):
     assert len(native_frames) >= 5
     symbols = {frame.symbol for frame in native_frames}
     assert any(
-        expected_symbol in symbols
-        for expected_symbol in {"sleep", "__nanosleep", "nanosleep"}
+        [
+            expected_symbol in symbols
+            for expected_symbol in {"sleep", "__nanosleep", "nanosleep"}
+        ]
     )
 
 
@@ -558,9 +560,8 @@ def test_get_build_ids_from_core(tmpdir: Path) -> None:
         build_ids = set(core_map_analyzer.extract_build_ids())
 
     # THEN
-
     assert build_ids
-    assert any(elf_id == core_id is not None for _, core_id, elf_id in build_ids)
+    assert any([elf_id == core_id is not None for _, core_id, elf_id in build_ids])
     for filename, core_id, elf_id in build_ids:
         assert filename is not None and filename != ""
         assert core_id == elf_id
