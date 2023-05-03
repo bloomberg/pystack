@@ -157,7 +157,7 @@ def xfail_on_expected_exceptions(
     """
     try:
         yield
-    except NotEnoughInformation:
+    except NotEnoughInformation:  # pragma: no cover
         if method == StackMethod.HEAP:
             pytest.xfail("Could not find interpreter state on brk heap")
         raise

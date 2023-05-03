@@ -14,13 +14,13 @@ from tests.utils import xfail_on_expected_exceptions
 
 TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
 
-if sys.version_info < (3, 10):
+if sys.version_info < (3, 10):  # pragma: no cover
     STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.BSS, StackMethod.HEAP)
     CORE_STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.BSS)
-elif sys.version_info < (3, 11):
+elif sys.version_info < (3, 11):  # pragma: no cover
     STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA, StackMethod.HEAP)
     CORE_STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA)
-else:
+else:  # pragma: no cover
     STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA)
     CORE_STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA)
 
