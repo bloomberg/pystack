@@ -14,7 +14,6 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -qy libdw-dev libelf-dev
-          npm install -g prettier
       - name: Install Python dependencies
         run: |
           python3 -m pip install -r requirements-extra.txt

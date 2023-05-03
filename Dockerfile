@@ -42,8 +42,6 @@ COPY ["requirements-test.txt", "requirements-extra.txt", "requirements-docs.txt"
 RUN python3.10 -m venv /venv \
     && /venv/bin/python -m pip install -U pip wheel setuptools cython \
     && /venv/bin/python -m pip install -U -r /tmp/requirements-test.txt -r /tmp/requirements-extra.txt
-# RUN npm install -g prettier
-# RUN ln -s /opt/bb/bin/clang-format /usr/bin/clang-format
 
 ENV PYTHON=python3.10 \
     VIRTUAL_ENV="/venv" \

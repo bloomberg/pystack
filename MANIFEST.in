@@ -1,5 +1,4 @@
 exclude .clang-format
-exclude .prettierignore
 exclude CONTRIBUTING.md
 exclude Dockerfile
 exclude src/pystack/*.cpp
@@ -15,7 +14,6 @@ include README.md
 include src/pystack/py.typed
 include .bumpversion.cfg
 include .pre-commit-config.yaml
-include .prettierrc.yaml
 
 recursive-include src/pystack/_pystack *
 recursive-include src/pystack *.py
