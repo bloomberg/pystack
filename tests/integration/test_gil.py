@@ -29,10 +29,7 @@ def test_gil_status_one_thread_among_many_holds_the_gil(python, tmpdir):
     # THEN
 
     assert len(threads) == 4
-    gil_thread = next((thread for thread in threads if thread.holds_the_gil), None)
-    assert gil_thread is not None
-    others = [thread for thread in threads if not thread.holds_the_gil]
-    assert len(others) == 3
+    assert sorted(thread.holds_the_gil for thread in threads) == [0, 0, 0, 1]
 
 
 @ALL_PYTHONS
@@ -111,10 +108,7 @@ def test_gil_status_one_thread_among_many_holds_the_gil_for_core(python, tmpdir)
     # THEN
 
     assert len(threads) == 4
-    gil_thread = next((thread for thread in threads if thread.holds_the_gil), None)
-    assert gil_thread is not None
-    others = [thread for thread in threads if not thread.holds_the_gil]
-    assert len(others) == 3
+    assert sorted(thread.holds_the_gil for thread in threads) == [0, 0, 0, 1]
 
 
 @ALL_PYTHONS
