@@ -6,6 +6,7 @@ import pytest
 from pystack._pystack import ProcessManager
 from pystack.engine import CoreFileAnalyzer
 from pystack.engine import get_process_threads
+from pystack.errors import EngineError
 from pystack.maps import generate_maps_for_process
 from pystack.maps import parse_maps_file
 from pystack.maps import parse_maps_file_for_binary
@@ -106,6 +107,24 @@ def test_detection_of_interpreter_active(python, tmpdir):
     # THEN
 
     assert status == -1 or is_running is True
+
+
+@ALL_PYTHONS
+def test_reattaching_to_already_traced_process(python, tmpdir):
+    # GIVEN
+    _, python_executable = python
+
+    with spawn_child_process(
+        python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
+    ) as child_process:
+        pid = child_process.pid
+
+        # WHEN / THEN
+        with pytest.raises(EngineError, match="Operation not permitted"):
+            it1 = iter(get_process_threads(pid, stop_process=True))
+            it2 = iter(get_process_threads(pid, stop_process=True))
+            next(it1)
+            next(it2)
 
 
 @pytest.mark.parametrize(
