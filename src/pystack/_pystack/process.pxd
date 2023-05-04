@@ -12,9 +12,9 @@ from libcpp.vector cimport vector
 
 cdef extern from "process.h" namespace "pystack::AbstractProcessManager":
     cdef enum InterpreterStatus:
-        RUNNING = 1
-        FINALIZED = 0
-        UNKNOWN = -1
+        RUNNING
+        FINALIZED
+        UNKNOWN
 
 cdef extern from "process.h" namespace "pystack":
     cdef cppclass AbstractProcessManager:
