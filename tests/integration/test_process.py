@@ -5,6 +5,7 @@ import pytest
 
 from pystack._pystack import ProcessManager
 from pystack.engine import CoreFileAnalyzer
+from pystack.engine import get_process_threads
 from pystack.maps import generate_maps_for_process
 from pystack.maps import parse_maps_file
 from pystack.maps import parse_maps_file_for_binary
@@ -116,3 +117,14 @@ def test_detection_of_interpreter_active(python, tmpdir):
 )
 def test_elf_checker(file, expected):
     assert is_elf(file) == expected
+
+
+def test_invalid_method_for_get_process_threads():
+    # GIVEN/WHEN/THEN
+    with pytest.raises(ValueError, match="Invalid method for stack analysis"):
+        list(
+            get_process_threads(
+                pid=1,
+                method=None,  # type: ignore
+            )
+        )

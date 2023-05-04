@@ -652,6 +652,21 @@ def test_core_analizer_raises_when_an_invalid_core_is_provided(tmpdir: Path) -> 
         list(get_process_threads_for_core(Path(not_a_core), Path(sys.executable)))
 
 
+def test_invalid_method_for_get_process_threads_for_core():
+    # GIVEN
+    devnull = Path("/dev/null")
+
+    # WHEN/THEN
+    with pytest.raises(ValueError, match="Invalid method for stack analysis"):
+        list(
+            get_process_threads_for_core(
+                core_file=devnull,
+                executable=devnull,
+                method=None,  # type: ignore
+            )
+        )
+
+
 def test_get_build_ids_from_core(tmpdir: Path) -> None:
     # GIVEN
     python_executable = sys.executable
