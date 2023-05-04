@@ -70,13 +70,13 @@ initializePythonLoggerInterface()
 
 
 class StackMethod(enum.Enum):
-    AUTO = 0
-    ELF_DATA = 1
-    SYMBOLS = 2
-    BSS = 3
-    ANONYMOUS_MAPS = 4
-    HEAP = 5
-    ALL = 1000
+    ELF_DATA = 1 << 0
+    SYMBOLS = 1 << 1
+    BSS = 1 << 2
+    ANONYMOUS_MAPS = 1 << 3
+    HEAP = 1 << 4
+    AUTO = ELF_DATA | SYMBOLS | BSS
+    ALL = AUTO | ANONYMOUS_MAPS | HEAP
 
 
 class NativeReportingMode(enum.Enum):
@@ -519,79 +519,46 @@ cdef remote_addr_t _get_interpreter_state_addr(
     AbstractProcessManager *manager, object method, int core=False
 ) except*:
     cdef remote_addr_t head = 0
+    possible_methods = [
+        StackMethod.ELF_DATA,
+        StackMethod.SYMBOLS,
+        StackMethod.BSS,
+        StackMethod.ANONYMOUS_MAPS,
+        StackMethod.HEAP,
+    ]
 
-    if method in {StackMethod.AUTO, StackMethod.ALL, StackMethod.ELF_DATA}:
+    for possible_method in possible_methods:
+        if method.value & possible_method.value == 0:
+            continue
+
         try:
-            head = manager.findInterpreterStateFromElfData()
+            if possible_method == StackMethod.ELF_DATA:
+                how = "using ELF data"
+                head = manager.findInterpreterStateFromElfData()
+            elif possible_method == StackMethod.SYMBOLS:
+                how = "using symbols"
+                head = manager.findInterpreterStateFromSymbols()
+            elif possible_method == StackMethod.BSS:
+                how = "scanning the BSS"
+                head = manager.scanBSS()
+            elif possible_method == StackMethod.ANONYMOUS_MAPS:
+                how = "scanning all anonymous maps"
+                head = manager.scanAllAnonymousMaps()
+            elif possible_method == StackMethod.HEAP:
+                how = "scanning the heap"
+                head = manager.scanHeap()
         except Exception as exc:
             LOGGER.warning(
-                "Unexpected error using ELF data to find PyInterpreterState: %s",
-                exc,
+                "Unexpected error finding PyInterpreterState by %s: %s", how, exc
             )
-        if head:
-            LOGGER.info(
-                "Address of PyInterpreterState found using ELF data at 0x%0.2X", head
-            )
-            return head
 
-    if method in {StackMethod.AUTO, StackMethod.ALL, StackMethod.SYMBOLS}:
-        try:
-            head = manager.findInterpreterStateFromSymbols()
-        except Exception as exc:
-            LOGGER.warning(
-                "Unexpected error using symbols to find PyInterpreterState: %s",
-                exc,
-            )
         if head:
-            LOGGER.info(
-                "Address of PyInterpreterState found using symbols at 0x%0.2X", head
-            )
+            LOGGER.info("PyInterpreterState found by %s at address 0x%0.2X", how, head)
             return head
+        else:
+            LOGGER.info("Address of PyInterpreterState not found by %s", how)
 
-    if method in {StackMethod.AUTO, StackMethod.ALL, StackMethod.BSS}:
-        try:
-            head = manager.scanBSS()
-        except Exception as exc:
-            LOGGER.warning(
-                "Unexpected error scanning BSS to find PyInterpreterState: %s",
-                exc,
-            )
-        if head:
-            LOGGER.info(
-                "Address of PyInterpreterState found scanning the .bss section at 0x%0.2X",
-                head,
-            )
-            return head
-
-    if core and method in {StackMethod.ALL, StackMethod.ANONYMOUS_MAPS}:
-        try:
-            head = manager.scanAllAnonymousMaps()
-        except Exception as exc:
-            LOGGER.warning(
-                "Unexpected error scanning anonymous maps to find PyInterpreterState: %s",
-                exc,
-            )
-        if head:
-            LOGGER.info(
-                "Address of PyInterpreterState found scanning anonymous maps at 0x%0.2X",
-                head,
-            )
-            return head
-
-    if not core and method in {StackMethod.ALL, StackMethod.HEAP}:
-        try:
-            head = manager.scanHeap()
-        except Exception as exc:
-            LOGGER.warning(
-                "Unexpected error scanning heap to find PyInterpreterState: %s",
-                exc,
-            )
-        if head:
-            LOGGER.info(
-                "Address of PyInterpreterState found scanning the heap at 0x%0.2X", head
-            )
-            return head
-
+    LOGGER.info("Address of PyInterpreterState could not be found")
     return 0
 
 
