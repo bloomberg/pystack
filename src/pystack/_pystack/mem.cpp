@@ -202,11 +202,12 @@ BlockingProcessMemoryManager::BlockingProcessMemoryManager(pid_t pid, const std:
         LOG(INFO) << "Trying to stop thread " << tid;
         long ret = ptrace(PTRACE_ATTACH, tid, nullptr, nullptr);
         if (ret < 0) {
+            int error = errno;
             detachFromProcess();
-            if (errno == EPERM) {
+            if (error == EPERM) {
                 throw std::runtime_error(PERM_MESSAGE);
             }
-            throw std::system_error(errno, std::generic_category());
+            throw std::system_error(error, std::generic_category());
         }
         LOG(INFO) << "Waiting for thread " << tid << " to be stopped";
         ret = waitpid(tid, nullptr, WUNTRACED);
