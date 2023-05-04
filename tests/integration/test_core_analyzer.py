@@ -4,6 +4,7 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -13,6 +14,8 @@ from pystack.engine import StackMethod
 from pystack.engine import get_process_threads_for_core
 from pystack.errors import EngineError
 from pystack.errors import NotEnoughInformation
+from pystack.maps import MemoryMapInformation
+from pystack.maps import VirtualMap
 from pystack.types import LocationInfo
 from pystack.types import NativeFrame
 from pystack.types import frame_type
@@ -256,6 +259,98 @@ def test_multiple_thread_stack_native(
         assert all(
             frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path
         )
+
+
+@ALL_PYTHONS
+def test_gather_stack_with_heap_fails_if_no_heap(python: PythonVersion, tmpdir: Path):
+    # GIVEN
+    _, python_executable = python
+
+    def heap_dropping_memory_map_info(*args, **kwargs):
+        ret = MemoryMapInformation(*args, **kwargs)
+        ret.heap = None
+        return ret
+
+    err = "Could not gather enough information to extract the Python frame information"
+
+    # WHEN
+    with generate_core_file(
+        python_executable, TEST_MULTIPLE_THREADS_FILE, tmpdir
+    ) as core_file:
+        with patch("pystack.maps.MemoryMapInformation", heap_dropping_memory_map_info):
+            # THEN
+
+            with pytest.raises(NotEnoughInformation, match=err):
+                list(
+                    get_process_threads_for_core(
+                        core_file, python_executable, method=StackMethod.HEAP
+                    )
+                )
+
+
+@ALL_PYTHONS
+def test_gather_stack_with_bss_fails_if_no_bss(python: PythonVersion, tmpdir: Path):
+    # GIVEN
+    _, python_executable = python
+
+    def bss_dropping_memory_map_info(*args, **kwargs):
+        ret = MemoryMapInformation(*args, **kwargs)
+        ret.bss = None
+        return ret
+
+    err = "Could not gather enough information to extract the Python frame information"
+
+    # WHEN
+    with generate_core_file(
+        python_executable, TEST_MULTIPLE_THREADS_FILE, tmpdir
+    ) as core_file:
+        with patch("pystack.maps.MemoryMapInformation", bss_dropping_memory_map_info):
+            # THEN
+
+            with pytest.raises(NotEnoughInformation, match=err):
+                list(
+                    get_process_threads_for_core(
+                        core_file, python_executable, method=StackMethod.BSS
+                    )
+                )
+
+
+@ALL_PYTHONS
+def test_gather_stack_with_heap_fails_if_heap_address_is_wrong(
+    python: PythonVersion, tmpdir: Path
+):
+    # GIVEN
+    _, python_executable = python
+
+    def heap_dropping_memory_map_info(*args, **kwargs):
+        ret = MemoryMapInformation(*args, **kwargs)
+        ret.heap = VirtualMap(
+            start=1024,
+            end=2048,
+            filesize=1024,
+            offset=2**31,
+            device="",
+            flags="rw",
+            inode=0,
+            path=Path("[heap]"),
+        )
+        return ret
+
+    err = "Could not gather enough information to extract the Python frame information"
+
+    # WHEN
+    with generate_core_file(
+        python_executable, TEST_MULTIPLE_THREADS_FILE, tmpdir
+    ) as core_file:
+        with patch("pystack.maps.MemoryMapInformation", heap_dropping_memory_map_info):
+            # THEN
+
+            with pytest.raises(NotEnoughInformation, match=err):
+                list(
+                    get_process_threads_for_core(
+                        core_file, python_executable, method=StackMethod.HEAP
+                    )
+                )
 
 
 def test_thread_registered_with_python_with_other_threads(tmpdir):
