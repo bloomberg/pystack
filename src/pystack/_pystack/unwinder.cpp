@@ -445,7 +445,8 @@ Unwinder::unwindThread(pid_t tid) const
             // unwinding.
             if (frames.empty()) {
                 int dwfl_err = dwfl_errno();
-                std::string error(dwfl_errmsg(dwfl_err));
+                std::string error(
+                        dwfl_err ? dwfl_errmsg(dwfl_err) : "unwinding failed with no error reported");
                 throw UnwinderError("Unknown error happened when gathering thread frames: " + error);
             }
             break;
@@ -492,7 +493,8 @@ thread_callback_for_frames(Dwfl_Thread* thread, void* arg)
             // unwinding.
             if (thread_arg->frames.empty()) {
                 int dwfl_err = dwfl_errno();
-                std::string error(dwfl_errmsg(dwfl_err));
+                std::string error(
+                        dwfl_err ? dwfl_errmsg(dwfl_err) : "unwinding failed with no error reported");
                 throw UnwinderError("Unknown error happened when gathering thread frames: " + error);
             }
             break;
@@ -525,7 +527,8 @@ CoreFileUnwinder::unwindThread(pid_t tid) const
             // unwinding.
             if (frames.empty()) {
                 int dwfl_err = dwfl_errno();
-                std::string error(dwfl_errmsg(dwfl_err));
+                std::string error(
+                        dwfl_err ? dwfl_errmsg(dwfl_err) : "unwinding failed with no error reported");
                 throw UnwinderError("Unknown error happened when gathering thread frames: " + error);
             }
             break;
