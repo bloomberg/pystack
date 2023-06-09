@@ -9,6 +9,7 @@ repos:
       - id: check-yaml
       - id: end-of-file-fixer
       - id: trailing-whitespace
+        exclude: "^[.]bumpversion[.]cfg"
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: v1.10.0
