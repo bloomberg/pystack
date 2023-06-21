@@ -138,7 +138,7 @@ def generate_maps_from_core_data(
     ]
 
     all_maps: RawCoreMapList = sorted(
-        memory_maps + missing_mapped_files, key=lambda map: map["start"]  # type: ignore
+        memory_maps + missing_mapped_files, key=lambda map: map["start"]
     )
 
     # Some paths in the mapped files can be absolute, but we need to work with the canonical
