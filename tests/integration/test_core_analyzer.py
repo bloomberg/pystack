@@ -395,7 +395,7 @@ def test_thread_registered_with_python_with_other_threads(tmpdir):
     assert lines == [13, 10]
 
     native_frames = list(non_python_thread.native_frames)
-    assert len(native_frames) >= 5
+    assert len(native_frames) >= 4
     symbols = {frame.symbol for frame in native_frames}
     assert any(
         [

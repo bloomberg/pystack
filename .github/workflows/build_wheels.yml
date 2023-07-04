@@ -4,7 +4,6 @@ on:
   push:
   pull_request:
     paths-ignore:
-      - "docs/**"
       - "CONTRIBUTING.md"
   release:
     types:
@@ -212,8 +211,7 @@ jobs:
 
     container:
       image: archlinux
-      options: --cap-add=SYS_PTRACE
-
+      options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined
     steps:
       - uses: actions/checkout@v3
       - uses: actions/download-artifact@v3
@@ -232,13 +230,14 @@ jobs:
             python-wheel
       - name: Install Python dependencies
         run: |
-          python -m pip install --upgrade pip
-          python -m pip install -r requirements-test.txt
-          python -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
+          python -m venv venv
+          venv/bin/python -m pip install --upgrade pip
+          venv/bin/python -m pip install -r requirements-test.txt
+          venv/bin/python -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "auto"
-        run: python -m pytest tests -k 'not 2.7' -n auto -vvv
+        run: venv/bin/python -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_wheels_in_debian:
     needs: [build_wheels]
