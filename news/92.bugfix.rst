@@ -1,1 +1,0 @@
-Drop a use of the f-string ``=`` specifier, which wasn't introduced until Python 3.8 (running PyStack with Python 3.7 was failing because of this).
