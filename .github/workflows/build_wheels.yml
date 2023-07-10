@@ -39,12 +39,15 @@ jobs:
       matrix:
         os: [ubuntu-latest]
         cibw_python: ["cp37-*", "cp38-*", "cp39-*", "cp310-*", "cp311-*"]
-        cibw_arch: ["x86_64"]
+        cibw_arch: ["x86_64", "aarch64"]
 
     steps:
       - name: Disable ptrace security restrictions
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      - uses: docker/setup-qemu-action@v1
+        if: runner.os == 'Linux'
+        name: Set up QEMU
       - uses: actions/download-artifact@v3
         with:
           name: artifact
