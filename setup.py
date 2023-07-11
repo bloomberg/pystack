@@ -1,10 +1,9 @@
 import os
 import pathlib
 import sys
-from distutils.core import setup
 
+import setuptools
 from Cython.Build import cythonize
-from setuptools import Extension
 
 install_requires = []
 
@@ -49,7 +48,7 @@ if TEST_BUILD:
     DEFINE_MACROS.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
 
 
-PYSTACK_EXTENSION = Extension(
+PYSTACK_EXTENSION = setuptools.Extension(
     name="pystack._pystack",
     sources=[
         "src/pystack/_pystack.pyx",
@@ -83,7 +82,7 @@ with open("src/pystack/_version.py") as fp:
 HERE = pathlib.Path(__file__).parent.resolve()
 LONG_DESCRIPTION = (HERE / "README.md").read_text(encoding="utf-8")
 
-setup(
+setuptools.setup(
     name="pystack",
     version=about["__version__"],
     python_requires=">=3.7.0",
