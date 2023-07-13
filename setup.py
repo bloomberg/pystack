@@ -1,9 +1,15 @@
 import os
 import pathlib
 import sys
+from sys import platform
 
 import setuptools
 from Cython.Build import cythonize
+
+IS_LINUX = "linux" in platform
+
+if not IS_LINUX:
+    raise RuntimeError(f"memray does not support this platform ({platform})")
 
 install_requires = []
 

@@ -50,6 +50,10 @@ PyStack has the following amazing features:
 - 💼 Self-contained: it does not depend on external tools or programs other than the Python
   interpreter used to run PyStack itself.
 
+## What platforms are supported?
+
+At this time only Linux is supported.
+
 ## Building from source
 
 If you wish to build PyStack from source, you need the following binary dependencies in your
