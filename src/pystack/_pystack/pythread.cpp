@@ -50,8 +50,7 @@ findPthreadTidOffset(
     PyInterpreterState is;
     manager->copyObjectFromProcess(interp_state_addr, &is);
 
-    auto current_thread_addr =
-            manager->versionedInterpreterStateField<remote_addr_t, &py_is_v::o_tstate_head>(is);
+    auto current_thread_addr = manager->getField(is, &py_is_v::o_tstate_head);
 
     auto thread_head = current_thread_addr;
 
@@ -67,8 +66,7 @@ findPthreadTidOffset(
     while (current_thread_addr != (remote_addr_t) nullptr) {
         PyThreadState current_thread;
         manager->copyObjectFromProcess(current_thread_addr, &current_thread);
-        auto pthread_id_addr =
-                manager->versionedThreadField<unsigned long, &py_thread_v::o_thread_id>(current_thread);
+        auto pthread_id_addr = manager->getField(current_thread, &py_thread_v::o_thread_id);
 
         pid_t the_tid;
         std::vector<off_t> glibc_pthread_offset_candidates = {
@@ -82,8 +80,7 @@ findPthreadTidOffset(
                 return candidate;
             }
         }
-        remote_addr_t next_thread_addr =
-                manager->versionedThreadField<remote_addr_t, &py_thread_v::o_next>(current_thread);
+        remote_addr_t next_thread_addr = manager->getField(current_thread, &py_thread_v::o_next);
         if (next_thread_addr == current_thread_addr) {
             break;
         }
@@ -96,8 +93,7 @@ findPthreadTidOffset(
     while (current_thread_addr != (remote_addr_t) nullptr) {
         PyThreadState current_thread;
         manager->copyObjectFromProcess(current_thread_addr, &current_thread);
-        auto pthread_id_addr =
-                manager->versionedThreadField<unsigned long, &py_thread_v::o_thread_id>(current_thread);
+        auto pthread_id_addr = manager->getField(current_thread, &py_thread_v::o_thread_id);
 
         // Attempt to locate a field in the pthread struct that's equal to the pid.
         uintptr_t buffer[200];
@@ -111,8 +107,7 @@ findPthreadTidOffset(
             }
         }
 
-        remote_addr_t next_thread_addr =
-                manager->versionedThreadField<remote_addr_t, &py_thread_v::o_next>(current_thread);
+        remote_addr_t next_thread_addr = manager->getField(current_thread, &py_thread_v::o_next);
         if (next_thread_addr == current_thread_addr) {
             break;
         }
@@ -139,11 +134,10 @@ PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager,
     }
 
     d_addr = addr;
-    remote_addr_t candidate_next_addr =
-            manager->versionedThreadField<remote_addr_t, &py_thread_v::o_next>(ts);
+    remote_addr_t candidate_next_addr = manager->getField(ts, &py_thread_v::o_next);
     d_next_addr = candidate_next_addr == addr ? (remote_addr_t) nullptr : candidate_next_addr;
 
-    d_pthread_id = manager->versionedThreadField<unsigned long, &py_thread_v::o_thread_id>(ts);
+    d_pthread_id = manager->getField(ts, &py_thread_v::o_thread_id);
     d_tid = getThreadTid(manager, addr, d_pthread_id);
     d_next = nullptr;
 
@@ -218,15 +212,14 @@ PyThread::getFrameAddr(
 {
     if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
         Python3_11::CFrame cframe;
-        remote_addr_t cframe_addr =
-                manager->versionedThreadField<remote_addr_t, &py_thread_v::o_frame>(ts);
+        remote_addr_t cframe_addr = manager->getField(ts, &py_thread_v::o_frame);
         if (!manager->isAddressValid(cframe_addr)) {
             return reinterpret_cast<remote_addr_t>(nullptr);
         }
         manager->copyObjectFromProcess(cframe_addr, &cframe);
         return reinterpret_cast<remote_addr_t>(cframe.current_frame);
     } else {
-        return manager->versionedThreadField<remote_addr_t, &py_thread_v::o_frame>(ts);
+        return manager->getField(ts, &py_thread_v::o_frame);
     }
 }
 
@@ -275,8 +268,7 @@ PyThread::calculateGilStatus(const std::shared_ptr<const AbstractProcessManager>
             LOG(DEBUG) << "Searching for the GIL by checking the value of 'tstate_current'";
             PyRuntimeState runtime;
             manager->copyObjectFromProcess(pyruntime, &runtime);
-            uintptr_t tstate_current =
-                    manager->versionedRuntimeField<uintptr_t, &py_runtime_v::o_tstate_current>(runtime);
+            uintptr_t tstate_current = manager->getField(runtime, &py_runtime_v::o_tstate_current);
             return (tstate_current == d_addr ? GilStatus::HELD : GilStatus::NOT_HELD);
         } else {
             LOG(DEBUG) << "Searching for the GIL by scanning the _PyRuntime structure";
@@ -335,9 +327,9 @@ PyThread::calculateGCStatus(
         case 10:
         case 9: {
             PyInterpreterState interp;
-            auto is_addr = manager->versionedThreadField<remote_addr_t, &py_thread_v::o_interp>(ts);
+            auto is_addr = manager->getField(ts, &py_thread_v::o_interp);
             manager->copyObjectFromProcess(is_addr, &interp);
-            gcstate = manager->versionedInterpreterStateField<GCRuntimeState, &py_is_v ::o_gc>(interp);
+            gcstate = manager->getField(interp, &py_is_v ::o_gc);
             break;
         }
         case 8:
@@ -349,7 +341,7 @@ PyThread::calculateGCStatus(
             }
             PyRuntimeState runtime;
             manager->copyObjectFromProcess(pyruntime, &runtime);
-            gcstate = manager->versionedRuntimeField<GCRuntimeState, &py_runtime_v::o_gc>(runtime);
+            gcstate = manager->getField(runtime, &py_runtime_v::o_gc);
             break;
         }
         default: {
@@ -358,7 +350,7 @@ PyThread::calculateGCStatus(
         };
     }
 
-    auto collecting = manager->versionedGcStatesField<remote_addr_t, &py_gc_v::o_collecting>(gcstate);
+    auto collecting = manager->getField(gcstate, &py_gc_v::o_collecting);
     LOG(DEBUG) << "GC status correctly retrieved: " << collecting;
     return collecting ? GCStatus::COLLECTING : GCStatus::NOT_COLLECTING;
 }
@@ -378,8 +370,7 @@ getThreadFromInterpreterState(
     PyInterpreterState is;
     manager->copyObjectFromProcess(addr, &is);
 
-    auto thread_addr =
-            manager->versionedInterpreterStateField<remote_addr_t, &py_is_v::o_tstate_head>(is);
+    auto thread_addr = manager->getField(is, &py_is_v::o_tstate_head);
     return std::make_shared<PyThread>(manager, thread_addr);
 }
 

@@ -107,8 +107,8 @@ getLocationInfo(
         PyCodeObject& code,
         uintptr_t last_instruction_index)
 {
-    int code_lineno = manager->versionedCodeField<unsigned int, &py_code_v::o_firstlineno>(code);
-    remote_addr_t lnotab_addr = *(remote_addr_t*)((char*)&code + manager->offsets().py_code.o_lnotab);
+    int code_lineno = manager->getField(code, &py_code_v::o_firstlineno);
+    remote_addr_t lnotab_addr = manager->getField(code, &py_code_v::o_lnotab);
     LOG(DEBUG) << std::hex << std::showbase << "Copying lnotab data from address " << lnotab_addr;
     std::string lnotab = manager->getBytesFromAddress(lnotab_addr);
 
@@ -120,8 +120,7 @@ getLocationInfo(
     // Check out https://github.com/python/cpython/blob/main/Objects/lnotab_notes.txt for the format of
     // the lnotab table in different versions of the interpreter.
     if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
-        uintptr_t code_adaptive =
-                code_addr + manager->versionedCodeOffset<&py_code_v::o_code_adaptive>();
+        uintptr_t code_adaptive = code_addr + manager->getFieldOffset(&py_code_v::o_code_adaptive);
         ptrdiff_t addrq =
                 (reinterpret_cast<uint16_t*>(last_instruction_index)
                  - reinterpret_cast<uint16_t*>(code_adaptive));
@@ -174,14 +173,13 @@ CodeObject::CodeObject(
     LOG(DEBUG) << std::hex << std::showbase << "Copying code struct from address " << addr;
     manager->copyMemoryFromProcess(addr, manager->offsets().py_code.size, &code);
 
-    remote_addr_t filename_addr =
-            *(remote_addr_t*)((char*)&code + manager->offsets().py_code.o_filename);
+    remote_addr_t filename_addr = manager->getField(code, &py_code_v::o_filename);
     LOG(DEBUG) << std::hex << std::showbase << "Copying filename Python string from address "
                << filename_addr;
     d_filename = manager->getStringFromAddress(filename_addr);
     LOG(DEBUG) << "Code object filename: " << d_filename;
 
-    remote_addr_t name_addr = *(remote_addr_t*)((char*)&code + manager->offsets().py_code.o_name);
+    remote_addr_t name_addr = manager->getField(code, &py_code_v::o_name);
     LOG(DEBUG) << std::hex << std::showbase << "Copying code name Python string from address "
                << name_addr;
     d_scope = manager->getStringFromAddress(name_addr);
@@ -193,12 +191,11 @@ CodeObject::CodeObject(
                << d_location_info.end_lineno << ") column_range=(" << d_location_info.column << ", "
                << d_location_info.end_column << ")";
 
-    d_narguments = manager->versionedCodeField<unsigned int, &py_code_v::o_argcount>(code);
+    d_narguments = manager->getField(code, &py_code_v::o_argcount);
     LOG(DEBUG) << "Code object n arguments: " << d_narguments;
 
     LOG(DEBUG) << "Copying variable names";
-    remote_addr_t varnames_addr =
-            manager->versionedCodeField<remote_addr_t, &py_code_v::o_varnames>(code);
+    remote_addr_t varnames_addr = manager->getField(code, &py_code_v::o_varnames);
     TupleObject varnames(manager, varnames_addr);
     std::transform(
             varnames.Items().cbegin(),

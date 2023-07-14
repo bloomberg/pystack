@@ -166,8 +166,7 @@ AbstractProcessManager::isValidInterpreterState(remote_addr_t addr) const
     }
 
     PyThreadState current_thread;
-    auto current_thread_addr =
-            versionedInterpreterStateField<remote_addr_t, &py_is_v::o_tstate_head>(is);
+    auto current_thread_addr = getField(is, &py_is_v::o_tstate_head);
     if (!isAddressValid(current_thread_addr)) {
         return false;
     }
@@ -178,7 +177,7 @@ AbstractProcessManager::isValidInterpreterState(remote_addr_t addr) const
         return false;
     }
 
-    if (versionedThreadField<remote_addr_t, &py_thread_v::o_interp>(current_thread) != addr) {
+    if (getField(current_thread, &py_thread_v::o_interp) != addr) {
         return false;
     }
 
@@ -187,9 +186,9 @@ AbstractProcessManager::isValidInterpreterState(remote_addr_t addr) const
 
     // Validate dictionaries in the interpreter state
     std::unordered_map<std::string, remote_addr_t> dictionaries(
-            {{"modules", versionedInterpreterStateField<remote_addr_t, &py_is_v::o_modules>(is)},
-             {"sysdict", versionedInterpreterStateField<remote_addr_t, &py_is_v::o_sysdict>(is)},
-             {"builtins", versionedInterpreterStateField<remote_addr_t, &py_is_v::o_builtins>(is)}});
+            {{"modules", getField(is, &py_is_v::o_modules)},
+             {"sysdict", getField(is, &py_is_v::o_sysdict)},
+             {"builtins", getField(is, &py_is_v::o_builtins)}});
     for (const auto& [dictname, addr] : dictionaries) {
         if (!isValidDictionaryObject(addr)) {
             LOG(DEBUG) << "The '" << dictname << "' dictionary object is not valid";
@@ -227,8 +226,7 @@ AbstractProcessManager::findInterpreterStateFromPyRuntime(remote_addr_t runtime_
 
     PyRuntimeState py_runtime;
     copyObjectFromProcess(runtime_addr, &py_runtime);
-    remote_addr_t interp_state =
-            versionedRuntimeField<remote_addr_t, &py_runtime_v::o_interp_head>(py_runtime);
+    remote_addr_t interp_state = getField(py_runtime, &py_runtime_v::o_interp_head);
 
     if (!isValidInterpreterState(interp_state)) {
         LOG(INFO) << "Failing to resolve PyInterpreterState based on PyRuntime address " << std::hex
@@ -470,7 +468,7 @@ AbstractProcessManager::isInterpreterActive() const
     if (runtime_addr) {
         PyRuntimeState py_runtime;
         copyObjectFromProcess(runtime_addr, &py_runtime);
-        remote_addr_t p = versionedRuntimeField<remote_addr_t, &py_runtime_v::o_finalizing>(py_runtime);
+        remote_addr_t p = getField(py_runtime, &py_runtime_v::o_finalizing);
         return p == 0 ? InterpreterStatus::RUNNING : InterpreterStatus::FINALIZED;
     }
 

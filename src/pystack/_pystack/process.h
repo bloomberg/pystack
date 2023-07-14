@@ -68,59 +68,19 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     int minorVersion() const;
     const python_v& offsets() const;
 
-    template<typename T, typename U, auto PMD0, auto PMD1>
-    inline auto& versionedField(const U& py_obj) const
+    template<typename OffsetsStruct, typename FieldPointer>
+    inline offset_t getFieldOffset(FieldPointer OffsetsStruct::*field) const
     {
-        offset_t offset = d_py_v->*PMD0.*PMD1;
-        return (*((T*)(((char*)&py_obj) + offset)));
+        return (d_py_v->get<OffsetsStruct>().*field).offset;
     }
 
-    template<typename T, auto PMD1>
-    inline auto& versionedThreadField(const PyThreadState& py_thread) const
+    template<typename OffsetsStruct, typename FieldPointer>
+    inline const typename FieldPointer::Type&
+    getField(const typename OffsetsStruct::Structure& obj, FieldPointer OffsetsStruct::*field) const
     {
-        return versionedField<T, PyThreadState, &python_v::py_thread, PMD1>(py_thread);
-    }
-
-    template<typename T, auto PMD1>
-    inline auto& versionedInterpreterStateField(const PyInterpreterState& py_is) const
-    {
-        return versionedField<T, PyInterpreterState, &python_v::py_is, PMD1>(py_is);
-    }
-
-    template<typename T, auto PMD1>
-    inline auto& versionedGcStatesField(const GCRuntimeState& py_gc) const
-    {
-        return versionedField<T, GCRuntimeState, &python_v::py_gc, PMD1>(py_gc);
-    }
-
-    template<typename T, auto PMD1>
-    inline auto& versionedFrameField(const PyFrameObject& py_frame) const
-    {
-        return versionedField<T, PyFrameObject, &python_v::py_frame, PMD1>(py_frame);
-    }
-
-    template<typename T, auto PMD1>
-    inline auto& versionedCodeField(const PyCodeObject& py_code) const
-    {
-        return versionedField<T, PyCodeObject, &python_v::py_code, PMD1>(py_code);
-    }
-
-    template<auto PMD1>
-    inline auto versionedCodeOffset() const
-    {
-        return d_py_v->py_code.*PMD1;
-    }
-
-    template<typename T, auto PMD1>
-    inline auto& versionedRuntimeField(const PyRuntimeState& py_runtime) const
-    {
-        return versionedField<T, PyRuntimeState, &python_v::py_runtime, PMD1>(py_runtime);
-    }
-
-    template<typename T, auto PMD1>
-    inline auto& versionedTypeField(const PyTypeObject& py_type) const
-    {
-        return versionedField<T, PyTypeObject, &python_v::py_type, PMD1>(py_type);
+        offset_t offset = getFieldOffset(field);
+        auto address = reinterpret_cast<const char*>(&obj) + offset;
+        return *reinterpret_cast<const typename FieldPointer::Type*>(address);
     }
 
   protected:

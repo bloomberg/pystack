@@ -96,7 +96,7 @@ typedef struct _interpreter_frame
     PyObject* f_code;
     PyObject* frame_obj;
     struct _PyInterpreterFrame* previous;
-    _Py_CODEUNIT* f_lasti;
+    _Py_CODEUNIT* prev_instr;
     int stacktop;
     bool is_entry;
     char owner;

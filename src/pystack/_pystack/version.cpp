@@ -50,6 +50,7 @@ py_frame()
             offsetof(T, f_back),
             offsetof(T, f_code),
             offsetof(T, f_lasti),
+            0,
             offsetof(T, f_localsplus)};
 }
 
@@ -60,7 +61,8 @@ py_framev311()
     return {sizeof(T),
             offsetof(T, previous),
             offsetof(T, f_code),
-            offsetof(T, f_lasti),
+            0,
+            offsetof(T, prev_instr),
             offsetof(T, localsplus),
             offsetof(T, is_entry)};
 }

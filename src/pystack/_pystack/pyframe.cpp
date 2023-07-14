@@ -24,21 +24,21 @@ FrameObject::FrameObject(
     LOG(DEBUG) << std::hex << std::showbase << "Copying frame struct from address " << addr;
 
     manager->copyMemoryFromProcess(addr, manager->offsets().py_frame.size, &frame);
-    remote_addr_t py_code_addr = manager->versionedFrameField<remote_addr_t, &py_frame_v::o_code>(frame);
+    remote_addr_t py_code_addr = manager->getField(frame, &py_frame_v::o_code);
 
     LOG(DEBUG) << std::hex << std::showbase << "Attempting to construct code object from address "
                << py_code_addr;
 
     uintptr_t last_instruction;
     if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
-        last_instruction = manager->versionedFrameField<uintptr_t, &py_frame_v::o_lasti>(frame);
+        last_instruction = manager->getField(frame, &py_frame_v::o_prev_instr);
     } else {
-        last_instruction = manager->versionedFrameField<int, &py_frame_v::o_lasti>(frame);
+        last_instruction = manager->getField(frame, &py_frame_v::o_lasti);
     }
     d_code = std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
 
     d_addr = addr;
-    d_prev_addr = manager->versionedFrameField<remote_addr_t, &py_frame_v::o_back>(frame);
+    d_prev_addr = manager->getField(frame, &py_frame_v::o_back);
     LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << d_prev_addr;
     d_frame_no = frame_no;
     d_prev = nullptr;
@@ -52,7 +52,7 @@ FrameObject::FrameObject(
     }
     this->d_is_entry = true;
     if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
-        this->d_is_entry = manager->versionedFrameField<bool, &py_frame_v::o_is_entry>(frame);
+        this->d_is_entry = manager->getField(frame, &py_frame_v::o_is_entry);
     }
 }
 
@@ -63,7 +63,7 @@ FrameObject::resolveLocalVariables()
 
     const size_t n_arguments = d_code->NArguments();
     const size_t n_locals = d_code->Varnames().size();
-    const remote_addr_t locals_addr = d_addr + d_manager->offsets().py_frame.o_localsplus;
+    const remote_addr_t locals_addr = d_addr + d_manager->getFieldOffset(&py_frame_v::o_localsplus);
 
     if (n_locals < n_arguments) {
         throw std::runtime_error("Found more arguments than local variables");
