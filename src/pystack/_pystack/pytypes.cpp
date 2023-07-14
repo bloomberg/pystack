@@ -516,9 +516,9 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
     LOG(DEBUG) << std::hex << std::showbase << "Copying typeobject from address " << obj.ob_type;
     manager->copyMemoryFromProcess((remote_addr_t)obj.ob_type, manager->offsets().py_type.size, &cls);
 
-    d_flags = manager->versionedTypeField<unsigned long, &py_type_v::o_tp_flags>(cls);
+    d_flags = manager->getField(cls, &py_type_v::o_tp_flags);
 
-    remote_addr_t name_addr = manager->versionedTypeField<remote_addr_t, &py_type_v::o_tp_name>(cls);
+    remote_addr_t name_addr = manager->getField(cls, &py_type_v::o_tp_name);
     try {
         d_classname = manager->getCStringFromAddress(name_addr);
     } catch (RemoteMemCopyError& ex) {
@@ -689,7 +689,7 @@ Object::toConcreteObject() const
 std::string
 Object::guessClassName(PyTypeObject& type) const
 {
-    remote_addr_t tp_repr = d_manager->versionedTypeField<remote_addr_t, &py_type_v::o_tp_repr>(type);
+    remote_addr_t tp_repr = d_manager->getField(type, &py_type_v::o_tp_repr);
     if (tp_repr == d_manager->findSymbol("float_repr")) {
         return "float";
     }
