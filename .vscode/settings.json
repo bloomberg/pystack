@@ -74,5 +74,6 @@
     "typeinfo": "cpp",
     "valarray": "cpp",
     "variant": "cpp"
-  }
+  },
+  "cmake.sourceDirectory": "/Users/pgalindo3/github/pystack/src/pystack/_pystack"
 }
