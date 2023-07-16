@@ -3,7 +3,8 @@
 requires = [
      "setuptools",
      "wheel",
-     "Cython"
+     "Cython",
+     "pkgconfig"
 ]
 
 build-backend = 'setuptools.build_meta'
