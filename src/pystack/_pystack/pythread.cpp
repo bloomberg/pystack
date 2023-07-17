@@ -147,7 +147,7 @@ PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager,
         d_next = std::make_unique<PyThread>(manager, d_next_addr);
     }
 
-    d_gil_status = calculateGilStatus(manager);
+    d_gil_status = calculateGilStatus(ts, manager);
     d_gc_status = calculateGCStatus(ts, manager);
 }
 
@@ -248,14 +248,10 @@ PyThread::isGCCollecting() const
     return d_gc_status;
 }
 
-static inline bool
-supportsExactGilChecking(int major, int minor)
-{
-    return major >= 3 && minor >= 8;
-}
-
 PyThread::GilStatus
-PyThread::calculateGilStatus(const std::shared_ptr<const AbstractProcessManager>& manager) const
+PyThread::calculateGilStatus(
+        PyThreadState& ts,
+        const std::shared_ptr<const AbstractProcessManager>& manager) const
 {
     LOG(DEBUG) << "Attempting to determine GIL Status";
     remote_addr_t thread_addr;
@@ -264,7 +260,28 @@ PyThread::calculateGilStatus(const std::shared_ptr<const AbstractProcessManager>
         assert(manager->majorVersion() == 3);
         LOG(DEBUG) << "_PyRuntime symbol detected. Searching for GIL status within _PyRuntime structure";
 
-        if (supportsExactGilChecking(manager->majorVersion(), manager->minorVersion())) {
+        if (manager->majorVersion() > 3
+            || (manager->majorVersion() == 3 && manager->minorVersion() >= 12))
+        {
+            // Fast, exact method supporting per-interpreter GILs:
+            // The thread state points to an interpreter state, which contains
+            // a ceval state, which points to a GIL runtime state.
+            // If that GIL state has `locked` set and `last_holder` is d_addr,
+            // then the thread represented by this PyThread holds the GIL.
+            PyInterpreterState interp;
+            auto is_addr = manager->getField(ts, &py_thread_v::o_interp);
+            manager->copyObjectFromProcess(is_addr, &interp);
+
+            auto gil_addr = manager->getField(interp, &py_is_v::o_gil_runtime_state);
+
+            Python3_9::_gil_runtime_state gil;
+            manager->copyObjectFromProcess(gil_addr, &gil);
+
+            auto locked = *reinterpret_cast<int*>(&gil.locked);
+            auto holder = *reinterpret_cast<remote_addr_t*>(&gil.last_holder);
+
+            return (locked && holder == d_addr ? GilStatus::HELD : GilStatus::NOT_HELD);
+        } else if (manager->majorVersion() == 3 && manager->minorVersion() >= 8) {
             // Fast, exact method by checking the gilstate structure in _PyRuntime
             LOG(DEBUG) << "Searching for the GIL by checking the value of 'tstate_current'";
             PyRuntimeState runtime;
