@@ -260,26 +260,19 @@ python_v python_v3_11 = {
         py_gc<Python3_8::_gc_runtime_state>(),
 };
 
-// ----------------------------------------------------------------------------
-
-const auto LATEST_VERSION = &python_v3_10;
-
 const python_v*
 getCPythonOffsets(int major, int minor)
 {
     switch (major) {
-        // ---- Python 2 ------------------------------------------------------------
+        // ---- Python 2 -------------------------------------------------------
         case 2:
-            if (minor == 7) {
-                return &python_v2;
-            } else {
+            if (minor != 7) {
                 warnAboutUnsuportedVersion(major, minor);
-                return &python_v2;
             }
+            return &python_v2;
             break;
 
-            // ---- Python 3
-            // ------------------------------------------------------------
+        // ---- Python 3 -------------------------------------------------------
         case 3:
             switch (minor) {
                 case 0:
@@ -329,7 +322,10 @@ getCPythonOffsets(int major, int minor)
 
                 default:
                     warnAboutUnsuportedVersion(major, minor);
-                    return LATEST_VERSION;
+                    // fallthrough to latest
+                case 12:
+                    return &python_v3_12;
+                    break;
             }
             break;
         default:
