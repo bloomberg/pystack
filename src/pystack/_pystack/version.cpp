@@ -101,7 +101,8 @@ py_threadv311()
             offsetof(T, next),
             offsetof(T, interp),
             offsetof(T, cframe),
-            offsetof(T, thread_id)};
+            offsetof(T, thread_id),
+            offsetof(T, native_thread_id)};
 }
 
 template<class T>
