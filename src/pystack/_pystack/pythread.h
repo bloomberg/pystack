@@ -61,7 +61,9 @@ class PyThread : public Thread
     std::shared_ptr<FrameObject> d_first_frame;
 
     // Methods
-    GilStatus calculateGilStatus(const std::shared_ptr<const AbstractProcessManager>& manager) const;
+    GilStatus calculateGilStatus(
+            PyThreadState& ts,
+            const std::shared_ptr<const AbstractProcessManager>& manager) const;
     GCStatus calculateGCStatus(
             PyThreadState& ts,
             const std::shared_ptr<const AbstractProcessManager>& manager) const;
