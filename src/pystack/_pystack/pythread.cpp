@@ -341,6 +341,7 @@ PyThread::calculateGCStatus(
     GCRuntimeState gcstate;
 
     switch (manager->minorVersion()) {
+        case 12:
         case 11:
         case 10:
         case 9: {
