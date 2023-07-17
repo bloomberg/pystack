@@ -162,7 +162,18 @@ LongObject::LongObject(
 
     _PyLongObject longobj;
     manager->copyObjectFromProcess(addr, &longobj);
-    ssize_t size = longobj.ob_base.ob_size;
+    ssize_t size;
+    bool negative;
+
+    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 12)) {
+        auto lv_tag = *reinterpret_cast<uintptr_t*>(&longobj.ob_base.ob_size);
+        negative = (lv_tag & 3) == 2;
+        size = lv_tag >> 3;
+    } else {
+        negative = longobj.ob_base.ob_size < 0;
+        size = std::abs(longobj.ob_base.ob_size);
+    }
+
     if (size == 0) {
         d_value = 0;
         return;
@@ -186,12 +197,12 @@ LongObject::LongObject(
      */
 
     std::vector<digit> digits;
-    digits.resize(std::abs(size));
+    digits.resize(size);
     manager->copyMemoryFromProcess(
             addr + offsetof(_PyLongObject, ob_digit),
-            sizeof(digit) * std::abs(size),
+            sizeof(digit) * size,
             digits.data());
-    for (ssize_t i = 0; i < std::abs(size); ++i) {
+    for (ssize_t i = 0; i < size; ++i) {
         long long factor;
         if (__builtin_mul_overflow(digits[i], (1Lu << (ssize_t)(shift * i)), &factor)) {
             d_overflowed = true;
@@ -203,7 +214,9 @@ LongObject::LongObject(
         }
     }
 
-    d_value = size < 0 ? -1 * d_value : d_value;
+    if (negative) {
+        d_value = -1 * d_value;
+    }
 }
 
 std::string
