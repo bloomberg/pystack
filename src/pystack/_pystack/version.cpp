@@ -142,6 +142,16 @@ py_gc()
 }
 
 template<class T>
+constexpr py_cframe_v
+py_cframe()
+{
+    return {
+            sizeof(T),
+            offsetof(T, current_frame),
+    };
+}
+
+template<class T>
 constexpr py_runtime_v
 py_runtime()
 {
@@ -259,6 +269,7 @@ python_v python_v3_11 = {
         py_isv311<Python3_11::PyInterpreterState>(),
         py_runtime<Python3_11::PyRuntimeState>(),
         py_gc<Python3_8::_gc_runtime_state>(),
+        py_cframe<Python3_11::CFrame>(),
 };
 
 const python_v*

@@ -93,6 +93,13 @@ struct py_gc_v
     FieldOffset<remote_addr_t> o_collecting;
 };
 
+struct py_cframe_v
+{
+    typedef CFrame Structure;
+    ssize_t size;
+    FieldOffset<remote_addr_t> current_frame;
+};
+
 struct python_v
 {
     py_type_v py_type;
@@ -102,6 +109,7 @@ struct python_v
     py_is_v py_is;
     py_runtime_v py_runtime;
     py_gc_v py_gc;
+    py_cframe_v py_cframe;
 
     template<typename T>
     inline const T& get() const;
@@ -121,6 +129,7 @@ define_python_v_get_specialization(py_thread);
 define_python_v_get_specialization(py_is);
 define_python_v_get_specialization(py_runtime);
 define_python_v_get_specialization(py_gc);
+define_python_v_get_specialization(py_cframe);
 
 #undef define_python_v_get_specialization
 
