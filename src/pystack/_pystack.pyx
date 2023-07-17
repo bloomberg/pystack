@@ -10,6 +10,7 @@ from typing import Dict
 from typing import Iterable
 from typing import List
 from typing import Optional
+from typing import Set
 from typing import Tuple
 from typing import TypeVar
 
@@ -236,7 +237,7 @@ cdef class CoreFileAnalyzer:
         return any(prefix in str(path) for prefix in self.ignored_libs)
 
     @intercept_runtime_errors(EngineError)
-    def missing_modules(self) -> List[str]:
+    def missing_modules(self) -> Set[str]:
         cdef set result = set()
         cdef set missing_mod_names = set()
         for mod in self._core_analyzer.get().missingModules():
