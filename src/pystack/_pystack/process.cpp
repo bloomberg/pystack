@@ -147,8 +147,7 @@ AbstractProcessManager::isValidInterpreterState(remote_addr_t addr) const
     garbage.
 
     If any of the previous steps fail, we continue with the next memory chunk
-    until we found the PyInterpreterState or we run our of chunks.
-
+    until we find the PyInterpreterState or we run out of chunks.
     */
     if (!isAddressValid(addr)) {
         return false;
@@ -360,7 +359,14 @@ AbstractProcessManager::getStringFromAddress(remote_addr_t addr) const
         len = unicode._base._base.length;
         buffer.resize(len);
 
-        data_addr = ((remote_addr_t)((char*)addr + sizeof(PyASCIIObject)));
+        size_t offset;
+        if (d_major > 3 || (d_major == 3 && d_minor >= 12)) {
+            offset = sizeof(Python3_12::PyASCIIObject);
+        } else {
+            offset = sizeof(Python3::PyASCIIObject);
+        }
+
+        data_addr = ((remote_addr_t)((char*)addr + offset));
         LOG(DEBUG) << std::hex << std::showbase << "Copying ASCII data for unicode object from address "
                    << data_addr;
         copyMemoryFromProcess(data_addr, len, buffer.data());
