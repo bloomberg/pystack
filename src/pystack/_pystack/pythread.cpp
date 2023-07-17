@@ -211,13 +211,14 @@ PyThread::getFrameAddr(
         const PyThreadState& ts)
 {
     if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
-        Python3_11::CFrame cframe;
         remote_addr_t cframe_addr = manager->getField(ts, &py_thread_v::o_frame);
         if (!manager->isAddressValid(cframe_addr)) {
             return reinterpret_cast<remote_addr_t>(nullptr);
         }
+
+        CFrame cframe;
         manager->copyObjectFromProcess(cframe_addr, &cframe);
-        return reinterpret_cast<remote_addr_t>(cframe.current_frame);
+        return manager->getField(cframe, &py_cframe_v::current_frame);
     } else {
         return manager->getField(ts, &py_thread_v::o_frame);
     }

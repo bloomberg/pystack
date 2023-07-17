@@ -169,4 +169,8 @@ typedef union {
     Python3_11::PyThreadState v3_11;
 } PyThreadState;
 
+union CFrame {
+    Python3_11::CFrame v3_11;
+};
+
 }  // namespace pystack
