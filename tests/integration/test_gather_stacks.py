@@ -268,10 +268,7 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
         for frame in main_thread.native_frames
         if frame_type(frame, main_thread.python_version) == NativeFrame.FrameType.EVAL
     ]
-    if python_has_inlined_eval_frames(major_version, minor_version):  # pragma: no cover
-        assert len(eval_frames) == 1
-    else:  # pragma: no cover
-        assert len(eval_frames) >= 4
+    assert len(eval_frames) == sum(frame.is_entry for frame in main_thread.frames)
     assert all("?" not in frame.symbol for frame in eval_frames)
     if any(frame.linenumber == 0 for frame in eval_frames):  # pragma: no cover
         assert all(frame.linenumber == 0 for frame in eval_frames)
@@ -302,12 +299,7 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
             for frame in thread.native_frames
             if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL
         ]
-        if python_has_inlined_eval_frames(
-            int(major_version), int(minor_version)
-        ):  # pragma: no cover
-            assert len(eval_frames) == 2
-        else:  # pragma: no cover
-            assert len(eval_frames) == 6
+        assert len(eval_frames) == sum(frame.is_entry for frame in thread.frames)
         assert all("?" not in frame.symbol for frame in eval_frames)
         if any(frame.linenumber == 0 for frame in eval_frames):  # pragma: no cover
             assert all(frame.linenumber == 0 for frame in eval_frames)
