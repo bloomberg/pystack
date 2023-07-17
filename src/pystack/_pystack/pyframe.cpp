@@ -44,14 +44,33 @@ FrameObject::FrameObject(
     d_prev = nullptr;
     d_next = nullptr;
 
+    d_is_shim = false;
+    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 12)) {
+        constexpr int FRAME_OWNED_BY_CSTACK = 3;
+        d_is_shim = manager->getField(frame, &py_frame_v::o_owner) == FRAME_OWNED_BY_CSTACK;
+    }
+
+    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
+        d_is_entry = false;  // Entry frames are detected below
+    } else {
+        d_is_entry = true;  // All frames are entry frames
+    }
+
     if (d_prev_addr && d_frame_no < FRAME_LIMIT) {
         LOG(DEBUG) << std::hex << std::showbase << "Attempting to obtain new frame # " << d_frame_no + 1
                    << " from address " << d_prev_addr;
         d_prev = std::make_unique<FrameObject>(manager, d_prev_addr, frame_no + 1);
-        d_prev->d_next = this;
+        // Skip artificial shim frames inserted before entry frames in 3.12+
+        while (d_prev && d_prev->d_is_shim) {
+            d_is_entry = true;
+            d_prev = d_prev->d_prev;
+        }
+        if (d_prev) {
+            d_prev->d_next = this;
+        }
     }
-    this->d_is_entry = true;
-    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
+
+    if (manager->majorVersion() == 3 && manager->minorVersion() == 11) {
         this->d_is_entry = manager->getField(frame, &py_frame_v::o_is_entry);
     }
 }

@@ -41,5 +41,6 @@ class FrameObject
     std::unordered_map<std::string, std::string> d_arguments{};
     std::unordered_map<std::string, std::string> d_locals{};
     bool d_is_entry;
+    bool d_is_shim;
 };
 }  // namespace pystack
