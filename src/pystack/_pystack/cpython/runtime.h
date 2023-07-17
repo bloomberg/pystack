@@ -226,11 +226,32 @@ typedef struct pyruntimestate
 } PyRuntimeState;
 }  // namespace Python3_11
 
+namespace Python3_12 {
+typedef struct pyruntimestate
+{
+    int _initialized;
+    int preinitializing;
+    int preinitialized;
+    int core_initialized;
+    int initialized;
+    PyThreadState* finalizing;
+
+    struct pyinterpreters
+    {
+        PyThread_type_lock mutex;
+        PyInterpreterState* head;
+        PyInterpreterState* main;
+        int64_t next_id;
+    } interpreters;
+} PyRuntimeState;
+}  // namespace Python3_12
+
 typedef union {
     Python3_7::PyRuntimeState v3_7;
     Python3_8::PyRuntimeState v3_8;
     Python3_9::PyRuntimeState v3_9;
-    Python3_9::PyRuntimeState v3_11;
+    Python3_11::PyRuntimeState v3_11;
+    Python3_12::PyRuntimeState v3_12;
 } PyRuntimeState;
 
 }  // namespace pystack

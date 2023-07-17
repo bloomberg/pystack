@@ -41,6 +41,7 @@ struct py_frame_v
     FieldOffset<uintptr_t> o_prev_instr;
     FieldOffset<PyObject* [1]> o_localsplus;
     FieldOffset<bool> o_is_entry;
+    FieldOffset<char> o_owner;
 };
 
 struct py_thread_v
@@ -84,6 +85,7 @@ struct py_is_v
     FieldOffset<remote_addr_t> o_modules;
     FieldOffset<remote_addr_t> o_sysdict;
     FieldOffset<remote_addr_t> o_builtins;
+    FieldOffset<remote_addr_t> o_gil_runtime_state;
 };
 
 struct py_gc_v

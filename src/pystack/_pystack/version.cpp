@@ -68,6 +68,20 @@ py_framev311()
 }
 
 template<class T>
+constexpr py_frame_v
+py_framev312()
+{
+    return {sizeof(T),
+            offsetof(T, previous),
+            offsetof(T, f_code),
+            0,
+            offsetof(T, prev_instr),
+            offsetof(T, localsplus),
+            0,
+            offsetof(T, owner)};
+}
+
+template<class T>
 constexpr py_thread_v
 py_thead_h()
 {
@@ -132,6 +146,20 @@ py_isv311()
 }
 
 template<class T>
+constexpr py_is_v
+py_isv312()
+{
+    return {sizeof(T),
+            offsetof(T, next),
+            offsetof(T, threads.head),
+            offsetof(T, gc),
+            offsetof(T, imports.modules),
+            offsetof(T, sysdict),
+            offsetof(T, builtins),
+            offsetof(T, ceval.gil)};
+}
+
+template<class T>
 constexpr py_gc_v
 py_gc()
 {
@@ -161,6 +189,17 @@ py_runtime()
             offsetof(T, interpreters.head),
             offsetof(T, gc),
             offsetof(T, gilstate.tstate_current._value),
+    };
+}
+
+template<class T>
+constexpr py_runtime_v
+py_runtimev312()
+{
+    return {
+            sizeof(T),
+            offsetof(T, finalizing),
+            offsetof(T, interpreters.head),
     };
 }
 
@@ -271,6 +310,21 @@ python_v python_v3_11 = {
         py_gc<Python3_8::_gc_runtime_state>(),
         py_cframe<Python3_11::CFrame>(),
 };
+
+// ---- Python 3.12 ------------------------------------------------------------
+
+python_v python_v3_12 = {
+        py_type<Python3_8::PyTypeObject>(),
+        py_codev311<Python3_12::PyCodeObject>(),
+        py_framev312<Python3_12::PyFrameObject>(),
+        py_threadv311<Python3_12::PyThreadState>(),
+        py_isv312<Python3_12::PyInterpreterState>(),
+        py_runtimev312<Python3_12::PyRuntimeState>(),
+        py_gc<Python3_8::_gc_runtime_state>(),
+        py_cframe<Python3_12::CFrame>(),
+};
+
+// -----------------------------------------------------------------------------
 
 const python_v*
 getCPythonOffsets(int major, int minor)
