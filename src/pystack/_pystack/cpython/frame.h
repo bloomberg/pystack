@@ -105,11 +105,33 @@ typedef struct _interpreter_frame
 
 }  // namespace Python3_11
 
+namespace Python3_12 {
+typedef signed char PyFrameState;
+
+typedef struct _interpreter_frame
+{
+    PyCodeObject* f_code;
+    struct _interpreter_frame* previous;
+    PyObject* f_funcobj;
+    PyObject* f_globals;
+    PyObject* f_builtins;
+    PyObject* f_locals;
+    PyObject* frame_obj;
+    _Py_CODEUNIT* prev_instr;
+    int stacktop;
+    uint16_t return_offset;
+    char owner;
+    PyObject* localsplus[1];
+} PyFrameObject;
+
+}  // namespace Python3_12
+
 typedef union {
     Python2::PyFrameObject v2;
     Python3_7::PyFrameObject v3_7;
     Python3_10::PyFrameObject v3_10;
     Python3_11::PyFrameObject v3_11;
+    Python3_12::PyFrameObject v3_12;
 } PyFrameObject;
 
 }  // namespace pystack

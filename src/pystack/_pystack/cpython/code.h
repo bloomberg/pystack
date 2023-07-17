@@ -125,12 +125,48 @@ typedef struct
 } PyCodeObject;
 }  // namespace Python3_11
 
+namespace Python3_12 {
+typedef uint16_t _Py_CODEUNIT;
+typedef struct
+{
+    PyObject_VAR_HEAD PyObject* co_consts;
+    PyObject* co_names;
+    PyObject* co_exceptiontable;
+    int co_flags;
+    int co_argcount;
+    int co_posonlyargcount;
+    int co_kwonlyargcount;
+    int co_stacksize;
+    int co_firstlineno;
+    int co_nlocalsplus;
+    int co_framesize;
+    int co_nlocals;
+    int co_ncellvars;
+    int co_nfreevars;
+    uint32_t co_version;
+    PyObject* co_localsplusnames;
+    PyObject* co_localspluskinds;
+    PyObject* co_filename;
+    PyObject* co_name;
+    PyObject* co_qualname;
+    PyObject* co_linetable;
+    PyObject* co_weakreflist;
+    void* _co_cached;
+    uint64_t _co_instrumentation_version;
+    void* _co_monitoring;
+    int _co_firsttraceable;
+    void* co_extra;
+    char co_code_adaptive[1];
+} PyCodeObject;
+}  // namespace Python3_12
+
 typedef union {
     Python2::PyCodeObject v2;
     Python3_3::PyCodeObject v3_3;
     Python3_6::PyCodeObject v3_6;
     Python3_8::PyCodeObject v3_8;
     Python3_11::PyCodeObject v3_11;
+    Python3_12::PyCodeObject v3_12;
 } PyCodeObject;
 
 }  // namespace pystack
