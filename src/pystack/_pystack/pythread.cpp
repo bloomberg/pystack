@@ -160,7 +160,7 @@ PyThread::getThreadTid(
     int the_tid = -1;
     if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
         manager->copyObjectFromProcess(
-                (remote_addr_t)(thread_addr + offsetof(Python3_11::PyThreadState, native_thread_id)),
+                (remote_addr_t)(thread_addr + manager->getFieldOffset(&py_thread_v::o_native_thread_id)),
                 &the_tid);
     } else {
         the_tid = inferTidFromPThreadStructure(manager, pthread_id);

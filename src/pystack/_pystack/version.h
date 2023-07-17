@@ -52,6 +52,7 @@ struct py_thread_v
     FieldOffset<remote_addr_t> o_interp;
     FieldOffset<remote_addr_t> o_frame;
     FieldOffset<unsigned long> o_thread_id;
+    FieldOffset<unsigned long> o_native_thread_id;
 };
 
 struct py_runtime_v
