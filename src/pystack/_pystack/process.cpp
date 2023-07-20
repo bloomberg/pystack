@@ -547,9 +547,9 @@ ProcessManager::ProcessManager(
 , d_tids(getProcessTids(pid))
 {
     if (blocking) {
-        d_manager = std::make_unique<BlockingProcessMemoryManager>(pid, d_tids);
+        d_manager = std::make_unique<BlockingProcessMemoryManager>(pid, d_tids, d_memory_maps);
     } else {
-        d_manager = std::make_unique<ProcessMemoryManager>(pid);
+        d_manager = std::make_unique<ProcessMemoryManager>(pid, d_memory_maps);
     }
     d_analyzer = analyzer;
     d_unwinder = std::make_unique<Unwinder>(analyzer);
