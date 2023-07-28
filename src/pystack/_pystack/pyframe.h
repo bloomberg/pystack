@@ -34,9 +34,7 @@ class FrameObject
     const std::shared_ptr<const AbstractProcessManager> d_manager{};
     remote_addr_t d_addr{};
     ssize_t d_frame_no{};
-    remote_addr_t d_prev_addr{};
     std::shared_ptr<FrameObject> d_prev{nullptr};
-    FrameObject* d_next{nullptr};
     std::shared_ptr<CodeObject> d_code{nullptr};
     std::unordered_map<std::string, std::string> d_arguments{};
     std::unordered_map<std::string, std::string> d_locals{};
