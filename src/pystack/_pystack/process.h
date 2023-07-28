@@ -64,8 +64,7 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     std::pair<int, int> findPythonVersion() const;
 
     void setPythonVersion(const std::pair<int, int>& version);
-    int majorVersion() const;
-    int minorVersion() const;
+    bool versionIsAtLeast(int required_major, int required_minor) const;
     const python_v& offsets() const;
 
     template<typename OffsetsStruct, typename FieldPointer>

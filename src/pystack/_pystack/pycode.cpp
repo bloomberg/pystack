@@ -112,14 +112,14 @@ getLocationInfo(
     LOG(DEBUG) << std::hex << std::showbase << "Copying lnotab data from address " << lnotab_addr;
     std::string lnotab = manager->getBytesFromAddress(lnotab_addr);
 
-    assert(manager->majorVersion() > 3 || manager->minorVersion() >= 11 || lnotab.size() % 2 == 0);
+    assert(manager->versionIsAtLeast(3, 11) || lnotab.size() % 2 == 0);
     std::string::size_type last_executed_instruction = last_instruction_index;
 
     LocationInfo location_info = LocationInfo{0, 0, 0, 0};
 
     // Check out https://github.com/python/cpython/blob/main/Objects/lnotab_notes.txt for the format of
     // the lnotab table in different versions of the interpreter.
-    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
+    if (manager->versionIsAtLeast(3, 11)) {
         uintptr_t code_adaptive = code_addr + manager->getFieldOffset(&py_code_v::o_code_adaptive);
         ptrdiff_t addrq =
                 (reinterpret_cast<uint16_t*>(last_instruction_index)
@@ -132,10 +132,7 @@ getLocationInfo(
             location_info.column = posinfo.column;
             location_info.end_column = posinfo.end_column;
         }
-    } else if (
-            manager->majorVersion() > 3
-            || (manager->majorVersion() == 3 && manager->minorVersion() == 10))
-    {
+    } else if (manager->versionIsAtLeast(3, 10)) {
         // Word-code is two bytes, so the actual limit in the table 2 * the instruction index
         last_executed_instruction <<= 1;
         for (std::string::size_type i = 0, current_instruction = 0; i < lnotab.size();) {

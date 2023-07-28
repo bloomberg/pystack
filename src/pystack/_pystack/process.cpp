@@ -506,16 +506,10 @@ AbstractProcessManager::setPythonVersion(const std::pair<int, int>& version)
     d_minor = version.second;
 }
 
-int
-AbstractProcessManager::majorVersion() const
+bool
+AbstractProcessManager::versionIsAtLeast(int required_major, int required_minor) const
 {
-    return d_major;
-}
-
-int
-AbstractProcessManager::minorVersion() const
-{
-    return d_minor;
+    return d_major > required_major || (d_major == required_major && d_minor >= required_minor);
 }
 
 const python_v&
