@@ -38,11 +38,10 @@ FrameObject::FrameObject(
     d_code = std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
 
     d_addr = addr;
-    d_prev_addr = manager->getField(frame, &py_frame_v::o_back);
-    LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << d_prev_addr;
+    auto prev_addr = manager->getField(frame, &py_frame_v::o_back);
+    LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << prev_addr;
     d_frame_no = frame_no;
     d_prev = nullptr;
-    d_next = nullptr;
 
     d_is_shim = false;
     if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 12)) {
@@ -56,17 +55,14 @@ FrameObject::FrameObject(
         d_is_entry = true;  // All frames are entry frames
     }
 
-    if (d_prev_addr && d_frame_no < FRAME_LIMIT) {
+    if (prev_addr && d_frame_no < FRAME_LIMIT) {
         LOG(DEBUG) << std::hex << std::showbase << "Attempting to obtain new frame # " << d_frame_no + 1
-                   << " from address " << d_prev_addr;
-        d_prev = std::make_unique<FrameObject>(manager, d_prev_addr, frame_no + 1);
+                   << " from address " << prev_addr;
+        d_prev = std::make_unique<FrameObject>(manager, prev_addr, frame_no + 1);
         // Skip artificial shim frames inserted before entry frames in 3.12+
         while (d_prev && d_prev->d_is_shim) {
             d_is_entry = true;
             d_prev = d_prev->d_prev;
-        }
-        if (d_prev) {
-            d_prev->d_next = this;
         }
     }
 
