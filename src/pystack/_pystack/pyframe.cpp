@@ -44,7 +44,7 @@ FrameObject::getIsShim(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         const PyFrameObject& frame)
 {
-    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 12)) {
+    if (manager->versionIsAtLeast(3, 12)) {
         constexpr int FRAME_OWNED_BY_CSTACK = 3;
         return manager->getField(frame, &py_frame_v::o_owner) == FRAME_OWNED_BY_CSTACK;
     }
@@ -62,7 +62,7 @@ FrameObject::getCode(
                << py_code_addr;
 
     uintptr_t last_instruction;
-    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
+    if (manager->versionIsAtLeast(3, 11)) {
         last_instruction = manager->getField(frame, &py_frame_v::o_prev_instr);
     } else {
         last_instruction = manager->getField(frame, &py_frame_v::o_lasti);
@@ -85,14 +85,14 @@ FrameObject::getPrevAndIsEntry(
     }
 
     bool is_entry;
-    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 12)) {
+    if (manager->versionIsAtLeast(3, 12)) {
         // This is an entry frame if the previous frame was a shim.
         // The previous frame should also be skipped in that case.
         is_entry = prev && prev->d_is_shim;
         if (is_entry) {
             prev = prev->d_prev;
         }
-    } else if (manager->majorVersion() == 3 && manager->minorVersion() == 11) {
+    } else if (manager->versionIsAtLeast(3, 11)) {
         // This is an entry frame if it has an entry flag set.
         is_entry = manager->getField(frame, &py_frame_v::o_is_entry);
     } else {
