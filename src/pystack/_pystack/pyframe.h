@@ -30,6 +30,18 @@ class FrameObject
     void resolveLocalVariables();
 
   private:
+    // Methods
+    static bool
+    getIsShim(const std::shared_ptr<const AbstractProcessManager>& manager, const PyFrameObject& frame);
+
+    static std::unique_ptr<CodeObject>
+    getCode(const std::shared_ptr<const AbstractProcessManager>& manager, const PyFrameObject& frame);
+
+    static std::pair<std::shared_ptr<FrameObject>, bool> getPrevAndIsEntry(
+            const std::shared_ptr<const AbstractProcessManager>& manager,
+            const PyFrameObject& frame,
+            ssize_t frame_no);
+
     // Data members
     const std::shared_ptr<const AbstractProcessManager> d_manager{};
     remote_addr_t d_addr{};

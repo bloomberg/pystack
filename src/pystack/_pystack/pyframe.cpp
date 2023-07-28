@@ -24,6 +24,38 @@ FrameObject::FrameObject(
     LOG(DEBUG) << std::hex << std::showbase << "Copying frame struct from address " << addr;
 
     manager->copyMemoryFromProcess(addr, manager->offsets().py_frame.size, &frame);
+
+    d_addr = addr;
+    d_frame_no = frame_no;
+    d_is_shim = getIsShim(manager, frame);
+
+    ssize_t next_frame_no = frame_no + 1;
+    if (d_is_shim) {
+        LOG(DEBUG) << "Skipping over a shim frame inserted by the interpreter";
+        next_frame_no = frame_no;
+    } else {
+        d_code = getCode(manager, frame);
+    }
+    std::tie(d_prev, d_is_entry) = getPrevAndIsEntry(manager, frame, next_frame_no);
+}
+
+bool
+FrameObject::getIsShim(
+        const std::shared_ptr<const AbstractProcessManager>& manager,
+        const PyFrameObject& frame)
+{
+    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 12)) {
+        constexpr int FRAME_OWNED_BY_CSTACK = 3;
+        return manager->getField(frame, &py_frame_v::o_owner) == FRAME_OWNED_BY_CSTACK;
+    }
+    return false;  // Versions before 3.12 don't have shim frames.
+}
+
+std::unique_ptr<CodeObject>
+FrameObject::getCode(
+        const std::shared_ptr<const AbstractProcessManager>& manager,
+        const PyFrameObject& frame)
+{
     remote_addr_t py_code_addr = manager->getField(frame, &py_frame_v::o_code);
 
     LOG(DEBUG) << std::hex << std::showbase << "Attempting to construct code object from address "
@@ -35,40 +67,40 @@ FrameObject::FrameObject(
     } else {
         last_instruction = manager->getField(frame, &py_frame_v::o_lasti);
     }
-    d_code = std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
+    return std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
+}
 
-    d_addr = addr;
+std::pair<std::shared_ptr<FrameObject>, bool>
+FrameObject::getPrevAndIsEntry(
+        const std::shared_ptr<const AbstractProcessManager>& manager,
+        const PyFrameObject& frame,
+        ssize_t next_frame_no)
+{
     auto prev_addr = manager->getField(frame, &py_frame_v::o_back);
     LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << prev_addr;
-    d_frame_no = frame_no;
-    d_prev = nullptr;
 
-    d_is_shim = false;
+    std::shared_ptr<FrameObject> prev;
+    if (prev_addr) {
+        prev = std::make_shared<FrameObject>(manager, prev_addr, next_frame_no);
+    }
+
+    bool is_entry;
     if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 12)) {
-        constexpr int FRAME_OWNED_BY_CSTACK = 3;
-        d_is_shim = manager->getField(frame, &py_frame_v::o_owner) == FRAME_OWNED_BY_CSTACK;
-    }
-
-    if (manager->majorVersion() > 3 || (manager->majorVersion() == 3 && manager->minorVersion() >= 11)) {
-        d_is_entry = false;  // Entry frames are detected below
-    } else {
-        d_is_entry = true;  // All frames are entry frames
-    }
-
-    if (prev_addr && d_frame_no < FRAME_LIMIT) {
-        LOG(DEBUG) << std::hex << std::showbase << "Attempting to obtain new frame # " << d_frame_no + 1
-                   << " from address " << prev_addr;
-        d_prev = std::make_unique<FrameObject>(manager, prev_addr, frame_no + 1);
-        // Skip artificial shim frames inserted before entry frames in 3.12+
-        while (d_prev && d_prev->d_is_shim) {
-            d_is_entry = true;
-            d_prev = d_prev->d_prev;
+        // This is an entry frame if the previous frame was a shim.
+        // The previous frame should also be skipped in that case.
+        is_entry = prev && prev->d_is_shim;
+        if (is_entry) {
+            prev = prev->d_prev;
         }
+    } else if (manager->majorVersion() == 3 && manager->minorVersion() == 11) {
+        // This is an entry frame if it has an entry flag set.
+        is_entry = manager->getField(frame, &py_frame_v::o_is_entry);
+    } else {
+        // This is an entry frame, as all frames prior to 3.11 were.
+        is_entry = true;
     }
 
-    if (manager->majorVersion() == 3 && manager->minorVersion() == 11) {
-        this->d_is_entry = manager->getField(frame, &py_frame_v::o_is_entry);
-    }
+    return std::make_pair(prev, is_entry);
 }
 
 void
