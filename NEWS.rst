@@ -8,6 +8,17 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.2.0 (2023-07-31)
+--------------------------
+
+Features
+~~~~~~~~
+
+- Add support for Python 3.12 (#108)
+- Improve the performance of reading memory from running processes (#124)
+- Improve the performance of reading memory from core files (#126)
+
+
 pystack 1.1.0 (2023-07-10)
 --------------------------
 
