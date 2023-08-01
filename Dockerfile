@@ -81,7 +81,7 @@ COPY ["requirements-test.txt", "requirements-extra.txt", "requirements-docs.txt"
 
 # Install Python packages
 RUN python3.10 -m venv /venv \
-    && /venv/bin/python -m pip install -U pip wheel setuptools cython \
+    && /venv/bin/python -m pip install -U pip wheel setuptools cython pkgconfig \
     && /venv/bin/python -m pip install -U -r /tmp/requirements-test.txt -r /tmp/requirements-extra.txt
 
 # Set environment variables

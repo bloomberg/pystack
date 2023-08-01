@@ -57,7 +57,6 @@ library_flags = {"libraries": ["elf", "dw"]}
 
 try:
     library_flags = pkgconfig.parse("libelf libdw")
-    library_flags = {"libraries": library_flags["libraries"]}
 except EnvironmentError as e:
     print("pkg-config not found.", e)
     print("Falling back to static flags.")
@@ -81,12 +80,12 @@ PYSTACK_EXTENSION = setuptools.Extension(
         "src/pystack/_pystack/unwinder.cpp",
         "src/pystack/_pystack/version.cpp",
     ],
-    libraries=library_flags["libraries"],
     include_dirs=["src"],
     language="c++",
     extra_compile_args=["-std=c++17"],
     extra_link_args=["-std=c++17"],
     define_macros=DEFINE_MACROS,
+    **library_flags,
 )
 
 PYSTACK_EXTENSION.libraries.extend(["dl", "stdc++fs"])
