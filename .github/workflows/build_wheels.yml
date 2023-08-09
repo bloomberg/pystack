@@ -235,7 +235,7 @@ jobs:
           path: dist
       - name: Set up dependencies
         run: |
-          pacman -Sy --noconfirm \
+          pacman -Syu --noconfirm \
             gdb \
             gcc \
             file \
