@@ -41,6 +41,7 @@ html_additional_pages = {
     "index": "index.html",
 }
 root_doc = "overview"
+html_favicon = "favicon.ico"
 
 # -- Options for smartquotes ----------------------------------------------------------
 
