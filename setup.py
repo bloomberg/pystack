@@ -80,7 +80,6 @@ PYSTACK_EXTENSION = setuptools.Extension(
         "src/pystack/_pystack/unwinder.cpp",
         "src/pystack/_pystack/version.cpp",
     ],
-    include_dirs=["src"],
     language="c++",
     extra_compile_args=["-std=c++17"],
     extra_link_args=["-std=c++17"],
