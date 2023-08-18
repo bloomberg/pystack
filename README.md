@@ -54,6 +54,8 @@ PyStack has the following amazing features:
 
 At this time only Linux is supported.
 
+It can be found on the [Arch User Repository](https://aur.archlinux.org/packages/python-pystack).
+
 ## Building from source
 
 If you wish to build PyStack from source, you need the following binary dependencies in your
