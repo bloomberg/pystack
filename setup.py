@@ -10,7 +10,7 @@ from Cython.Build import cythonize
 IS_LINUX = "linux" in platform
 
 if not IS_LINUX:
-    raise RuntimeError(f"memray does not support this platform ({platform})")
+    raise RuntimeError(f"pystack does not support this platform ({platform})")
 
 install_requires = []
 
