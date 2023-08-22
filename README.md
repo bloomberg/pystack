@@ -148,6 +148,7 @@ options:
   --native-all   Include native (C) frames from threads not registered with the interpreter (implies --native)
   --locals       Show local variables for each frame in the stack trace
   --exhaustive   Use all possible methods to obtain the Python stack info (may be slow)
+  --self         Introspect the same process that invoke this program
 ```
 
 To use PyStack, you just need to provide the PID of the process:
