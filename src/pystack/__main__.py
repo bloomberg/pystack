@@ -172,12 +172,6 @@ def generate_cli_parser() -> argparse.ArgumentParser:
         default=False,
         help="Use all possible methods to obtain the Python stack info (may be slow)",
     )
-    remote_parser.add_argument(
-        "--self",
-        action="store_true",
-        default=False,
-        help="Introspect the same process that invoke this program",
-    )
     core_parser = subparsers.add_parser(
         "core",
         help="Analyze a core dump file given its location and the executable",
