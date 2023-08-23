@@ -134,7 +134,7 @@ where the running process must not be impacted in any way (other than being temp
 though `--no-block` can avoid even that). There are several options available:
 
 ```shell
-usage: pystack remote [-h] [-v] [--no-color] [--no-block] [--native] [--native-all] [--locals] [--exhaustive] [--self] pid
+usage: pystack remote [-h] [-v] [--no-color] [--no-block] [--native] [--native-all] [--locals] [--exhaustive] pid
 
 positional arguments:
   pid            The PID of the remote process
