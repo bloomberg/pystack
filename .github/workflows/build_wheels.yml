@@ -3,8 +3,6 @@ name: Wheels
 on:
   push:
   pull_request:
-    paths-ignore:
-      - "CONTRIBUTING.md"
   release:
     types:
       - published
