@@ -204,8 +204,9 @@ jobs:
             g++ \
             file \
             python3 \
-            python3-devel \
-            python3-debug
+            python3-devel
+          dnf debuginfo-install -y \
+            python3
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip

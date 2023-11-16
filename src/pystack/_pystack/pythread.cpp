@@ -96,9 +96,20 @@ findPthreadTidOffset(
         auto pthread_id_addr = manager->getField(current_thread, &py_thread_v::o_thread_id);
 
         // Attempt to locate a field in the pthread struct that's equal to the pid.
-        uintptr_t buffer[200];
-        manager->copyObjectFromProcess(pthread_id_addr, &buffer);
-        for (int i = 0; i < 200; i++) {
+        uintptr_t buffer[100];
+        size_t buffer_size = sizeof(buffer);
+        while (buffer_size > 0) {
+            try {
+                LOG(DEBUG) << "Trying to copy a buffer of " << buffer_size << " bytes to get pthread ID";
+                manager->copyMemoryFromProcess(pthread_id_addr, buffer_size, &buffer);
+                break;
+            } catch (const RemoteMemCopyError& ex) {
+                LOG(DEBUG) << "Failed to copy buffer to get pthread ID";
+                buffer_size /= 2;
+            }
+        }
+        LOG(DEBUG) << "Copied a buffer of " << buffer_size << " bytes to get pthread ID";
+        for (int i = 0; i < buffer_size / sizeof(uintptr_t); i++) {
             if (static_cast<pid_t>(buffer[i]) == manager->Pid()) {
                 off_t offset = sizeof(uintptr_t) * i;
                 LOG(DEBUG) << "Tid offset located by scanning at offset " << std::showbase << std::hex
