@@ -119,6 +119,12 @@ ProcessTracer::~ProcessTracer()
     detachFromProcess();
 }
 
+std::vector<int>
+ProcessTracer::getTids() const
+{
+    return d_tids;
+}
+
 AbstractProcessManager::AbstractProcessManager(
         pid_t pid,
         std::vector<VirtualMap>&& memory_maps,
@@ -590,8 +596,12 @@ ProcessManager::ProcessManager(
         MemoryMapInformation map_info)
 : AbstractProcessManager(pid, std::move(memory_maps), std::move(map_info))
 , tracer(tracer)
-, d_tids(getProcessTids(pid))
 {
+    if (tracer) {
+        d_tids = tracer->getTids();
+    } else {
+        d_tids = getProcessTids(pid);
+    }
     d_manager = std::make_unique<ProcessMemoryManager>(pid, d_memory_maps);
     d_analyzer = analyzer;
     d_unwinder = std::make_unique<Unwinder>(analyzer);

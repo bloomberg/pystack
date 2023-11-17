@@ -38,6 +38,9 @@ class ProcessTracer
     // Destructors
     ~ProcessTracer();
 
+    // Methods
+    std::vector<int> getTids() const;
+
   private:
     // Data members
     std::vector<int> d_tids;
