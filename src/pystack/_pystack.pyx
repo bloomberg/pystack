@@ -654,8 +654,6 @@ def get_process_threads(
         method,
         native_mode,
     )
-    virtual_maps = list(generate_maps_for_process(pid))
-    map_info = parse_maps_file(pid, virtual_maps)
 
     try:
         with ProcessManager.create_from_pid(pid, stop_process) as manager:
