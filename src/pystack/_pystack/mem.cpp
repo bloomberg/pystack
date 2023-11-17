@@ -4,9 +4,7 @@
 #include <fstream>
 #include <ios>
 #include <memory>
-#include <sys/ptrace.h>
 #include <sys/uio.h>
-#include <sys/wait.h>
 #include <syscall.h>
 #include <system_error>
 #include <unistd.h>
@@ -289,51 +287,6 @@ ProcessMemoryManager::isAddressValid(remote_addr_t addr, const VirtualMap& map) 
         return false;
     }
     return map.Start() <= addr && addr < map.End();
-}
-
-BlockingProcessMemoryManager::BlockingProcessMemoryManager(
-        pid_t pid,
-        const std::vector<int>& tids,
-        const std::vector<VirtualMap>& vmaps)
-: ProcessMemoryManager(pid, vmaps)
-, d_tids(tids)
-{
-    for (auto& tid : d_tids) {
-        LOG(INFO) << "Trying to stop thread " << tid;
-        long ret = ptrace(PTRACE_ATTACH, tid, nullptr, nullptr);
-        if (ret < 0) {
-            int error = errno;
-            detachFromProcess();
-            if (error == EPERM) {
-                throw std::runtime_error(PERM_MESSAGE);
-            }
-            throw std::system_error(error, std::generic_category());
-        }
-        LOG(INFO) << "Waiting for thread " << tid << " to be stopped";
-        ret = waitpid(tid, nullptr, WUNTRACED);
-        if (ret < 0) {
-            // In some old kernels is not possible to use WUNTRACED with
-            // threads (only the main thread will return a non zero value).
-            if (tid == pid || errno != ECHILD) {
-                detachFromProcess();
-            }
-        }
-        LOG(INFO) << "Process " << tid << " attached";
-    }
-}
-
-void
-BlockingProcessMemoryManager::detachFromProcess()
-{
-    for (auto& tid : d_tids) {
-        LOG(INFO) << "Detaching from thread " << tid;
-        ptrace(PTRACE_DETACH, tid, nullptr, nullptr);
-    }
-}
-
-BlockingProcessMemoryManager::~BlockingProcessMemoryManager()
-{
-    detachFromProcess();
 }
 
 CorefileRemoteMemoryManager::CorefileRemoteMemoryManager(

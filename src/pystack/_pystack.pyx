@@ -24,7 +24,6 @@ from _pystack.elf_common cimport SectionInfo
 from _pystack.elf_common cimport getSectionInfo
 from _pystack.logging cimport initializePythonLoggerInterface
 from _pystack.mem cimport AbstractRemoteMemoryManager
-from _pystack.mem cimport BlockingProcessMemoryManager
 from _pystack.mem cimport MemoryMapInformation as CppMemoryMapInformation
 from _pystack.mem cimport ProcessMemoryManager
 from _pystack.mem cimport VirtualMap as CppVirtualMap
@@ -32,6 +31,7 @@ from _pystack.process cimport AbstractProcessManager
 from _pystack.process cimport CoreFileProcessManager
 from _pystack.process cimport InterpreterStatus
 from _pystack.process cimport ProcessManager as NativeProcessManager
+from _pystack.process cimport ProcessTracer
 from _pystack.process cimport remote_addr_t
 from _pystack.pycode cimport CodeObject
 from _pystack.pyframe cimport FrameObject
@@ -289,6 +289,10 @@ cdef class ProcessManager:
 
     @classmethod
     def create_from_pid(cls, int pid, bint stop_process):
+        cdef shared_ptr[ProcessTracer] tracer
+        if stop_process:
+            tracer = make_shared[ProcessTracer](pid)
+
         virtual_maps = list(generate_maps_for_process(pid))
         map_info = parse_maps_file(pid, virtual_maps)
 
@@ -297,7 +301,7 @@ cdef class ProcessManager:
         ](pid)
         cdef shared_ptr[AbstractProcessManager] native_manager = <shared_ptr[AbstractProcessManager]> (
             make_shared[NativeProcessManager](
-                pid, stop_process, analyzer,
+                pid, tracer, analyzer,
                 _pymaps_to_maps(virtual_maps),
                 _pymapinfo_to_mapinfo(map_info),
             )

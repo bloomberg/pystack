@@ -27,6 +27,25 @@ struct InvalidRemoteObject : public InvalidCopiedMemory
     }
 };
 
+class ProcessTracer
+{
+  public:
+    // Constructors
+    ProcessTracer(pid_t pid);
+    ProcessTracer(const ProcessTracer&) = delete;
+    ProcessTracer& operator=(const ProcessTracer&) = delete;
+
+    // Destructors
+    ~ProcessTracer();
+
+  private:
+    // Data members
+    std::vector<int> d_tids;
+
+    // Methods
+    void detachFromProcess();
+};
+
 class AbstractProcessManager : public std::enable_shared_from_this<AbstractProcessManager>
 {
   public:
@@ -118,7 +137,7 @@ class ProcessManager : public AbstractProcessManager
     // Constructors
     ProcessManager(
             pid_t pid,
-            bool blocking,
+            const std::shared_ptr<ProcessTracer>& tracer,
             const std::shared_ptr<ProcessAnalyzer>& analyzer,
             std::vector<VirtualMap> memory_maps,
             MemoryMapInformation map_info);
@@ -128,6 +147,7 @@ class ProcessManager : public AbstractProcessManager
 
   private:
     // Data members
+    std::shared_ptr<ProcessTracer> tracer;
     std::vector<int> d_tids;
 };
 

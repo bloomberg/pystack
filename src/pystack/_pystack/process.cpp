@@ -6,6 +6,8 @@
 #include <iostream>
 #include <stdexcept>
 #include <string>
+#include <sys/ptrace.h>
+#include <sys/wait.h>
 #include <utility>
 #include <vector>
 
@@ -22,6 +24,8 @@
 #include "version.h"
 
 namespace {
+
+static const std::string PERM_MESSAGE = "Operation not permitted";
 
 class DirectoryReader
 {
@@ -72,6 +76,47 @@ getProcessTids(pid_t pid)
             std::back_inserter(tids),
             [](const std::string& file) -> int { return std::stoi(file); });
     return tids;
+}
+
+ProcessTracer::ProcessTracer(pid_t pid)
+: d_tids(getProcessTids(pid))
+{
+    for (auto& tid : d_tids) {
+        LOG(INFO) << "Trying to stop thread " << tid;
+        long ret = ptrace(PTRACE_ATTACH, tid, nullptr, nullptr);
+        if (ret < 0) {
+            int error = errno;
+            detachFromProcess();
+            if (error == EPERM) {
+                throw std::runtime_error(PERM_MESSAGE);
+            }
+            throw std::system_error(error, std::generic_category());
+        }
+        LOG(INFO) << "Waiting for thread " << tid << " to be stopped";
+        ret = waitpid(tid, nullptr, WUNTRACED);
+        if (ret < 0) {
+            // In some old kernels is not possible to use WUNTRACED with
+            // threads (only the main thread will return a non zero value).
+            if (tid == pid || errno != ECHILD) {
+                detachFromProcess();
+            }
+        }
+        LOG(INFO) << "Process " << tid << " attached";
+    }
+}
+
+void
+ProcessTracer::detachFromProcess()
+{
+    for (auto& tid : d_tids) {
+        LOG(INFO) << "Detaching from thread " << tid;
+        ptrace(PTRACE_DETACH, tid, nullptr, nullptr);
+    }
+}
+
+ProcessTracer::~ProcessTracer()
+{
+    detachFromProcess();
 }
 
 AbstractProcessManager::AbstractProcessManager(
@@ -539,18 +584,15 @@ AbstractProcessManager::findInterpreterStateFromElfData() const
 
 ProcessManager::ProcessManager(
         pid_t pid,
-        bool blocking,
+        const std::shared_ptr<ProcessTracer>& tracer,
         const std::shared_ptr<ProcessAnalyzer>& analyzer,
         std::vector<VirtualMap> memory_maps,
         MemoryMapInformation map_info)
 : AbstractProcessManager(pid, std::move(memory_maps), std::move(map_info))
+, tracer(tracer)
 , d_tids(getProcessTids(pid))
 {
-    if (blocking) {
-        d_manager = std::make_unique<BlockingProcessMemoryManager>(pid, d_tids, d_memory_maps);
-    } else {
-        d_manager = std::make_unique<ProcessMemoryManager>(pid, d_memory_maps);
-    }
+    d_manager = std::make_unique<ProcessMemoryManager>(pid, d_memory_maps);
     d_analyzer = analyzer;
     d_unwinder = std::make_unique<Unwinder>(analyzer);
 }

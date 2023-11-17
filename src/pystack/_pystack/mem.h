@@ -179,26 +179,6 @@ class ProcessMemoryManager : public AbstractRemoteMemoryManager
     ssize_t readChunk(remote_addr_t addr, size_t len, char* dst) const;
 };
 
-class BlockingProcessMemoryManager : public ProcessMemoryManager
-{
-  public:
-    // Constructors
-    explicit BlockingProcessMemoryManager(
-            pid_t pid,
-            const std::vector<int>& tids,
-            const std::vector<VirtualMap>& vmaps);
-
-    // Destructors
-    ~BlockingProcessMemoryManager() override;
-
-  private:
-    // Data members
-    std::vector<int> d_tids;
-
-    // Methods
-    void detachFromProcess();
-};
-
 struct SimpleVirtualMap
 {
     uintptr_t start;
