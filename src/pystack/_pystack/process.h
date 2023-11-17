@@ -7,6 +7,7 @@
 #include <stdexcept>
 #include <unistd.h>
 #include <unordered_map>
+#include <unordered_set>
 #include <utility>
 #include <vector>
 
@@ -43,7 +44,7 @@ class ProcessTracer
 
   private:
     // Data members
-    std::vector<int> d_tids;
+    std::unordered_set<int> d_tids;
 
     // Methods
     void detachFromProcess();
