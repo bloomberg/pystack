@@ -17,6 +17,9 @@ cdef extern from "process.h" namespace "pystack::AbstractProcessManager":
         UNKNOWN
 
 cdef extern from "process.h" namespace "pystack":
+    cdef cppclass ProcessTracer:
+        pass
+
     cdef cppclass AbstractProcessManager:
         remote_addr_t scanBSS() except+
         remote_addr_t scanHeap() except+
@@ -30,7 +33,7 @@ cdef extern from "process.h" namespace "pystack":
         void setPythonVersion(pair[int, int] version)
 
     cdef cppclass ProcessManager(AbstractProcessManager):
-        ProcessManager(int pid, int blocking, shared_ptr[ProcessAnalyzer] analyzer, vector[VirtualMap] memory_maps, MemoryMapInformation map_info) except+
+        ProcessManager(int pid, shared_ptr[ProcessTracer] tracer, shared_ptr[ProcessAnalyzer] analyzer, vector[VirtualMap] memory_maps, MemoryMapInformation map_info) except+
 
     cdef cppclass CoreFileProcessManager(AbstractProcessManager):
         CoreFileProcessManager(int pid, shared_ptr[CoreFileAnalyzer] analyzer, vector[VirtualMap] memory_maps, MemoryMapInformation map_info) except+

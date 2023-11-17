@@ -14,11 +14,6 @@ cdef extern from "mem.h" namespace "pystack":
         ssize_t copyMemoryFromProcess(remote_addr_t addr, size_t size, void *destination) except+
 
 
-    cdef cppclass BlockingProcessMemoryManager(ProcessMemoryManager):
-        BlockingProcessMemoryManager(int pid, vector[int]d_tids) except+
-        ssize_t copyMemoryFromProcess(remote_addr_t addr, size_t size, void *destination) except+
-
-
     struct SimpleVirtualMap:
         uintptr_t start
         uintptr_t end
