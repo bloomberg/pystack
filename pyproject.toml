@@ -56,6 +56,7 @@ before-all = [
   "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
   "tar -xf elfutils.tar.bz2",
   "cd elfutils-$VERS",
+  "patch libdwfl/dwfl_segment_report_module.c < {package}/build_scripts/elfutils_contiguous_segments.diff",
   "CFLAGS='-w' ./configure --enable-libdebuginfod=dummy --disable-debuginfod --prefix=/usr --libdir=/usr/lib64",
   "make install"
 ]
@@ -93,6 +94,7 @@ before-all = [
   "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
   "tar -xf elfutils.tar.bz2",
   "cd elfutils-$VERS",
+  "patch libdwfl/dwfl_segment_report_module.c < {package}/build_scripts/elfutils_contiguous_segments.diff",
   "CFLAGS='-w -DFNM_EXTMATCH=0' ./configure --prefix=/usr --disable-nls --disable-libdebuginfod --disable-debuginfod --with-zstd",
   "make install"
 ]
