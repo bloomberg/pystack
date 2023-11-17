@@ -87,7 +87,7 @@ class NativeReportingMode(enum.Enum):
     ALL = 1000
 
 
-cdef api void log_with_python(const char* message, int level):
+cdef api void log_with_python(const char* message, int level) noexcept:
     with contextlib.suppress(UnicodeDecodeError):
         LOGGER.log(level, message)
 
