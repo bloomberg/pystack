@@ -79,30 +79,60 @@ getProcessTids(pid_t pid)
 }
 
 ProcessTracer::ProcessTracer(pid_t pid)
-: d_tids(getProcessTids(pid))
 {
-    for (auto& tid : d_tids) {
-        LOG(INFO) << "Trying to stop thread " << tid;
-        long ret = ptrace(PTRACE_ATTACH, tid, nullptr, nullptr);
-        if (ret < 0) {
-            int error = errno;
-            detachFromProcess();
-            if (error == EPERM) {
-                throw std::runtime_error(PERM_MESSAGE);
+    std::unordered_map<int, int> error_by_tid;
+
+    bool found_new_tid = true;
+    while (found_new_tid) {
+        found_new_tid = false;
+
+        auto tids = getProcessTids(pid);
+        for (auto& tid : tids) {
+            if (d_tids.count(tid)) {
+                continue;  // already stopped
             }
-            throw std::system_error(error, std::generic_category());
-        }
-        LOG(INFO) << "Waiting for thread " << tid << " to be stopped";
-        ret = waitpid(tid, nullptr, WUNTRACED);
-        if (ret < 0) {
-            // In some old kernels is not possible to use WUNTRACED with
-            // threads (only the main thread will return a non zero value).
-            if (tid == pid || errno != ECHILD) {
+
+            auto err_it = error_by_tid.find(tid);
+            if (err_it != error_by_tid.end()) {
+                // We got an error for this TID on the last iteration.
+                // Since we found the TID again this iteration, it still
+                // belongs to us and should have been stoppable.
                 detachFromProcess();
+
+                int error = err_it->second;
+                if (error == EPERM) {
+                    throw std::runtime_error(PERM_MESSAGE);
+                }
+                throw std::system_error(error, std::generic_category());
             }
+
+            found_new_tid = true;
+
+            LOG(INFO) << "Trying to stop thread " << tid;
+            long ret = ptrace(PTRACE_ATTACH, tid, nullptr, nullptr);
+            if (ret < 0) {
+                int error = errno;
+                LOG(WARNING) << "Failed to attach to thread " << tid << ": " << strerror(error);
+                error_by_tid.emplace(tid, error);
+                continue;
+            }
+
+            // Add each tid as we attach: these are the tids we detach from.
+            d_tids.insert(tid);
+
+            LOG(INFO) << "Waiting for thread " << tid << " to be stopped";
+            ret = waitpid(tid, nullptr, WUNTRACED);
+            if (ret < 0) {
+                // In some old kernels is not possible to use WUNTRACED with
+                // threads (only the main thread will return a non zero value).
+                if (tid == pid || errno != ECHILD) {
+                    detachFromProcess();
+                }
+            }
+            LOG(INFO) << "Thread " << tid << " stopped";
         }
-        LOG(INFO) << "Process " << tid << " attached";
     }
+    LOG(INFO) << "All " << d_tids.size() << " threads stopped";
 }
 
 void
@@ -122,7 +152,7 @@ ProcessTracer::~ProcessTracer()
 std::vector<int>
 ProcessTracer::getTids() const
 {
-    return d_tids;
+    return {d_tids.begin(), d_tids.end()};
 }
 
 AbstractProcessManager::AbstractProcessManager(
