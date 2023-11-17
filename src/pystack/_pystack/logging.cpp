@@ -22,7 +22,7 @@ logWithPython(const std::string& message, int level)
         throw std::runtime_error("Logger is not initialized");
     }
     if (!PyErr_Occurred()) {
-        log_with_python(message.c_str(), level);
+        log_with_python(&message, level);
     }
 }
 

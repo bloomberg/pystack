@@ -87,9 +87,9 @@ class NativeReportingMode(enum.Enum):
     ALL = 1000
 
 
-cdef api void log_with_python(const char* message, int level) noexcept:
-    with contextlib.suppress(UnicodeDecodeError):
-        LOGGER.log(level, message)
+cdef api void log_with_python(const cppstring *message, int level) noexcept:
+    pymessage = _try_to_decode_string(message)
+    LOGGER.log(level, pymessage)
 
 T = TypeVar("T", bound=Callable[..., Any])
 
