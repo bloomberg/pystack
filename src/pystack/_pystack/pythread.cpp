@@ -109,7 +109,7 @@ findPthreadTidOffset(
             }
         }
         LOG(DEBUG) << "Copied a buffer of " << buffer_size << " bytes to get pthread ID";
-        for (int i = 0; i < buffer_size / sizeof(uintptr_t); i++) {
+        for (size_t i = 0; i < buffer_size / sizeof(uintptr_t); i++) {
             if (static_cast<pid_t>(buffer[i]) == manager->Pid()) {
                 off_t offset = sizeof(uintptr_t) * i;
                 LOG(DEBUG) << "Tid offset located by scanning at offset " << std::showbase << std::hex
