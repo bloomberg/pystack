@@ -1,0 +1,66 @@
+diff --git a/libdwfl/dwfl_segment_report_module.c b/libdwfl/dwfl_segment_report_module.c
+index 3ef62a7d..09ee37b3 100644
+--- a/libdwfl/dwfl_segment_report_module.c
++++ b/libdwfl/dwfl_segment_report_module.c
+@@ -737,17 +737,34 @@ dwfl_segment_report_module (Dwfl *dwfl, int ndx, const char *name,
+ 	        && invalid_elf (module->elf, module->disk_file_has_build_id,
+ 				&build_id))
+ 	      {
+-		elf_end (module->elf);
+-		close (module->fd);
+-		module->elf = NULL;
+-		module->fd = -1;
++		/* If MODULE's build-id doesn't match the disk file's
++		   build-id, close ELF only if MODULE and ELF refer to
++		   different builds of files with the same name.  This
++		   prevents premature closure of the correct ELF in cases
++		   where segments of a module are non-contiguous in memory.  */
++		if (name != NULL && module->name[0] != '\0'
++		    && strcmp (basename (module->name), basename (name)) == 0)
++		  {
++		    elf_end (module->elf);
++		    close (module->fd);
++		    module->elf = NULL;
++		    module->fd = -1;
++		  }
+ 	      }
+-	    if (module->elf != NULL)
++	    else if (module->elf != NULL)
+ 	      {
+-		/* Ignore this found module if it would conflict in address
+-		   space with any already existing module of DWFL.  */
++		/* This module has already been reported.  */
+ 		skip_this_module = true;
+ 	      }
++	    else
++	      {
++		/* Only report this module if we haven't already done so.  */
++		for (Dwfl_Module *mod = dwfl->modulelist; mod != NULL;
++		     mod = mod->next)
++		  if (mod->low_addr == module_start
++		      && mod->high_addr == module_end)
++		    skip_this_module = true;
++	      }
+ 	  }
+       if (skip_this_module)
+ 	goto out;
+@@ -781,10 +798,6 @@ dwfl_segment_report_module (Dwfl *dwfl, int ndx, const char *name,
+ 	}
+     }
+
+-  /* Our return value now says to skip the segments contained
+-     within the module.  */
+-  ndx = addr_segndx (dwfl, segment, module_end, true);
+-
+   /* Examine its .dynamic section to get more interesting details.
+      If it has DT_SONAME, we'll use that as the module name.
+      If it has a DT_DEBUG, then it's actually a PIE rather than a DSO.
+@@ -929,6 +942,8 @@ dwfl_segment_report_module (Dwfl *dwfl, int ndx, const char *name,
+       ndx = -1;
+       goto out;
+     }
++  else
++    ndx++;
+
+   /* We have reported the module.  Now let the caller decide whether we
+      should read the whole thing in right now.  */
