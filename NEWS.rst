@@ -8,6 +8,19 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.3.0 (2023-11-28)
+--------------------------
+
+Bug Fixes
+~~~~~~~~~
+
+- Add a patch to the bundled elfutils used to create wheels to account for a bug when analysing cores with interleaved segments (#153)
+- Removed the unused ``--self`` flag. (#141)
+- Fix some instances when identifying the pthread id was failing in systems without GLIBC (#152)
+- Fix several some race conditions when stopping threads in multithreaded programs (#155)
+- Ensure log messages that contain non-UTF-8 data are not lost (#155)
+
+
 pystack 1.2.0 (2023-07-31)
 --------------------------
 
