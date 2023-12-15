@@ -24,8 +24,9 @@ jobs:
       - name: Build sdist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: sdist
           path: dist/*.tar.gz
 
   choose_architectures:
@@ -42,13 +43,13 @@ jobs:
 
   build_wheels:
     needs: [build_sdist, choose_architectures]
-    name: Wheel for Linux-${{ matrix.cibw_python }}-${{ matrix.cibw_arch }}
+    name: Wheel for Linux-${{ matrix.cibw_python }}-*-${{ matrix.cibw_arch }}
     runs-on: ${{ matrix.os }}
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest]
-        cibw_python: ["cp37-*", "cp38-*", "cp39-*", "cp310-*", "cp311-*", "cp312-*"]
+        cibw_python: ["cp37", "cp38", "cp39", "cp310", "cp311", "cp312"]
         cibw_arch: ${{ fromJSON(needs.choose_architectures.outputs.cibw_arches) }}
 
     steps:
@@ -58,20 +59,21 @@ jobs:
       - uses: docker/setup-qemu-action@v3
         if: runner.os == 'Linux'
         name: Set up QEMU
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          name: sdist
       - name: Extract sdist
         run: |
           tar zxvf *.tar.gz --strip-components=1
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.2
         env:
-          CIBW_BUILD: ${{ matrix.cibw_python }}
+          CIBW_BUILD: "${{ matrix.cibw_python }}-*"
           CIBW_ARCHS_LINUX: ${{ matrix.cibw_arch }}
           CIBW_PRERELEASE_PYTHONS: True
-      - uses: actions/upload-artifact@v3
+      - uses: actions/upload-artifact@v4
         with:
+          name: wheels-${{ matrix.cibw_python }}-${{ matrix.cibw_arch }}
           path: ./wheelhouse/*.whl
 
   test_attaching_to_old_interpreters:
@@ -83,9 +85,9 @@ jobs:
         python_version: ["2.7", "3.6"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          name: "wheels-cp311-x86_64"
           path: dist
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -121,14 +123,16 @@ jobs:
         python_version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "${{matrix.python_version}}-dev"
+      - id: cibw_version
+        run: echo 'python=cp${{ matrix.python_version }}' | tr -d '.' > $GITHUB_OUTPUT
+      - uses: actions/download-artifact@v4
+        with:
+          name: "wheels-${{ steps.cibw_version.outputs.python }}-x86_64"
+          path: dist
       - name: Set up dependencies
         run: |
           sudo add-apt-repository ppa:deadsnakes/ppa
@@ -163,13 +167,15 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
       - name: Set up dependencies
         run: |
           apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
+      - id: cibw_version
+        run: python3 -c 'import sys;print("python=cp"+"".join(map(str, sys.version_info[:2])))' > $GITHUB_OUTPUT
+      - uses: actions/download-artifact@v4
+        with:
+          name: "wheels-${{ steps.cibw_version.outputs.python }}-x86_64"
+          path: dist
       - name: Install Python dependencies
         run: |
           python3 -m venv venv
@@ -193,10 +199,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
       - name: Set up dependencies
         run: |
           dnf install -y \
@@ -207,6 +209,12 @@ jobs:
             python3-devel
           dnf debuginfo-install -y \
             python3
+      - id: cibw_version
+        run: python3 -c 'import sys;print("python=cp"+"".join(map(str, sys.version_info[:2])))' > $GITHUB_OUTPUT
+      - uses: actions/download-artifact@v4
+        with:
+          name: "wheels-${{ steps.cibw_version.outputs.python }}-x86_64"
+          path: dist
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
@@ -228,10 +236,6 @@ jobs:
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
       - name: Set up dependencies
         run: |
           pacman -Syu --noconfirm \
@@ -242,6 +246,12 @@ jobs:
             python-pip \
             python-setuptools \
             python-wheel
+      - id: cibw_version
+        run: python -c 'import sys;print("python=cp"+"".join(map(str, sys.version_info[:2])))' > $GITHUB_OUTPUT
+      - uses: actions/download-artifact@v4
+        with:
+          name: "wheels-${{ steps.cibw_version.outputs.python }}-x86_64"
+          path: dist
       - name: Install Python dependencies
         run: |
           python -m venv venv
@@ -265,10 +275,6 @@ jobs:
 
     steps:
       - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v3
-        with:
-          name: artifact
-          path: dist
       - name: Set up dependencies
         run: |
           apt-get update
@@ -280,6 +286,12 @@ jobs:
             python3-venv \
             python3-dbg \
             python3-distutils
+      - id: cibw_version
+        run: python3 -c 'import sys;print("python=cp"+"".join(map(str, sys.version_info[:2])))' > $GITHUB_OUTPUT
+      - uses: actions/download-artifact@v4
+        with:
+          name: "wheels-${{ steps.cibw_version.outputs.python }}-x86_64"
+          path: dist
       - name: Install Python dependencies
         run: |
           python3 -m venv venv
@@ -294,13 +306,13 @@ jobs:
   upload_pypi:
     needs: [test_wheels]
     runs-on: ubuntu-latest
-    if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-      - uses: actions/download-artifact@v3
+      - uses: actions/download-artifact@v4
         with:
-          name: artifact
+          # with no name set, it downloads all of the artifacts
           path: dist
-      - uses: pypa/gh-action-pypi-publish@release/v1
-        with:
-          skip_existing: true
-          password: ${{ secrets.PYPI_PASSWORD }}
+      - run: |
+          mv dist/sdist/*.tar.gz dist/
+          mv dist/wheels-*/*.whl dist/
+          rmdir dist/{sdist,wheels-*}
+      - run: ls -R dist
