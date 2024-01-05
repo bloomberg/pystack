@@ -29,26 +29,27 @@ jobs:
           name: sdist
           path: dist/*.tar.gz
 
-  choose_architectures:
-    name: Decide which architectures to build wheels for
+  choose_wheel_types:
+    name: Decide which wheel types to build
     runs-on: ubuntu-latest
     steps:
-      - id: x86_64
-        run: echo "cibw_arch=x86_64" >> $GITHUB_OUTPUT
-      - id: aarch64
-        run: echo "cibw_arch=aarch64" >> $GITHUB_OUTPUT
+      - id: manylinux_x86_64
+        run: echo "wheel_types=manylinux_x86_64" >> $GITHUB_OUTPUT
+      - id: musllinux_x86_64
+        run: echo "wheel_types=musllinux_x86_64" >> $GITHUB_OUTPUT
+      - id: manylinux_aarch64
+        run: echo "wheel_types=manylinux_aarch64" >> $GITHUB_OUTPUT
     outputs:
-      cibw_arches: ${{ toJSON(steps.*.outputs.cibw_arch) }}
+      wheel_types: ${{ toJSON(steps.*.outputs.wheel_types) }}
 
   build_wheels:
-    needs: [build_sdist, choose_architectures]
-    name: Wheel for Linux ${{ matrix.cibw_arch }}
-    runs-on: ${{ matrix.os }}
+    needs: [build_sdist, choose_wheel_types]
+    name: ${{ matrix.wheel_type }} wheels
+    runs-on: ubuntu-latest
     strategy:
       fail-fast: false
       matrix:
-        os: [ubuntu-latest]
-        cibw_arch: ${{ fromJSON(needs.choose_architectures.outputs.cibw_arches) }}
+        wheel_type: ${{ fromJSON(needs.choose_wheel_types.outputs.wheel_types) }}
 
     steps:
       - name: Disable ptrace security restrictions
@@ -66,12 +67,12 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.16.2
         env:
-          CIBW_BUILD: "cp3{7..12}-*"
-          CIBW_ARCHS_LINUX: ${{ matrix.cibw_arch }}
+          CIBW_BUILD: "cp3{7..12}-${{ matrix.wheel_type }}"
+          CIBW_ARCHS_LINUX: auto aarch64
           CIBW_PRERELEASE_PYTHONS: True
       - uses: actions/upload-artifact@v4
         with:
-          name: ${{ matrix.cibw_arch }}-wheels
+          name: ${{ matrix.wheel_type }}-wheels
           path: ./wheelhouse/*.whl
 
   test_attaching_to_old_interpreters:
@@ -85,7 +86,7 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
-          name: "x86_64-wheels"
+          name: "manylinux_x86_64-wheels"
           path: dist
       - name: Set up Python
         uses: actions/setup-python@v5
@@ -127,7 +128,7 @@ jobs:
           python-version: "${{matrix.python_version}}-dev"
       - uses: actions/download-artifact@v4
         with:
-          name: "x86_64-wheels"
+          name: "manylinux_x86_64-wheels"
           path: dist
       - name: Set up dependencies
         run: |
@@ -168,7 +169,7 @@ jobs:
           apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
       - uses: actions/download-artifact@v4
         with:
-          name: "x86_64-wheels"
+          name: "musllinux_x86_64-wheels"
           path: dist
       - name: Install Python dependencies
         run: |
@@ -205,7 +206,7 @@ jobs:
             python3
       - uses: actions/download-artifact@v4
         with:
-          name: "x86_64-wheels"
+          name: "manylinux_x86_64-wheels"
           path: dist
       - name: Install Python dependencies
         run: |
@@ -240,7 +241,7 @@ jobs:
             python-wheel
       - uses: actions/download-artifact@v4
         with:
-          name: "x86_64-wheels"
+          name: "manylinux_x86_64-wheels"
           path: dist
       - name: Install Python dependencies
         run: |
@@ -278,7 +279,7 @@ jobs:
             python3-distutils
       - uses: actions/download-artifact@v4
         with:
-          name: "x86_64-wheels"
+          name: "manylinux_x86_64-wheels"
           path: dist
       - name: Install Python dependencies
         run: |
