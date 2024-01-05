@@ -38,6 +38,7 @@ jobs:
       - id: musllinux_x86_64
         run: echo "wheel_types=musllinux_x86_64" >> $GITHUB_OUTPUT
       - id: manylinux_aarch64
+        if: github.event_name == 'release' && github.event.action == 'published'
         run: echo "wheel_types=manylinux_aarch64" >> $GITHUB_OUTPUT
     outputs:
       wheel_types: ${{ toJSON(steps.*.outputs.wheel_types) }}
@@ -295,6 +296,7 @@ jobs:
   upload_pypi:
     needs: [test_wheels]
     runs-on: ubuntu-latest
+    if: github.event_name == 'release' && github.event.action == 'published'
     steps:
       - uses: actions/download-artifact@v4
         with:
@@ -304,4 +306,8 @@ jobs:
           mv dist/sdist/*.tar.gz dist/
           mv dist/*-wheels/*.whl dist/
           rmdir dist/{sdist,*-wheels}
-      - run: ls -R dist
+          ls -R dist
+      - uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          skip_existing: true
+          password: ${{ secrets.PYPI_PASSWORD }}
