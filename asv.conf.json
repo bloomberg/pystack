@@ -1,9 +1,9 @@
 {
     "version":1,
     "benchmark_dir": "./benchmarks",
-    "repo":"git@github.com:ms2892/pystack.git",
+    "repo":"git@github.com:bloomberg/pystack.git",
     "project": "pystack",
-    "project_url": "https://github.com/ms2892/pystack",
+    "project_url": "https://github.com/bloomberg/pystack",
     "env_dir":".asv/env",
     "results_dir":".asv/results",
     "html_dir":".asv/html",
