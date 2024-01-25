@@ -1,4 +1,4 @@
-from pystack.colors import *
+from pystack.colors import colored, format_colored
 
 RANGE=100
 
@@ -9,7 +9,13 @@ class ColorsBenchmarkSuite:
 
     def time_colored(self):
         colors = ["red","green","yellow","blue","magenta","cyan","white"]
-        highlights = ["on_red","on_green","on_yellow","on_blue","on_magenta","on_cyan","on_white"]
+        highlights = ["on_red",
+                      "on_green",
+                      "on_yellow",
+                      "on_blue",
+                      "on_magenta",
+                      "on_cyan",
+                      "on_white"]
         attributes = ["bold", "dark", "underline", "blink", "reverse", "concealed"]
         for counter in range(RANGE):
             for color in colors:

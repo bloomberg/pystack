@@ -34,20 +34,23 @@ def time_simple_maps_no_such_pid():
 
 def time_simple_maps():
     for i in range(RANGE):
-        map_text = """
-            7f1ac1e2b000-7f1ac1e50000 r--p 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
-        """
-
-            # WHEN
+        map_text = (
+            "7f1ac1e2b000-7f1ac1e50000 "
+            "r--p "
+            "00000000 08:12 8398159"
+            "                    /usr/lib/libc-2.31.so"
+        )
 
         with patch("builtins.open", mock_open(read_data=map_text)):
             maps = list(generate_maps_for_process(1))
 
 def time_maps_with_long_device_numbers():
     for i in range(RANGE):
-        map_text = """
-            7f1ac1e2b000-7f1ac1e50000 r--p 00000000 0123:4567 8398159 /usr/lib/libc-2.31.so
-        """
+        map_text = (
+            "7f1ac1e2b000-7f1ac1e50000 "
+            "r--p 00000000 0123:4567 "
+            "8398159 /usr/lib/libc-2.31.so"
+        )
 
         # WHEN
 
@@ -69,13 +72,11 @@ def time_map_permissions():
     # GIVEN
     for i in range(RANGE):
         map_text = """
-            7f1ac1e2b000-7f1ac1e50000 r--- 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
-            7f1ac1e2b000-7f1ac1e50000 rw-- 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
-            7f1ac1e2b000-7f1ac1e50000 rwx- 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
-            7f1ac1e2b000-7f1ac1e50000 rwxp 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
+7f1ac1e2b000-7f1ac1e50000 r--- 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
+7f1ac1e2b000-7f1ac1e50000 rw-- 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
+7f1ac1e2b000-7f1ac1e50000 rwx- 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
+7f1ac1e2b000-7f1ac1e50000 rwxp 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
         """
-
-        # WHEN
 
         with patch("builtins.open", mock_open(read_data=map_text)):
             maps = list(generate_maps_for_process(1))
@@ -84,8 +85,8 @@ def time_unexpected_line_is_ignored():
     # GIVEN
     for i in range(RANGE):
         map_text = """
-            I am an unexpected line
-            7f1ac1e2b000-7f1ac1e50000 r--p 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
+I am an unexpected line
+7f1ac1e2b000-7f1ac1e50000 r--p 00000000 08:12 8398159                    /usr/lib/libc-2.31.so
         """
 
         # WHEN
@@ -96,11 +97,11 @@ def time_unexpected_line_is_ignored():
 def time_special_maps():
     for i in range(RANGE):
         map_text = """
-            555f1ab1c000-555f1ab3d000 rw-p 00000000 00:00 0                          [heap]
-            7ffdf8102000-7ffdf8124000 rw-p 00000000 00:00 0                          [stack]
-            7ffdf8152000-7ffdf8155000 r--p 00000000 00:00 0                          [vvar]
-            7ffdf8155000-7ffdf8156000 r-xp 00000000 00:00 0                          [vdso]
-            ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
+555f1ab1c000-555f1ab3d000 rw-p 00000000 00:00 0                          [heap]
+7ffdf8102000-7ffdf8124000 rw-p 00000000 00:00 0                          [stack]
+7ffdf8152000-7ffdf8155000 r--p 00000000 00:00 0                          [vvar]
+7ffdf8155000-7ffdf8156000 r-xp 00000000 00:00 0                          [vdso]
+ffffffffff600000-ffffffffff601000 --xp 00000000 00:00 0                  [vsyscall]
         """
 
         # WHEN
@@ -750,40 +751,40 @@ def time_maps_with_scattered_segments():
 
     for i in range(RANGE):
         map_text = """
-            00400000-00401000 r-xp 00000000 fd:00 67488961          /bin/python3.9-dbg
-            00600000-00601000 r--p 00000000 fd:00 67488961          /bin/python3.9-dbg
-            00601000-00602000 rw-p 00001000 fd:00 67488961          /bin/python3.9-dbg
-            0067b000-00a58000 rw-p 00000000 00:00 0                 [heap]
-            7f7b38000000-7f7b38028000 rw-p 00000000 00:00 0
-            7f7b38028000-7f7b3c000000 ---p 00000000 00:00 0
-            7f7b40000000-7f7b40021000 rw-p 00000000 00:00 0
-            7f7b40021000-7f7b44000000 ---p 00000000 00:00 0
-            7f7b44ec0000-7f7b44f40000 rw-p 00000000 00:00 0
-            f7b45a61000-7f7b45d93000 rw-p 00000000 00:00 0
-            7f7b46014000-7f7b46484000 r--p 0050b000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
-            7f7b46484000-7f7b46485000 ---p 00000000 00:00 0
-            7f7b46485000-7f7b46cda000 rw-p 00000000 00:00 0
-            7f7b46cda000-7f7b46d16000 r--p 00a3d000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
-            7f7b46d16000-7f7b46d6f000 rw-p 00000000 00:00 0
-            7f7b46d6f000-7f7b46d92000 r--p 00001000 fd:00 67488961  /bin/python3.9-dbg
-            7f7b46d92000-7f7b46d93000 ---p 00000000 00:00 0
-            7f7b46d93000-7f7b475d3000 rw-p 00000000 00:00 0
-            7f7b498c1000-7f7b49928000 r-xp 00000000 fd:00 7023      /lib64/libssl.so.1.0.0
-            7f7b49928000-7f7b49b28000 ---p 00067000 fd:00 7023      /lib64/libssl.so.1.0.0
-            f7b4c632000-7f7b4c6f3000 rw-p 00000000 00:00 0
-            7f7b4c6f3000-7f7b4c711000 rw-p 00000000 00:00 0
-            7f7b4c711000-7f7b4c712000 r--p 0002a000 fd:00 67488961  /bin/python3.9-dbg
-            7f7b4c712000-7f7b4c897000 rw-p 00000000 00:00 0
-            7f7b5a356000-7f7b5a35d000 r--s 00000000 fd:00 201509519 /usr/lib64/gconv/gconv-modules.cache
-            7f7b5a35d000-7f7b5a827000 r-xp 00000000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
-            7f7b5a827000-7f7b5aa27000 ---p 004ca000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
-            7f7b5aa27000-7f7b5aa2c000 r--p 004ca000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
-            7f7b5aa2c000-7f7b5aa67000 rw-p 004cf000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
-            7f7b5aa67000-7f7b5aa8b000 rw-p 00000000 00:00 0
-            7fff26f8e000-7fff27020000 rw-p 00000000 00:00 0         [stack]
-            7fff27102000-7fff27106000 r--p 00000000 00:00 0         [vvar]
-            7fff27106000-7fff27108000 r-xp 00000000 00:00 0         [vdso]
-            ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]
+00400000-00401000 r-xp 00000000 fd:00 67488961          /bin/python3.9-dbg
+00600000-00601000 r--p 00000000 fd:00 67488961          /bin/python3.9-dbg
+00601000-00602000 rw-p 00001000 fd:00 67488961          /bin/python3.9-dbg
+0067b000-00a58000 rw-p 00000000 00:00 0                 [heap]
+7f7b38000000-7f7b38028000 rw-p 00000000 00:00 0
+7f7b38028000-7f7b3c000000 ---p 00000000 00:00 0
+7f7b40000000-7f7b40021000 rw-p 00000000 00:00 0
+7f7b40021000-7f7b44000000 ---p 00000000 00:00 0
+7f7b44ec0000-7f7b44f40000 rw-p 00000000 00:00 0
+f7b45a61000-7f7b45d93000 rw-p 00000000 00:00 0
+7f7b46014000-7f7b46484000 r--p 0050b000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
+7f7b46484000-7f7b46485000 ---p 00000000 00:00 0
+7f7b46485000-7f7b46cda000 rw-p 00000000 00:00 0
+7f7b46cda000-7f7b46d16000 r--p 00a3d000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
+7f7b46d16000-7f7b46d6f000 rw-p 00000000 00:00 0
+7f7b46d6f000-7f7b46d92000 r--p 00001000 fd:00 67488961  /bin/python3.9-dbg
+7f7b46d92000-7f7b46d93000 ---p 00000000 00:00 0
+7f7b46d93000-7f7b475d3000 rw-p 00000000 00:00 0
+7f7b498c1000-7f7b49928000 r-xp 00000000 fd:00 7023      /lib64/libssl.so.1.0.0
+7f7b49928000-7f7b49b28000 ---p 00067000 fd:00 7023      /lib64/libssl.so.1.0.0
+f7b4c632000-7f7b4c6f3000 rw-p 00000000 00:00 0
+7f7b4c6f3000-7f7b4c711000 rw-p 00000000 00:00 0
+7f7b4c711000-7f7b4c712000 r--p 0002a000 fd:00 67488961  /bin/python3.9-dbg
+7f7b4c712000-7f7b4c897000 rw-p 00000000 00:00 0
+7f7b5a356000-7f7b5a35d000 r--s 00000000 fd:00 201509519 /usr/lib64/gconv/gconv-modules.cache
+7f7b5a35d000-7f7b5a827000 r-xp 00000000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
+7f7b5a827000-7f7b5aa27000 ---p 004ca000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
+7f7b5aa27000-7f7b5aa2c000 r--p 004ca000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
+7f7b5aa2c000-7f7b5aa67000 rw-p 004cf000 fd:00 1059871   /lib64/libpython3.9d.so.1.0
+7f7b5aa67000-7f7b5aa8b000 rw-p 00000000 00:00 0
+7fff26f8e000-7fff27020000 rw-p 00000000 00:00 0         [stack]
+7fff27102000-7fff27106000 r--p 00000000 00:00 0         [vvar]
+7fff27106000-7fff27108000 r-xp 00000000 00:00 0         [vdso]
+ffffffffff600000-ffffffffff601000 r-xp 00000000 00:00 0 [vsyscall]
         """
 
         # WHEN

@@ -1,4 +1,10 @@
-from pystack.process import *
+from pystack.process import (
+    get_python_version_for_core,
+    InvalidPythonProcess,
+    get_python_version_for_process,
+    scan_core_bss_for_python_version,
+    scan_process_bss_for_python_version
+)
 from pystack.maps import VirtualMap
 from unittest.mock import Mock
 from unittest.mock import mock_open
