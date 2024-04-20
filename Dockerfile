@@ -79,14 +79,6 @@ RUN apt-get update \
 # Copy the installed files from the elfutils_builder stage
 COPY --from=elfutils_builder /usr/local /usr/local
 
-# Copy the required files
-COPY ["requirements-test.txt", "requirements-extra.txt", "requirements-docs.txt", "/tmp/"]
-
-# Install Python packages
-RUN python3.12 -m venv /venv \
-    && /venv/bin/python -m pip install -U pip wheel setuptools cython pkgconfig \
-    && /venv/bin/python -m pip install -U -r /tmp/requirements-test.txt -r /tmp/requirements-extra.txt
-
 # Set environment variables
 ENV PYTHON=python3.12 \
     VIRTUAL_ENV="/venv" \
@@ -94,6 +86,14 @@ ENV PYTHON=python3.12 \
     PYTHONDONTWRITEBYTECODE=1 \
     TZ=UTC \
     PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+# Copy the required files
+COPY ["requirements-test.txt", "requirements-extra.txt", "requirements-docs.txt", "/tmp/"]
+
+# Install Python packages
+RUN python3.12 -m venv $VIRTUAL_ENV \
+    && pip install -U pip wheel setuptools cython pkgconfig \
+    && pip install -U -r /tmp/requirements-test.txt -r /tmp/requirements-extra.txt
 
 # Set the working directory
 WORKDIR /src
