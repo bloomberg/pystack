@@ -24,17 +24,14 @@ RUN apt-get update \
         bison \
         pkg-config \
         libarchive-dev \
-        libmicrohttpd-dev \
         libcurl4-gnutls-dev \
-        libsqlite3-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && mkdir /elfutils \
     && cd /elfutils \
     && curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2 \
-    && tar -xf elfutils.tar.bz2 \
-    && cd elfutils-$VERS \
-    && CFLAGS='-w -DFNM_EXTMATCH=0' ./configure --prefix=/usr --disable-nls --disable-libdebuginfod --disable-debuginfod --with-zstd \
+    && tar -xf elfutils.tar.bz2 --strip-components 1 \
+    && CFLAGS='-w' ./configure --prefix=/usr/local --disable-nls --disable-debuginfod --enable-libdebuginfod=dummy --with-zstd \
     && make install
 
 # Stage 2: Final stage
@@ -72,11 +69,15 @@ RUN apt-get update \
     valgrind \
     lcov \
     file \
+    libzstd-dev \
+    liblzma-dev \
+    libbz2-dev \
+    zlib1g-dev \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy the installed files from the elfutils_builder stage
-COPY --from=elfutils_builder /usr /usr
+COPY --from=elfutils_builder /usr/local /usr/local
 
 # Copy the required files
 COPY ["requirements-test.txt", "requirements-extra.txt", "requirements-docs.txt", "/tmp/"]
@@ -91,7 +92,8 @@ ENV PYTHON=python3.12 \
     VIRTUAL_ENV="/venv" \
     PATH="/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
-    TZ=UTC
+    TZ=UTC \
+    PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 
 # Set the working directory
 WORKDIR /src
