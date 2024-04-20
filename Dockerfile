@@ -66,9 +66,11 @@ RUN apt-get update \
     make \
     cmake \
     gdb \
+    git \
     valgrind \
     lcov \
     file \
+    less \
     libzstd-dev \
     liblzma-dev \
     libbz2-dev \
