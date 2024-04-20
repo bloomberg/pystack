@@ -63,7 +63,9 @@ RUN apt-get update \
     python3.11-dev \
     python3.11-dbg \
     python3.11-distutils \
-    python3.10-full \
+    python3.12-dev \
+    python3.12-dbg \
+    python3.12-venv \
     make \
     cmake \
     gdb \
@@ -80,12 +82,12 @@ COPY --from=elfutils_builder /usr /usr
 COPY ["requirements-test.txt", "requirements-extra.txt", "requirements-docs.txt", "/tmp/"]
 
 # Install Python packages
-RUN python3.10 -m venv /venv \
+RUN python3.12 -m venv /venv \
     && /venv/bin/python -m pip install -U pip wheel setuptools cython pkgconfig \
     && /venv/bin/python -m pip install -U -r /tmp/requirements-test.txt -r /tmp/requirements-extra.txt
 
 # Set environment variables
-ENV PYTHON=python3.10 \
+ENV PYTHON=python3.12 \
     VIRTUAL_ENV="/venv" \
     PATH="/venv/bin:$PATH" \
     PYTHONDONTWRITEBYTECODE=1 \
