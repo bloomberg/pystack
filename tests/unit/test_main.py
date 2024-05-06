@@ -3,6 +3,7 @@ from pathlib import Path
 from textwrap import dedent
 from unittest.mock import Mock
 from unittest.mock import call
+from unittest.mock import mock_open
 from unittest.mock import patch
 
 import pytest
@@ -429,6 +430,56 @@ def test_process_core_default_without_executable():
         method=StackMethod.AUTO,
     )
     assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+
+
+def test_process_core_default_gzip_without_executable():
+    # GIVEN
+
+    argv = ["pystack", "core", "corefile.gz"]
+
+    threads = [Mock(), Mock(), Mock()]
+
+    # WHEN
+
+    with patch(
+        "pystack.__main__.get_process_threads_for_core"
+    ) as get_process_threads_mock, patch(
+        "pystack.__main__.print_thread"
+    ) as print_thread_mock, patch(
+        "sys.argv", argv
+    ), patch(
+        "pathlib.Path.exists", return_value=True
+    ), patch(
+        "pystack.__main__.is_elf", return_value=True
+    ), patch(
+        "gzip.open", mock_open(read_data=b"")
+    ) as gzip_open_mock, patch(
+        "tempfile.NamedTemporaryFile"
+    ) as tempfile_mock, patch(
+        "pystack.__main__.os.unlink", return_value=None
+    ), patch(
+        "pystack.__main__.CoreFileAnalyzer"
+    ) as core_file_analizer_mock:
+        core_file_analizer_mock().extract_executable.return_value = (
+            "extracted_executable"
+        )
+        get_process_threads_mock.return_value = threads
+        tempfile_mock.return_value.name = Path("corefile.gz")
+
+        main()
+
+    # THEN
+
+    get_process_threads_mock.assert_called_with(
+        Path("corefile.gz"),
+        Path("extracted_executable"),
+        library_search_path="",
+        native_mode=NativeReportingMode.OFF,
+        locals=False,
+        method=StackMethod.AUTO,
+    )
+    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    gzip_open_mock.assert_called_with(Path("corefile.gz"), "rb")
 
 
 def test_process_core_default_without_executable_and_executable_does_not_exist(capsys):
