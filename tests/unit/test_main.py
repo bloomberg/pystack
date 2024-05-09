@@ -464,14 +464,14 @@ def test_process_core_default_gzip_without_executable():
             "extracted_executable"
         )
         get_process_threads_mock.return_value = threads
-        tempfile_mock.return_value.name = Path("corefile.gz")
+        tempfile_mock.return_value.name = Path("/tmp/file")
 
         main()
 
     # THEN
 
     get_process_threads_mock.assert_called_with(
-        Path("corefile.gz"),
+        Path("/tmp/file"),
         Path("extracted_executable"),
         library_search_path="",
         native_mode=NativeReportingMode.OFF,
