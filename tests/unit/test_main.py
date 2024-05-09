@@ -456,8 +456,6 @@ def test_process_core_default_gzip_without_executable():
     ) as gzip_open_mock, patch(
         "tempfile.NamedTemporaryFile"
     ) as tempfile_mock, patch(
-        "pystack.__main__.os.unlink", return_value=None
-    ), patch(
         "pystack.__main__.CoreFileAnalyzer"
     ) as core_file_analizer_mock:
         core_file_analizer_mock().extract_executable.return_value = (

@@ -321,12 +321,11 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
     if not corefile.exists():
         parser.error(f"Core {corefile} does not exist")
 
-    temp_file = None
     if corefile.suffix == ".gz":
         temp_file = tempfile.NamedTemporaryFile(delete=False)
         try:
-            with gzip.open(corefile, "rb") as fp:
-                while chunk := fp.read(4 * 1024 * 1024):
+            with gzip.open(corefile, "rb") as file_handle:
+                while chunk := file_handle.read(4 * 1024 * 1024):
                     temp_file.write(chunk)
         except gzip.BadGzipFile:
             parser.error(f"Core {corefile} is not a valid gzip file")
@@ -394,10 +393,6 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
     ):
         native = args.native_mode != NativeReportingMode.OFF
         print_thread(thread, native)
-
-    # Delete temporary file created if corefile is a gzip.
-    if temp_file:
-        pathlib.Path(temp_file.name).unlink()
 
 
 if __name__ == "__main__":  # pragma: no cover
