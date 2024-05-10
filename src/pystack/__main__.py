@@ -1,11 +1,9 @@
 import argparse
-import gzip
 import logging
 import os
 import pathlib
 import signal
 import sys
-import tempfile
 from contextlib import suppress
 from textwrap import dedent
 from typing import Any
@@ -15,7 +13,9 @@ from typing import Optional
 from typing import Set
 
 from pystack.errors import InvalidPythonProcess
+from pystack.process import decompress_gzip
 from pystack.process import is_elf
+from pystack.process import is_gzip
 
 from . import errors
 from . import print_thread
@@ -321,17 +321,8 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
     if not corefile.exists():
         parser.error(f"Core {corefile} does not exist")
 
-    if corefile.suffix == ".gz":
-        temp_file = tempfile.NamedTemporaryFile(delete=False)
-        try:
-            with gzip.open(corefile, "rb") as file_handle:
-                while chunk := file_handle.read(4 * 1024 * 1024):
-                    temp_file.write(chunk)
-        except gzip.BadGzipFile:
-            parser.error(f"Core {corefile} is not a valid gzip file")
-        finally:
-            temp_file.close()
-        corefile = pathlib.Path(temp_file.name)
+    if is_gzip(corefile):
+        corefile = decompress_gzip(corefile)
 
     if args.executable is None:
         corefile_analyzer = CoreFileAnalyzer(corefile)
