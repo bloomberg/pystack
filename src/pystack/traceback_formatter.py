@@ -110,4 +110,3 @@ def _format_merged_stacks(
             raise ValueError(
                 f"Invalid frame type: {frame_type(frame, thread.python_version)}"
             )
-    return current_frame
