@@ -93,6 +93,11 @@ docs:  ## Generate documentation
 	$(MAKE) -C docs clean
 	$(MAKE) -C docs html
 
+.PHONY: docs-live
+docs-live:  ## Serve documentation on localhost:8000, with live-reload
+	$(MAKE) -C docs clean
+	$(MAKE) -C docs livehtml
+
 .PHONY: gh-pages
 gh-pages:  ## Publish documentation on GitHub Pages
 	$(eval GIT_REMOTE := $(shell git remote get-url $(UPSTREAM_GIT_REMOTE)))
