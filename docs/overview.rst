@@ -53,6 +53,7 @@ Contents
    :caption: Hands-on Tutorial
 
    tutorials/deadlock
+   tutorials/random_prime_number
 
 .. toctree::
   :caption: Project Information
