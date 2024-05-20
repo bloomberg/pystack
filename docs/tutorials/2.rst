@@ -1,0 +1,99 @@
+Exercise 2 - Random Prime Number Generation
+=================================
+
+Intro
+-----
+
+Error handling is essential for any programmer. Being able to understand error messages
+and apply accurate fixes in a timely manner is vital for mental health. Unfortunately, Python's stacktrace does not
+always give a clear picture on everything that can go wrong...
+
+Working Through an Example
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Let's go through an example where we create a function to identify prime numbers and generate random numbers until we
+find a prime number validated through our function.
+
+Exercise
+""""""""
+
+Take a look at the example in ``random_prime_number.py``: do you see any errors in the code?
+Take a guess, and then confirm by running the program. Does it work as you expected? If not, is it obvious
+why your program is not running properly?
+
+Expectations vs Reality
+"""""""""""""""""""""""
+
+Ideally, error handling allows a quick solution to become apparent, but sometimes we get no feedback at all.
+In this case, we accidentally entered an infinite while loop! But where in the program did we go wrong? Why does
+the ``prime`` variable never evaluate to true? Does the logic in the function ``is_prime`` work correctly, or is the
+error somewhere else?
+
+
+Since the code enters an infinite loop, there is never an error stack trace. This can lead to a lot of
+confusion and no information as to where the error occurred. We're here to see if there is a better way to debug
+your infinite while loop.
+
+
+
+Challenge
+"""""""""
+
+Experiment with ``pystack`` to determine where you need to fix your code. Look at what functions may help you evaluate
+the errors in your code without stacktrace. Use the ``pystack`` functionality while the code is still running and
+see if you can fix the error.
+
+.. raw:: html
+
+   <details>
+   <summary><i>Hint 1</i></summary>
+
+Check to your local variables using ``pystack``.
+
+.. raw:: html
+
+   </details>
+
+.. raw:: html
+
+   <details>
+   <summary><i>Hint 2</i></summary>
+
+Try the following command while your program is running: ``pystack remote --locals {PID}``.
+
+.. raw:: html
+
+   </details>
+
+Solutions
+"""""""""
+
+.. raw:: html
+
+   <details>
+   <summary><i>Toggle to see the solution</i></summary>
+
+After using ``pystack`` you can now see that we accidentally used the wrong random function!
+In our current implementation, ``random.random()`` only returns floats between [0.0, 1.0). This shows
+that while our ``is_prime`` function has correct logic, the function will never get passed a prime number.
+
+A quick fix is to replace the random function with ``random.randint(0, 100000)``. With this quick fix, our
+program will now generate random prime numbers!
+
+
+
+Full code solution `here
+<https://github.com/bloomberg/pystack/blob/main/docs/tutorials/solutions/exercise_2/random_prime_number.py>`_.
+
+.. raw:: html
+
+   </details>
+
+Conclusion
+^^^^^^^^^^
+
+Sometimes, finding the bug in your code is not as simple as looking at a stacktrace. Infinite loops
+are common logical errors in programs, but can be difficult to find. Instead of spending excess time
+searching through long lines of code, using ``pystack`` can help these logical errors be easier to
+find.
+
