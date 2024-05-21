@@ -4,6 +4,7 @@ from typing import Iterable
 from typing import Optional
 
 from .colors import colored
+from .engine import NativeReportingMode
 from .types import NativeFrame
 from .types import PyCodeObject
 from .types import PyFrame
@@ -11,8 +12,8 @@ from .types import PyThread
 from .types import frame_type
 
 
-def print_thread(thread: PyThread, native: bool) -> None:
-    for line in format_thread(thread, native):
+def print_thread(thread: PyThread, native_mode: NativeReportingMode) -> None:
+    for line in format_thread(thread, native_mode):
         print(line, file=sys.stdout, flush=True)
 
 
@@ -62,7 +63,8 @@ def _are_the_stacks_mergeable(thread: PyThread) -> bool:
     return n_eval_frames == n_entry_frames
 
 
-def format_thread(thread: PyThread, native: bool) -> Iterable[str]:
+def format_thread(thread: PyThread, native_mode: NativeReportingMode) -> Iterable[str]:
+    native = native_mode != NativeReportingMode.OFF
     current_frame: Optional[PyFrame] = thread.first_frame
     if current_frame is None and not native:
         yield f"The frame stack for thread {thread.tid} is empty"
