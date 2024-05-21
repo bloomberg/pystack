@@ -292,8 +292,7 @@ def process_remote(parser: argparse.ArgumentParser, args: argparse.Namespace) ->
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
     ):
-        native = args.native_mode != NativeReportingMode.OFF
-        print_thread(thread, native)
+        print_thread(thread, args.native_mode)
 
 
 def format_psinfo_information(psinfo: Dict[str, Any]) -> str:
@@ -423,8 +422,7 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
     ):
-        native = args.native_mode != NativeReportingMode.OFF
-        print_thread(thread, native)
+        print_thread(thread, args.native_mode)
 
 
 if __name__ == "__main__":  # pragma: no cover
