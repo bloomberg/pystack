@@ -167,6 +167,15 @@ def generate_cli_parser() -> argparse.ArgumentParser:
         "the interpreter (implies --native)",
     )
     remote_parser.add_argument(
+        "--native-last",
+        action="store_const",
+        dest="native_mode",
+        const=NativeReportingMode.LAST,
+        default=NativeReportingMode.OFF,
+        help="Include native (C) frames only after the last python frame "
+        "in the resulting stack trace",
+    )
+    remote_parser.add_argument(
         "--locals",
         action="store_true",
         default=False,
@@ -211,6 +220,15 @@ def generate_cli_parser() -> argparse.ArgumentParser:
         default=NativeReportingMode.OFF,
         help="Include native (C) frames from threads not registered with "
         "the interpreter (implies --native)",
+    )
+    core_parser.add_argument(
+        "--native-last",
+        action="store_const",
+        dest="native_mode",
+        const=NativeReportingMode.LAST,
+        default=NativeReportingMode.OFF,
+        help="Include native (C) frames only after the last python frame "
+        "in the resulting stack trace",
     )
     core_parser.add_argument(
         "--locals",
