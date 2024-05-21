@@ -27,6 +27,7 @@ class NativeReportingMode(enum.Enum):
     ALL = 1
     OFF = 2
     PYTHON = 3
+    LAST = 4
 
 class StackMethod(enum.Enum):
     ALL = 1
