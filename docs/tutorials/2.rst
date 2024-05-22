@@ -96,4 +96,3 @@ Sometimes, finding the bug in your code is not as simple as looking at a stacktr
 are common logical errors in programs, but can be difficult to find. Instead of spending excess time
 searching through long lines of code, using ``pystack`` can help these logical errors be easier to
 find.
-

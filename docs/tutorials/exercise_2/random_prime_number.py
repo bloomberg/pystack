@@ -1,11 +1,12 @@
-from math import sqrt
 import random
+from math import sqrt
 
-
-'''
+"""
 Check if a number is prime
 Returns true if prime or False if composite
-'''
+"""
+
+
 def is_prime(number, itr=None):
     # Generate iterator if no value is passed
     if itr is None:
@@ -30,10 +31,12 @@ def is_prime(number, itr=None):
     return True
 
 
-'''
-Generates a random integer 
+"""
+Generates a random integer
 Returns number and prime value
-'''
+"""
+
+
 def generate_num():
     number = random.random()
     return number, is_prime(number)
@@ -45,8 +48,8 @@ def main():
     while not prime:
         number, prime = generate_num()
 
-    print(f'The prime number generated is : {number}')
+    print(f"The prime number generated is : {number}")
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()
