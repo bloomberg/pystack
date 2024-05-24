@@ -27,6 +27,7 @@ from pystack.errors import InvalidExecutable
 from pystack.errors import InvalidPythonProcess
 from pystack.errors import MissingExecutableMaps
 from pystack.errors import NotEnoughInformation
+from pystack.maps import VirtualMap
 
 
 def test_error_message_wih_permission_error_text():
@@ -505,7 +506,7 @@ def test_process_core_default_without_executable_and_executable_does_not_exist(c
             "extracted_executable"
         )
         # THEN
-        path_exists_mock.side_effect = [True, False]
+        path_exists_mock.side_effect = [True, False, False, False]
 
         with pytest.raises(SystemExit):
             main()
@@ -1299,3 +1300,70 @@ def test_core_file_missing_build_ids_are_logged(caplog, native):
         else []
     )
     assert record_messages == expected
+
+
+def test_executable_is_not_elf_uses_the_first_map():
+    # GIVEN
+    argv = ["pystack", "core", "corefile"]
+
+    # WHEN
+    real_executable = Path("/foo/bar/executable")
+
+    with patch(
+        "pystack.__main__.get_process_threads_for_core"
+    ) as get_process_threads_mock, patch("pystack.__main__.print_thread"), patch(
+        "pystack.__main__.is_elf", lambda x: x == real_executable
+    ), patch(
+        "pystack.__main__.is_gzip", return_value=False
+    ), patch(
+        "sys.argv", argv
+    ), patch(
+        "pathlib.Path.exists", return_value=True
+    ), patch(
+        "pystack.__main__.CoreFileAnalyzer"
+    ) as core_analyzer_test:
+        core_analyzer_test().extract_executable.return_value = "extracted_executable"
+        core_analyzer_test().extract_maps.return_value = [
+            VirtualMap(
+                start=0x1000,
+                end=0x2000,
+                flags="r-xp",
+                offset=0,
+                device="00:00",
+                inode=0,
+                filesize=0,
+                path=None,
+            ),
+            VirtualMap(
+                start=0x2000,
+                end=0x3000,
+                flags="rw-p",
+                offset=0,
+                device="00:00",
+                inode=0,
+                filesize=0,
+                path=Path("/foo/bar/executable"),
+            ),
+            VirtualMap(
+                start=0x3000,
+                end=0x4000,
+                flags="r--p",
+                offset=0,
+                device="00:00",
+                inode=0,
+                filesize=0,
+                path=None,
+            ),
+        ]
+        main()
+
+    # THEN
+
+    get_process_threads_mock.assert_called_with(
+        Path("corefile"),
+        real_executable,
+        library_search_path="",
+        native_mode=NativeReportingMode.OFF,
+        locals=False,
+        method=StackMethod.AUTO,
+    )

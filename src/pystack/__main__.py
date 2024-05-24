@@ -327,6 +327,26 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
     if args.executable is None:
         corefile_analyzer = CoreFileAnalyzer(corefile)
         executable = pathlib.Path(corefile_analyzer.extract_executable())
+        if not executable.exists() or not is_elf(executable):
+            first_map = next(
+                (
+                    map
+                    for map in corefile_analyzer.extract_maps()
+                    if map.path is not None
+                ),
+                None,
+            )
+            if (
+                first_map is not None
+                and first_map.path is not None
+                and first_map.path.exists()
+                and is_elf(first_map.path)
+            ):
+                executable = first_map.path
+                LOGGER.info(
+                    "Setting executable automatically to the first map in the core: %s",
+                    executable,
+                )
         if not executable.exists():
             raise errors.DetectedExecutableNotFound(
                 f"Detected executable doesn't exist: {executable}"

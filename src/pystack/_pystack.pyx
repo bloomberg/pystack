@@ -212,7 +212,7 @@ cdef class CoreFileAnalyzer:
         self._core_analyzer = make_shared[CoreFileExtractor](analyzer)
 
     @intercept_runtime_errors(EngineError)
-    def extract_maps(self) -> Iterable[Dict[str, Any]]:
+    def extract_maps(self) -> Iterable[VirtualMap]:
         mapped_files = self._core_analyzer.get().extractMappedFiles()
         memory_maps = self._core_analyzer.get().MemoryMaps()
         return generate_maps_from_core_data(mapped_files, memory_maps)

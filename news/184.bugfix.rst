@@ -1,0 +1,1 @@
+Fix a bug that was causing Python scripts executed directly via shebang to report the shell script as the executable.
