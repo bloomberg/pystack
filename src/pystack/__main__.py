@@ -352,9 +352,20 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
         print(format_failureinfo_information(corefile_analyzer.extract_failure_info()))
 
     if not is_elf(executable):
-        raise errors.InvalidExecutable(
-            f"The provided executable ({executable}) doesn't have an executable format"
+        first_map = next(
+            (map for map in corefile_analyzer.extract_maps() if map.path is not None),
+            None,
         )
+        if first_map is not None and is_elf(first_map.path):
+            executable = first_map.path
+            LOGGER.info(
+                "Setting executable automatically to the first map in the core: %s",
+                executable,
+            )
+        else:
+            raise errors.InvalidExecutable(
+                f"The provided executable ({executable}) doesn't have an executable format"
+            )
 
     if args.native_mode != NativeReportingMode.OFF:
         for module in corefile_analyzer.missing_modules():
