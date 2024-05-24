@@ -52,9 +52,14 @@ def test_single_thread_stack_for_relocated_core(
 
         # Hack: help libdw find the split debug for ld-musl on Alpine.
         # Otherwise, the test fails even though we do everything right.
-        ld_musl_debug = list(Path("/usr/lib/debug/lib/").glob("ld-musl*.debug"))
-        if ld_musl_debug != []:  # pragma: no cover
-            (relocated_bundle / "app" / ".debug").symlink_to("/usr/lib/debug/lib")
+        debuginfos = list(Path("/usr/lib/debug/lib/").glob("ld-musl*.debug"))
+        for debuginfo in debuginfos:  # pragma: no cover
+            (relocated_bundle / "app" / debuginfo.name).symlink_to(debuginfo)
+
+        # Apply the same hack to find the libpython debug info, too.
+        debuginfos = list(Path("/usr/lib/debug/usr/lib/").glob("libpython*.debug"))
+        for debuginfo in debuginfos:  # pragma: no cover
+            (relocated_bundle / "app" / debuginfo.name).symlink_to(debuginfo)
 
         binary_dependencies = ":".join(
             {str(file.parent) for file in relocated_bundle.glob("**/*.so*")}
