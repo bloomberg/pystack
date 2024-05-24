@@ -10,6 +10,7 @@
 #include <string>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <unordered_map>
 #include <vector>
 
 #include <elf_common.h>
@@ -213,6 +214,7 @@ class CorefileRemoteMemoryManager : public AbstractRemoteMemoryManager
     std::vector<SimpleVirtualMap> d_shared_libs;
     size_t d_corefile_size;
     std::unique_ptr<char, std::function<void(char*)>> d_corefile_data;
+    mutable std::unordered_map<std::string, Dwarf_Addr> d_load_point_cache;
 
     StatusCode readCorefile(int fd, const char* filename) noexcept;
     StatusCode getMemoryLocationFromCore(remote_addr_t addr, off_t* offset_in_file) const;

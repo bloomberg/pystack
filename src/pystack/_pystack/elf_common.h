@@ -124,6 +124,9 @@ struct SectionInfo
 bool
 getSectionInfo(const std::string& filename, const std::string& section_name, SectionInfo* result);
 
+bool
+getLoadPointOffsetOfElf(const std::string& filename, Dwarf_Addr* result);
+
 std::string
 buildIdPtrToString(const uint8_t* id, ssize_t size);
 
