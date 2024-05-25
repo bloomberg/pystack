@@ -165,6 +165,9 @@ def decompress_gzip(
     """
     with tempfile.NamedTemporaryFile(delete=False) as temp_file:
         with gzip.open(filename, "rb") as file_handle:
-            while chunk := file_handle.read(chunk_size):
+            while True:
+                chunk = file_handle.read(chunk_size)
+                if not chunk:
+                    break
                 temp_file.write(chunk)
     return pathlib.Path(temp_file.name)
