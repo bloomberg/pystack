@@ -239,7 +239,9 @@ jobs:
             python \
             python-pip \
             python-setuptools \
-            python-wheel
+            python-wheel \
+            elfutils \
+            debuginfod
       - uses: actions/download-artifact@v4
         with:
           name: "manylinux_x86_64-wheels"
@@ -253,6 +255,7 @@ jobs:
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "auto"
+          DEBUGINFOD_URLS: "https://debuginfod.archlinux.org"
         run: venv/bin/python -m pytest tests -k 'not 2.7' -n auto -vvv
 
   test_wheels_in_debian:
