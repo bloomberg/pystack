@@ -48,7 +48,16 @@ Contents
    :hidden:
    :caption: Project Information
 
-   changelog
+.. toctree::
+   :hidden:
+   :caption: Hands-on Tutorial
+
+   tutorials/deadlock
+
+.. toctree::
+  :caption: Project Information
+
+  changelog
 
 
 Indices and tables
