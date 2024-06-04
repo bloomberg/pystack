@@ -3,6 +3,7 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
 from pytest import LogCaptureFixture
 
 from pystack.engine import CoreFileAnalyzer
@@ -17,6 +18,10 @@ TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
 TEST_MULTIPLE_THREADS_FILE = Path(__file__).parent / "multiple_thread_program.py"
 
 
+@pytest.mark.skipif(
+    sys.version_info > (3, 13),
+    reason="PyInstaller doesn't support Python 3.13 yet",
+)
 def test_single_thread_stack_for_relocated_core(
     tmpdir: Path, caplog: LogCaptureFixture
 ) -> None:
