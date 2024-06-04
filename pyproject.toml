@@ -46,6 +46,7 @@ underlines = "-~"
 build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*"]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-i686-image = "manylinux2014"
+musllinux-x86_64-image = "musllinux_1_1"
 skip = "*-musllinux_aarch64"
 
 [tool.cibuildwheel.linux]
