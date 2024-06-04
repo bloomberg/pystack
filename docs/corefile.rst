@@ -37,6 +37,8 @@ In most cases, you just need to provide the location of the core to use PyStack 
         (Python) File "/test.py", line 16, in third_func
             time.sleep(1000)
 
+Pystack can automatically extract core dumps from `.gz` files: `pystack core ./archived_core_file.gz`
+
 To learn more about the different options you can use to customize what is reported, check the :ref:`customizing-the-reports` section.
 
 Providing the executable

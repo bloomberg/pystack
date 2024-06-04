@@ -13,7 +13,9 @@ from typing import Optional
 from typing import Set
 
 from pystack.errors import InvalidPythonProcess
+from pystack.process import decompress_gzip
 from pystack.process import is_elf
+from pystack.process import is_gzip
 
 from . import errors
 from . import print_thread
@@ -318,6 +320,9 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
     corefile = pathlib.Path(args.core)
     if not corefile.exists():
         parser.error(f"Core {corefile} does not exist")
+
+    if is_gzip(corefile):
+        corefile = decompress_gzip(corefile)
 
     if args.executable is None:
         corefile_analyzer = CoreFileAnalyzer(corefile)
