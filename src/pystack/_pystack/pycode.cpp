@@ -161,12 +161,43 @@ getLocationInfo(
     return location_info;
 }
 
+static bool
+isValid(const std::shared_ptr<const AbstractProcessManager>& manager, remote_addr_t addr)
+{
+    if (manager->versionIsAtLeast(3, 13)) {
+        // In Python 3.13, the frame f_executable field can be a code object or a bunch
+        // of other possible types (including None). We consider valid only the cases
+        // where it is a code object.
+        remote_addr_t pycodeobject_addr = manager->getAddressFromCache("PyCode_Type");
+        if (pycodeobject_addr == 0) {
+            Object code_obj(manager, addr);
+            if (code_obj.objectType() == Object::ObjectType::CODE) {
+                manager->registerAddressInCache("PyCode_Type", code_obj.typeAddr());
+                return true;
+            }
+            return false;
+        } else {
+            PyObject obj;
+            manager->copyObjectFromProcess(addr, &obj);
+            return reinterpret_cast<remote_addr_t>(obj.ob_type) == pycodeobject_addr;
+        }
+    }
+    return true;
+}
+
 CodeObject::CodeObject(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         remote_addr_t addr,
         uintptr_t lasti)
 {
     PyCodeObject code;
+    if (!isValid(manager, addr)) {
+        d_filename = "???";
+        d_scope = "???";
+        d_location_info = LocationInfo{0, 0, 0, 0};
+        d_narguments = 0;
+        return;
+    }
     LOG(DEBUG) << std::hex << std::showbase << "Copying code struct from address " << addr;
     manager->copyMemoryFromProcess(addr, manager->offsets().py_code.size, &code);
 

@@ -120,6 +120,19 @@ py_threadv311()
 }
 
 template<class T>
+constexpr py_thread_v
+py_threadv313()
+{
+    return {sizeof(T),
+            offsetof(T, prev),
+            offsetof(T, next),
+            offsetof(T, interp),
+            offsetof(T, frame),
+            offsetof(T, thread_id),
+            offsetof(T, native_thread_id)};
+}
+
+template<class T>
 constexpr py_is_v
 py_is()
 {
@@ -324,6 +337,17 @@ python_v python_v3_12 = {
         py_cframe<Python3_12::CFrame>(),
 };
 
+python_v python_v3_13 = {
+        py_type<Python3_8::PyTypeObject>(),
+        py_codev311<Python3_12::PyCodeObject>(),
+        py_framev312<Python3_12::PyFrameObject>(),
+        py_threadv313<Python3_13::PyThreadState>(),
+        py_isv312<Python3_13::PyInterpreterState>(),
+        py_runtimev312<Python3_13::PyRuntimeState>(),
+        py_gc<Python3_8::_gc_runtime_state>(),
+        py_cframe<Python3_12::CFrame>(),
+};
+
 // -----------------------------------------------------------------------------
 
 const python_v*
@@ -385,12 +409,14 @@ getCPythonOffsets(int major, int minor)
                 case 11:
                     return &python_v3_11;
                     break;
-
+                case 12:
+                    return &python_v3_12;
+                    break;
                 default:
                     warnAboutUnsuportedVersion(major, minor);
                     // fallthrough to latest
-                case 12:
-                    return &python_v3_12;
+                case 13:
+                    return &python_v3_13;
                     break;
             }
             break;

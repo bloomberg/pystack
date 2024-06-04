@@ -247,6 +247,98 @@ typedef struct _is
 } PyInterpreterState;
 }  // namespace Python3_12
 
+namespace Python3_13 {
+
+struct _pythreadstate; /* Forward */
+struct PyMutex
+{
+    uint8_t v;
+};
+typedef int (*_Py_pending_call_func)(void*);
+struct _pending_call
+{
+    _Py_pending_call_func func;
+    void* arg;
+    int flags;
+};
+struct _pending_calls
+{
+    void* handling_thread;
+    PyMutex mutex;
+    int32_t npending;
+    int32_t max;
+    int32_t maxloop;
+    struct _pending_call calls[300];
+    int first;
+    int next;
+};
+
+struct _ceval_state
+{
+    uintptr_t instrumentation_version;
+    int recursion_limit;
+    struct _gil_runtime_state* gil;
+    int own_gil;
+    struct _pending_calls pending;
+};
+
+struct _import_state
+{
+    PyObject* modules;
+    PyObject* modules_by_index;
+    PyObject* importlib;
+    int override_frozen_modules;
+    int override_multi_interp_extensions_check;
+    int dlopenflags;
+    PyObject* import_func;
+    struct
+    {
+        PyThread_type_lock mutex;
+        unsigned long thread;
+        int level;
+    } lock;
+    struct
+    {
+        int import_level;
+        int64_t accumulated;
+        int header;
+    } find_and_load;
+};
+
+typedef struct _is
+{
+    struct _ceval_state ceval;
+    struct _is* next;
+
+    int64_t id;
+    int64_t id_refcount;
+    int requires_idref;
+    PyThread_type_lock id_mutex;
+    long _whence;
+    int _initialized;
+    int _ready;
+    int finalizing;
+    uintptr_t last_restart_version;
+    struct pythreads
+    {
+        uint64_t next_unique_id;
+        _pythreadstate* head;
+        _pythreadstate* main;
+        Py_ssize_t count;
+        size_t stacksize;
+    } threads;
+    struct pyruntimestate* runtime;
+    void* _finalizing;
+    unsigned long _finalizing_id;
+    struct Python3_8::_gc_runtime_state gc;
+    // Dictionary of the sys module
+    PyObject* sysdict;
+    // Dictionary of the builtins module
+    PyObject* builtins;
+    struct _import_state imports;
+} PyInterpreterState;
+}  // namespace Python3_13
+
 typedef union {
     Python2::PyInterpreterState v2;
     Python3_5::PyInterpreterState v3_5;
@@ -255,5 +347,6 @@ typedef union {
     Python3_9::PyInterpreterState v3_9;
     Python3_11::PyInterpreterState v3_11;
     Python3_12::PyInterpreterState v3_12;
+    Python3_13::PyInterpreterState v3_13;
 } PyInterpreterState;
 }  // namespace pystack

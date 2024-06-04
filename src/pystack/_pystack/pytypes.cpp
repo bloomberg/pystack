@@ -399,11 +399,16 @@ DictObject::loadFromPython3(remote_addr_t addr)
      *          All dicts sharing same key must have same insertion order.
      */
 
-    auto values_addr = (remote_addr_t)dict.ma_values;
+    auto dictvalues_addr = (remote_addr_t)dict.ma_values;
 
     // Get the values in one copy if we are dealing with a split-table dictionary
-    if (values_addr != 0) {
+    if (dictvalues_addr != 0) {
         d_values.resize(num_items);
+        auto values_offset =
+                (d_manager->versionIsAtLeast(3, 13) ? offsetof(Python3_13::PyDictValuesObject, values)
+                                                    : offsetof(Python3::PyDictValuesObject, values));
+
+        auto values_addr = dictvalues_addr + values_offset;
         d_manager->copyMemoryFromProcess(values_addr, num_items * sizeof(PyObject*), d_values.data());
     } else {
         std::transform(
@@ -525,6 +530,7 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
 
     PyTypeObject cls;
     LOG(DEBUG) << std::hex << std::showbase << "Copying typeobject from address " << obj.ob_type;
+    d_type_addr = reinterpret_cast<remote_addr_t>(obj.ob_type);
     manager->copyMemoryFromProcess((remote_addr_t)obj.ob_type, manager->offsets().py_type.size, &cls);
 
     d_flags = manager->getField(cls, &py_type_v::o_tp_flags);
@@ -545,6 +551,12 @@ bool
 Object::hasFlags(unsigned long flags) const
 {
     return flags & d_flags;
+}
+
+remote_addr_t
+Object::typeAddr() const
+{
+    return d_type_addr;
 }
 
 // Helpers for making overloaded lambdas in the variant visitor in Object::toString
@@ -652,6 +664,8 @@ Object::objectType() const
         return ObjectType::FLOAT;
     } else if (d_classname == "NoneType") {
         return ObjectType::NONE;
+    } else if (d_classname == "code") {
+        return ObjectType::CODE;
     }
     return ObjectType::OTHER;
 }
@@ -686,6 +700,7 @@ Object::toConcreteObject() const
                 return ListObject(d_manager, d_addr);
             case Object::ObjectType::DICT:
                 return DictObject(d_manager, d_addr);
+            case Object::ObjectType::CODE:
             case Object::ObjectType::OTHER:
                 return GenericObject(d_addr, d_classname);
         }
@@ -707,6 +722,9 @@ Object::guessClassName(PyTypeObject& type) const
     }
     if (tp_repr == d_manager->findSymbol("bool_repr")) {
         return "bool";
+    }
+    if (tp_repr == d_manager->findSymbol("code_repr")) {
+        return "PyCodeObject";
     }
     return "???";
 }

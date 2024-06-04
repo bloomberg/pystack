@@ -233,12 +233,75 @@ typedef struct _pythreadstate
 } PyThreadState;
 }  // namespace Python3_12
 
+namespace Python3_13 {
+typedef struct _err_stackitem
+{
+    PyObject* exc_value;
+    struct _err_stackitem* previous_item;
+} _PyErr_StackItem;
+typedef struct _pythreadstate
+{
+    struct _pythreadstate* prev;
+    struct _pythreadstate* next;
+    struct _is* interp;
+    uintptr_t eval_breaker;
+    struct
+    {
+        unsigned int initialized : 1;
+        unsigned int bound : 1;
+        unsigned int unbound : 1;
+        unsigned int bound_gilstate : 1;
+        unsigned int active : 1;
+        unsigned int finalizing : 1;
+        unsigned int cleared : 1;
+        unsigned int finalized : 1;
+        unsigned int : 24;
+    } _status;
+    int _whence;
+    int state;
+    int py_recursion_remaining;
+    int py_recursion_limit;
+    int c_recursion_remaining;
+    int recursion_headroom;
+    int tracing;
+    int what_event;
+    void* frame;
+    Py_tracefunc c_profilefunc;
+    Py_tracefunc c_tracefunc;
+    PyObject* c_profileobj;
+    PyObject* c_traceobj;
+    PyObject* current_exception;
+    _PyErr_StackItem* exc_info;
+    PyObject* dict;
+    int gilstate_counter;
+    PyObject* async_exc;
+    unsigned long thread_id;
+    unsigned long native_thread_id;
+
+    PyObject* delete_later;
+    uintptr_t critical_section;
+    int coroutine_origin_tracking_depth;
+    PyObject* async_gen_firstiter;
+    PyObject* async_gen_finalizer;
+    PyObject* context;
+    uint64_t context_ver;
+    uint64_t id;
+    void* datastack_chunk;
+    PyObject** datastack_top;
+    PyObject** datastack_limit;
+    _PyErr_StackItem exc_state;
+    PyObject* previous_executor;
+    uint64_t dict_global_version;
+} PyThreadState;
+}  // namespace Python3_13
+
 typedef union {
     Python2::PyThreadState v2;
     Python3_4::PyThreadState v3_4;
     Python3_7::PyThreadState v3_7;
     Python3_11::PyThreadState v3_11;
     Python3_12::PyThreadState v3_12;
+    Python3_13::PyThreadState v3_13;
 } PyThreadState;
 
 union CFrame {

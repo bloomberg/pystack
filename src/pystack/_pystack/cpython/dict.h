@@ -47,6 +47,11 @@ typedef struct
     PyObject** ma_values;
 } PyDictObject;
 
+typedef struct _dictvalues
+{
+    PyObject* values[1];
+} PyDictValuesObject;
+
 }  // namespace Python3
 namespace Python3_3 {
 typedef struct _dictkeysobject
@@ -80,5 +85,18 @@ typedef struct _dictkeysobject
     char dk_indices[]; /* char is required to avoid strict aliasing. */
 } PyDictKeysObject;
 }  // namespace Python3_11
+
+namespace Python3_13 {
+
+typedef struct _dictvalues
+{
+    uint8_t capacity;
+    uint8_t size;
+    uint8_t embedded;
+    uint8_t valid;
+    PyObject* values[1];
+} PyDictValuesObject;
+
+}  // namespace Python3_13
 
 }  // namespace pystack

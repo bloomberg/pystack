@@ -221,7 +221,7 @@ PyThread::getFrameAddr(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         const PyThreadState& ts)
 {
-    if (manager->versionIsAtLeast(3, 11)) {
+    if (manager->versionIsAtLeast(3, 11) && !manager->versionIsAtLeast(3, 13)) {
         remote_addr_t cframe_addr = manager->getField(ts, &py_thread_v::o_frame);
         if (!manager->isAddressValid(cframe_addr)) {
             return reinterpret_cast<remote_addr_t>(nullptr);
