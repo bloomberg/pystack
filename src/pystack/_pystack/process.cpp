@@ -535,6 +535,19 @@ AbstractProcessManager::Pid() const
 {
     return d_pid;
 }
+
+remote_addr_t
+AbstractProcessManager::getAddressFromCache(const std::string& symbol) const
+{
+    return d_type_cache[symbol];
+}
+
+void
+AbstractProcessManager::registerAddressInCache(const std::string& symbol, remote_addr_t address) const
+{
+    d_type_cache[symbol] = address;
+}
+
 std::string
 AbstractProcessManager::getCStringFromAddress(remote_addr_t addr) const
 {

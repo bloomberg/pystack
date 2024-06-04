@@ -62,7 +62,13 @@ FrameObject::getCode(
                << py_code_addr;
 
     uintptr_t last_instruction;
-    if (manager->versionIsAtLeast(3, 11)) {
+    if (manager->versionIsAtLeast(3, 13)) {
+        // In 3.13 the field is called *instr_ptr* and points to the current instruction
+        // rather than the previous one. We're reusing the same name and adjusting the
+        // value to allow us to use the same decoding code across versions.
+        uintptr_t inst_ptr = manager->getField(frame, &py_frame_v::o_prev_instr);
+        last_instruction = inst_ptr - sizeof(Python3_12::_Py_CODEUNIT*);
+    } else if (manager->versionIsAtLeast(3, 11)) {
         last_instruction = manager->getField(frame, &py_frame_v::o_prev_instr);
     } else {
         last_instruction = manager->getField(frame, &py_frame_v::o_lasti);

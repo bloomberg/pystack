@@ -153,7 +153,8 @@ class Object
         TUPLE,
         LIST,
         DICT,
-        OTHER,
+        CODE,
+        OTHER
     };
 
     static constexpr int MAX_LOCAL_STR_SIZE = 80;
@@ -166,10 +167,12 @@ class Object
     PythonObject toConcreteObject() const;
     bool hasFlags(unsigned long flags) const;
     std::string toString(ssize_t max_size = MAX_LOCAL_STR_SIZE) const;
+    remote_addr_t typeAddr() const;
 
   private:
     // Data members
     remote_addr_t d_addr;
+    remote_addr_t d_type_addr;
     std::string d_classname{};
     unsigned long d_flags{};
     std::shared_ptr<const AbstractProcessManager> d_manager{nullptr};

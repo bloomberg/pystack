@@ -65,6 +65,8 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     // Getters
     pid_t Pid() const;
     virtual const std::vector<int>& Tids() const = 0;
+    remote_addr_t getAddressFromCache(const std::string& symbol) const;
+    void registerAddressInCache(const std::string& symbol, remote_addr_t address) const;
 
     // Methods
     std::vector<NativeFrame> unwindThread(pid_t tid) const;
@@ -119,6 +121,7 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     int d_major{};
     int d_minor{};
     const python_v* d_py_v{};
+    mutable std::unordered_map<std::string, remote_addr_t> d_type_cache;
 
     // Methods
     bool isValidInterpreterState(remote_addr_t addr) const;
