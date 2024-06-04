@@ -68,7 +68,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v2.18.1
         env:
-          CIBW_BUILD: "cp3{7..12}-${{ matrix.wheel_type }}"
+          CIBW_BUILD: "cp3{7..13}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto aarch64
           CIBW_PRERELEASE_PYTHONS: True
       - uses: actions/upload-artifact@v4
@@ -120,7 +120,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12"]
+        python_version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -138,8 +138,7 @@ jobs:
           sudo apt-get install -qy \
             gdb \
             python${{matrix.python_version}}-dev \
-            python${{matrix.python_version}}-dbg \
-            python${{matrix.python_version}}-distutils
+            python${{matrix.python_version}}-dbg
       - name: Install Python dependencies
         run: |
           python${{matrix.python_version}} -m pip install --upgrade pip
@@ -309,6 +308,7 @@ jobs:
           mv dist/sdist/*.tar.gz dist/
           mv dist/*-wheels/*.whl dist/
           rmdir dist/{sdist,*-wheels}
+          rm -f dist/*cp313*
           ls -R dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
