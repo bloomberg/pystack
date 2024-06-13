@@ -85,6 +85,7 @@ class NativeReportingMode(enum.Enum):
     OFF = 0
     PYTHON = 1
     ALL = 1000
+    LAST = 2000
 
 
 cdef api void log_with_python(const cppstring *message, int level) noexcept:
