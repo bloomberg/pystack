@@ -1,0 +1,1 @@
+Heap corruption could cause PyStack to fail to generate a stack when ``--locals`` mode was used. This has been fixed by falling back to a reasonable default when attempting to format the repr of a local variable causes a dereference of an invalid pointer.

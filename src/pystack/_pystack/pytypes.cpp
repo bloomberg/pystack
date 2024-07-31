@@ -503,7 +503,7 @@ std::string
 GenericObject::toString(ssize_t max_size) const
 {
     std::stringstream os;
-    os << "<" << std::hex << std::showbase << d_classname << " at " << d_addr << ">";
+    os << "<" << std::hex << d_classname << " at 0x" << d_addr << ">";
     std::string object_str = os.str();
     return limitOutput(object_str, max_size);
 }
@@ -521,19 +521,39 @@ NoneObject::toString([[maybe_unused]] ssize_t max_size) const
 
 Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, remote_addr_t addr)
 : d_addr(addr)
+, d_type_addr(0)
+, d_classname()
+, d_flags()
 , d_manager(manager)
 {
     LOG(DEBUG) << std::hex << std::showbase << "Copying PyObject data from address " << addr;
 
     PyObject obj;
-    manager->copyObjectFromProcess(d_addr, &obj);
+    try {
+        manager->copyObjectFromProcess(d_addr, &obj);
+    } catch (RemoteMemCopyError& ex) {
+        LOG(WARNING) << std::hex << std::showbase << "Failed to read PyObject data from address "
+                     << d_addr;
+        d_classname = "invalid object";
+        return;
+    }
 
     PyTypeObject cls;
     LOG(DEBUG) << std::hex << std::showbase << "Copying typeobject from address " << obj.ob_type;
     d_type_addr = reinterpret_cast<remote_addr_t>(obj.ob_type);
-    manager->copyMemoryFromProcess((remote_addr_t)obj.ob_type, manager->offsets().py_type.size, &cls);
+    try {
+        manager->copyMemoryFromProcess(
+                (remote_addr_t)obj.ob_type,
+                manager->offsets().py_type.size,
+                &cls);
 
-    d_flags = manager->getField(cls, &py_type_v::o_tp_flags);
+        d_flags = manager->getField(cls, &py_type_v::o_tp_flags);
+    } catch (RemoteMemCopyError& ex) {
+        LOG(WARNING) << std::hex << std::showbase << "Failed to read typeobject from address "
+                     << obj.ob_type;
+        d_classname = "invalid object";
+        return;
+    }
 
     remote_addr_t name_addr = manager->getField(cls, &py_type_v::o_tp_name);
     try {
@@ -577,24 +597,33 @@ Object::toString(ssize_t max_size) const
     if (max_size <= 5) {
         return ELLIPSIS;
     }
-    std::stringstream os;
-    std::visit(
-            overloaded{
-                    [&](const auto& arg) { os << arg.toString(max_size); },
-                    [&](const bool arg) { os << arg; },
-                    [&](const long arg) { os << arg; },
-                    [&](const double arg) { os << arg; },
-                    [&](const std::string& arg) {
-                        std::string truncated = arg;
-                        if (static_cast<size_t>(max_size) < arg.size()) {
-                            truncated = arg.substr(0, max_size - 3) + "...";
-                        }
-                        os << truncated;
-                    },
-            },
-            toConcreteObject());
+    try {
+        std::stringstream os;
+        std::visit(
+                overloaded{
+                        [&](const auto& arg) { os << arg.toString(max_size); },
+                        [&](const bool arg) { os << arg; },
+                        [&](const long arg) { os << arg; },
+                        [&](const double arg) { os << arg; },
+                        [&](const std::string& arg) {
+                            std::string truncated = arg;
+                            if (static_cast<size_t>(max_size) < arg.size()) {
+                                truncated = arg.substr(0, max_size - 3) + "...";
+                            }
+                            os << truncated;
+                        },
+                },
+                toConcreteObject());
 
-    return os.str();
+        return os.str();
+    } catch (RemoteMemCopyError& ex) {
+        LOG(WARNING) << std::hex << std::showbase << "Failed to create a repr for object of type "
+                     << d_classname << " at address " << d_addr;
+
+        std::stringstream os;
+        os << std::hex << std::showbase << "<" << d_classname << " object at " << d_addr << ">";
+        return os.str();
+    }
 }
 
 long

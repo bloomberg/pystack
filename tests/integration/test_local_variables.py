@@ -558,3 +558,71 @@ first_func()
 
     second_func_frame = find_frame(frames, "second_func")
     assert "the_argument" not in second_func_frame.arguments
+
+
+@ALL_PYTHONS
+@ALL_SOURCES
+def test_trashed_locals(generate_threads, python, tmpdir):
+    # GIVEN
+    _, python_executable = python
+
+    program_template = """
+import ctypes
+import sys
+import time
+
+class ListObject(ctypes.Structure):
+    _fields_ = [
+        ("ob_refcnt", ctypes.c_ssize_t),
+        ("ob_type", ctypes.c_void_p),
+        ("ob_size", ctypes.c_ssize_t),
+        ("ob_item", ctypes.c_void_p),
+    ]
+
+class TupleObject(ctypes.Structure):
+    _fields_ = [
+        ("ob_refcnt", ctypes.c_ssize_t),
+        ("ob_type", ctypes.c_void_p),
+        ("ob_size", ctypes.c_ssize_t),
+        ("ob_item0", ctypes.c_void_p),
+        ("ob_item1", ctypes.c_void_p),
+    ]
+
+def main():
+    bad_type = (1, 2, 3)
+    bad_elem = (4, 5, 6)
+    nullelem = (7, 8, 9)
+    bad_list = [0, 1, 2]
+
+    TupleObject.from_address(id(bad_type)).ob_type = 0xded
+    TupleObject.from_address(id(bad_elem)).ob_item1 = 0xbad
+    TupleObject.from_address(id(nullelem)).ob_item1 = 0x0
+    ListObject.from_address(id(bad_list)).ob_item = 0x0
+
+    fifo = sys.argv[1]
+    with open(sys.argv[1], "w") as fifo:
+        fifo.write("ready")
+    time.sleep(1000)
+
+main()
+    """
+
+    script = tmpdir / "the_script.py"
+    script.write_text(program_template, encoding="utf-8")
+
+    # WHEN
+    threads = generate_threads(python_executable, script, tmpdir, locals=True)
+
+    # THEN
+
+    assert len(threads) == 1
+    (thread,) = threads
+
+    frames = list(thread.frames)
+    assert (len(frames)) == 2
+
+    main = find_frame(frames, "main")
+    assert re.match(r"^<invalid object at 0x[0-9a-f]{4,}>$", main.locals["bad_type"])
+    assert main.locals["bad_elem"] == "(4, <invalid object at 0xbad>, 6)"
+    assert main.locals["nullelem"] == "(7, <invalid object at 0x0>, 9)"
+    assert re.match(r"^<list object at 0x[0-9a-f]{4,}>$", main.locals["bad_list"])
