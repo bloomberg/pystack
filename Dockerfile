@@ -63,6 +63,9 @@ RUN apt-get update \
     python3.12-dev \
     python3.12-dbg \
     python3.12-venv \
+    python3.13-dev \
+    python3.13-dbg \
+    python3.13-venv \
     make \
     cmake \
     gdb \
@@ -93,7 +96,7 @@ ENV PYTHON=python3.12 \
 COPY ["requirements-test.txt", "requirements-extra.txt", "requirements-docs.txt", "/tmp/"]
 
 # Install Python packages
-RUN python3.12 -m venv $VIRTUAL_ENV \
+RUN $PYTHON -m venv $VIRTUAL_ENV \
     && pip install -U pip wheel setuptools cython pkgconfig \
     && pip install -U -r /tmp/requirements-test.txt -r /tmp/requirements-extra.txt
 

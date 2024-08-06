@@ -337,6 +337,8 @@ python_v python_v3_12 = {
         py_cframe<Python3_12::CFrame>(),
 };
 
+// ---- Python 3.13 ------------------------------------------------------------
+
 python_v python_v3_13 = {
         py_type<Python3_8::PyTypeObject>(),
         py_codev311<Python3_12::PyCodeObject>(),

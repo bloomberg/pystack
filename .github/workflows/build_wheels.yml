@@ -308,7 +308,6 @@ jobs:
           mv dist/sdist/*.tar.gz dist/
           mv dist/*-wheels/*.whl dist/
           rmdir dist/{sdist,*-wheels}
-          rm -f dist/*cp313*
           ls -R dist
       - uses: pypa/gh-action-pypi-publish@release/v1
         with:
