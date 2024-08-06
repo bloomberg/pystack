@@ -341,7 +341,7 @@ python_v python_v3_12 = {
 
 python_v python_v3_13 = {
         py_type<Python3_8::PyTypeObject>(),
-        py_codev311<Python3_12::PyCodeObject>(),
+        py_codev311<Python3_13::PyCodeObject>(),
         py_framev312<Python3_12::PyFrameObject>(),
         py_threadv313<Python3_13::PyThreadState>(),
         py_isv312<Python3_13::PyInterpreterState>(),
