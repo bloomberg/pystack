@@ -54,6 +54,7 @@ Contents
 
    tutorials/deadlock
    tutorials/random_prime_number
+   tutorials/core_tutorial
 
 .. toctree::
   :caption: Project Information
