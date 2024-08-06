@@ -1,0 +1,570 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="../">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="../genindex.html" /><link rel="search" title="Search" href="../search.html" /><link rel="next" title="Prime Number Generation" href="random_prime_number.html" /><link rel="prev" title="Customizing the reports" href="../customizing_the_reports.html" />
+
+    <link rel="shortcut icon" href="../_static/favicon.ico"/><!-- Generated with Sphinx 8.0.2 and Furo 2024.08.06 -->
+        <title>Deadlock - pystack</title>
+      <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo.css?v=354aac6f" />
+    <link rel="stylesheet" type="text/css" href="../_static/styles/furo-extensions.css?v=302659d7" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="../overview.html"><div class="brand">pystack</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="../overview.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="../_static/logo.png" alt="Logo"/>
+  </div>
+  
+  
+</a><form class="sidebar-search-container" method="get" action="../search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul>
+<li class="toctree-l1"><a class="reference internal" href="../process.html">Analyzing processes</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../corefile.html">Analyzing core dumps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../customizing_the_reports.html">Customizing the reports</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hands-on Tutorial</span></p>
+<ul class="current">
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Deadlock</a></li>
+<li class="toctree-l1"><a class="reference internal" href="random_prime_number.html">Prime Number Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="core_tutorial.html">Debugging Core Files</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Information</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="../_sources/tutorials/deadlock.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="deadlock">
+<h1>Deadlock<a class="headerlink" href="#deadlock" title="Link to this heading">¶</a></h1>
+<section id="intro">
+<h2>Intro<a class="headerlink" href="#intro" title="Link to this heading">¶</a></h2>
+<p>This lesson is meant to familiarize you with PyStack with a classic problem: lock acquisition.</p>
+<p>In this exercise, we will intentionally create a lock ordering issue, which is a common way of
+causing a deadlock, where two or more threads are all waiting for the others to release resources,
+causing the program to hang indefinitely.</p>
+</section>
+<section id="development-environment-setup">
+<h2>Development Environment Setup<a class="headerlink" href="#development-environment-setup" title="Link to this heading">¶</a></h2>
+<p>Navigate to the <a class="reference external" href="https://github.com/bloomberg/pystack">PyStack GitHub repo</a> and get a copy of the
+source code. You can either clone it, or just download the zip, whatever is your preference here.</p>
+<p>You will also need a terminal with a reasonably recent version of <code class="docutils literal notranslate"><span class="pre">python3</span></code> installed.</p>
+<p>Once you have the repo ready, <code class="docutils literal notranslate"><span class="pre">cd</span></code> into the <code class="docutils literal notranslate"><span class="pre">docs/tutorials</span></code> folder:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">cd</span><span class="w"> </span>docs/tutorials/
+</pre></div>
+</div>
+<p>It is here where we will be running the tests and exercises for the remainder of the tutorial.</p>
+<p>Let’s go ahead and setup our virtual environment. For reference, here are the official <a class="reference external" href="https://docs.python.org/3/library/venv.html">python3 venv
+docs</a>. You can also just follow along with the
+commands below.</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>venv<span class="w"> </span>.venv
+</pre></div>
+</div>
+<p>Once your virtual environment has been created, you can activate it like so:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span><span class="nb">source</span><span class="w"> </span>.venv/bin/activate
+</pre></div>
+</div>
+<p>Your terminal prompt will be prefixed with <code class="docutils literal notranslate"><span class="pre">(.venv)</span></code> to show that activation was successful.
+With our virtual environment ready, we can go ahead and install PyStack:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>-m<span class="w"> </span>pip<span class="w"> </span>install<span class="w"> </span>pystack
+</pre></div>
+</div>
+<p>Keep your virtual environment activated for the rest of the tutorial, and you should be able to run
+any of the commands in the exercises.</p>
+</section>
+<section id="debugging-a-running-process">
+<h2>Debugging a running process<a class="headerlink" href="#debugging-a-running-process" title="Link to this heading">¶</a></h2>
+<p><code class="docutils literal notranslate"><span class="pre">pystack</span> <span class="pre">remote</span></code> lets you analyze the status of a running (“remote”) process.</p>
+<section id="triggering-the-deadlock">
+<h3>Triggering the deadlock<a class="headerlink" href="#triggering-the-deadlock" title="Link to this heading">¶</a></h3>
+<p>In the <code class="docutils literal notranslate"><span class="pre">docs/tutorials</span></code> directory, there is a script called <code class="docutils literal notranslate"><span class="pre">deadlock.py</span></code>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="linenos"> 1</span><span class="kn">import</span> <span class="nn">os</span>
+<span class="linenos"> 2</span><span class="kn">import</span> <span class="nn">threading</span>
+<span class="linenos"> 3</span><span class="kn">import</span> <span class="nn">time</span>
+<span class="linenos"> 4</span>
+<span class="linenos"> 5</span>
+<span class="linenos"> 6</span><span class="k">def</span> <span class="nf">background</span><span class="p">(</span><span class="n">first_lock</span><span class="p">,</span> <span class="n">second_lock</span><span class="p">):</span>
+<span class="linenos"> 7</span>    <span class="k">with</span> <span class="n">first_lock</span><span class="p">:</span>
+<span class="linenos"> 8</span>        <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    First lock acquired&quot;</span><span class="p">)</span>
+<span class="linenos"> 9</span>        <span class="n">time</span><span class="o">.</span><span class="n">sleep</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+<span class="linenos">10</span>        <span class="k">with</span> <span class="n">second_lock</span><span class="p">:</span>
+<span class="linenos">11</span>            <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;    Second lock acquired&quot;</span><span class="p">)</span>
+<span class="linenos">12</span>
+<span class="linenos">13</span>
+<span class="linenos">14</span><span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+<span class="linenos">15</span>    <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Process ID: </span><span class="si">{</span><span class="n">os</span><span class="o">.</span><span class="n">getpid</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
+<span class="linenos">16</span>    <span class="n">lock_a</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+<span class="linenos">17</span>    <span class="n">lock_b</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Lock</span><span class="p">()</span>
+<span class="linenos">18</span>
+<span class="linenos">19</span>    <span class="n">t1</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">background</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">lock_a</span><span class="p">,</span> <span class="n">lock_b</span><span class="p">))</span>
+<span class="linenos">20</span>    <span class="n">t2</span> <span class="o">=</span> <span class="n">threading</span><span class="o">.</span><span class="n">Thread</span><span class="p">(</span><span class="n">target</span><span class="o">=</span><span class="n">background</span><span class="p">,</span> <span class="n">args</span><span class="o">=</span><span class="p">(</span><span class="n">lock_b</span><span class="p">,</span> <span class="n">lock_a</span><span class="p">))</span>
+<span class="linenos">21</span>
+<span class="linenos">22</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting First Thread&quot;</span><span class="p">)</span>
+<span class="linenos">23</span>    <span class="n">t1</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="linenos">24</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Starting Second Thread&quot;</span><span class="p">)</span>
+<span class="linenos">25</span>    <span class="n">t2</span><span class="o">.</span><span class="n">start</span><span class="p">()</span>
+<span class="linenos">26</span>
+<span class="linenos">27</span>    <span class="n">t1</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="linenos">28</span>    <span class="n">t2</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+<span class="linenos">29</span>
+<span class="linenos">30</span>    <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Finished execution&quot;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Since we navigated to that directory above, we can run the deadlock script with:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>python3<span class="w"> </span>deadlock.py<span class="w"> </span><span class="p">&amp;</span>
+</pre></div>
+</div>
+<p>This script will intentionally deadlock. The <code class="docutils literal notranslate"><span class="pre">&amp;</span></code> causes the process to be run in the background,
+so that you’re still able to run commands in the current terminal once it has deadlocked. The output
+will contain the process ID, so this is the expected output:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Process<span class="w"> </span>ID:<span class="w"> </span>&lt;PID&gt;
+Starting<span class="w"> </span>First<span class="w"> </span>Thread
+<span class="w">    </span>First<span class="w"> </span>lock<span class="w"> </span>acquired
+Starting<span class="w"> </span>Second<span class="w"> </span>Thread
+<span class="w">    </span>First<span class="w"> </span>lock<span class="w"> </span>acquired
+</pre></div>
+</div>
+<p>You could also find the PID with:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>ps<span class="w"> </span>aux<span class="w"> </span><span class="p">|</span><span class="w"> </span>grep<span class="w"> </span>deadlock.py
+</pre></div>
+</div>
+<p>After the deadlock occurs we can use the <code class="docutils literal notranslate"><span class="pre">pystack</span></code> command to analyze the process (replace
+<code class="docutils literal notranslate"><span class="pre">&lt;PID&gt;</span></code> with the process ID from the previous step):</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pystack<span class="w"> </span>remote<span class="w"> </span>&lt;PID&gt;
+</pre></div>
+</div>
+<p>If you see <code class="docutils literal notranslate"><span class="pre">Operation</span> <span class="pre">not</span> <span class="pre">permitted</span></code>, you may need to instead run it with:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>sudo<span class="w"> </span>-E<span class="w"> </span>pystack<span class="w"> </span>remote<span class="w"> </span>&lt;PID&gt;
+</pre></div>
+</div>
+</section>
+<section id="understanding-the-results">
+<h3>Understanding the results<a class="headerlink" href="#understanding-the-results" title="Link to this heading">¶</a></h3>
+<p>The expected result is output similar to this:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">Traceback</span> <span class="k">for</span> <span class="n">thread</span> <span class="mi">789</span> <span class="p">(</span><span class="n">python3</span><span class="p">)</span> <span class="p">[]</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">966</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_bootstrap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bootstrap_inner</span><span class="p">()</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1009</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_bootstrap_inner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">946</span><span class="p">,</span> <span class="ow">in</span> <span class="n">run</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;path_to_tutorials&gt;/deadlock.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">10</span><span class="p">,</span> <span class="ow">in</span> <span class="n">background</span>
+        <span class="k">with</span> <span class="n">second_lock</span><span class="p">:</span>
+
+<span class="n">Traceback</span> <span class="k">for</span> <span class="n">thread</span> <span class="mi">456</span> <span class="p">(</span><span class="n">python3</span><span class="p">)</span> <span class="p">[]</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">966</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_bootstrap</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_bootstrap_inner</span><span class="p">()</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1009</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_bootstrap_inner</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">run</span><span class="p">()</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">946</span><span class="p">,</span> <span class="ow">in</span> <span class="n">run</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">_args</span><span class="p">,</span> <span class="o">**</span><span class="bp">self</span><span class="o">.</span><span class="n">_kwargs</span><span class="p">)</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;path_to_tutorials&gt;/deadlock.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">10</span><span class="p">,</span> <span class="ow">in</span> <span class="n">background</span>
+        <span class="k">with</span> <span class="n">second_lock</span><span class="p">:</span>
+
+<span class="n">Traceback</span> <span class="k">for</span> <span class="n">thread</span> <span class="mi">123</span> <span class="p">(</span><span class="n">python3</span><span class="p">)</span> <span class="p">[]</span> <span class="p">(</span><span class="n">most</span> <span class="n">recent</span> <span class="n">call</span> <span class="n">last</span><span class="p">):</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;path_to_tutorials&gt;/deadlock.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">27</span><span class="p">,</span> <span class="ow">in</span> <span class="o">&lt;</span><span class="n">module</span><span class="o">&gt;</span>
+        <span class="n">t1</span><span class="o">.</span><span class="n">join</span><span class="p">()</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1089</span><span class="p">,</span> <span class="ow">in</span> <span class="n">join</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_wait_for_tstate_lock</span><span class="p">()</span>
+    <span class="p">(</span><span class="n">Python</span><span class="p">)</span> <span class="n">File</span> <span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span><span class="p">,</span> <span class="n">line</span> <span class="mi">1109</span><span class="p">,</span> <span class="ow">in</span> <span class="n">_wait_for_tstate_lock</span>
+        <span class="k">if</span> <span class="n">lock</span><span class="o">.</span><span class="n">acquire</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">timeout</span><span class="p">):</span>
+</pre></div>
+</div>
+<p>Notice that each section is displaying a running thread, and there are three threads here:</p>
+<ol class="arabic simple">
+<li><p>Thread 123 is the original thread that creates the other two, and waits for them</p></li>
+<li><p>Thread 456 is <code class="docutils literal notranslate"><span class="pre">t1</span></code></p></li>
+<li><p>Thread 789 is <code class="docutils literal notranslate"><span class="pre">t2</span></code></p></li>
+</ol>
+<p>Each thread has a stack trace:</p>
+<ul class="simple">
+<li><p>The thread 789 is trying to acquire <code class="docutils literal notranslate"><span class="pre">lock_a</span></code> but is blocked because <code class="docutils literal notranslate"><span class="pre">lock_a</span></code> is already held
+by thread 456.</p></li>
+<li><p>The thread 456 is trying to acquire <code class="docutils literal notranslate"><span class="pre">lock_b</span></code> but is blocked because <code class="docutils literal notranslate"><span class="pre">lock_b</span></code> is already held
+by thread 789.</p></li>
+<li><p>The main thread 123 is calling <code class="docutils literal notranslate"><span class="pre">join()</span></code> on <code class="docutils literal notranslate"><span class="pre">t1</span></code>, waiting for it to finish. However, <code class="docutils literal notranslate"><span class="pre">t1</span></code>
+cannot finish because it is stuck waiting for <code class="docutils literal notranslate"><span class="pre">t2</span></code>.</p></li>
+</ul>
+<p>We can see that this is a deadlock: every thread is willing to wait forever for some condition that
+will never happen, due to the improper lock acquisition ordering.</p>
+</section>
+<section id="exploring-more-features">
+<h3>Exploring more features<a class="headerlink" href="#exploring-more-features" title="Link to this heading">¶</a></h3>
+<p>PyStack has some features that can help us diagnose the problem. Using <code class="docutils literal notranslate"><span class="pre">--locals</span></code> you can obtain
+a simple string representation of the local variables in the different frames as well as the
+function arguments.</p>
+<p>When you run:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>pystack<span class="w"> </span>remote<span class="w"> </span>&lt;PID&gt;<span class="w"> </span>--locals
+</pre></div>
+</div>
+<p>The expected result is:</p>
+<div class="highlight-shell notranslate"><div class="highlight"><pre><span></span>Traceback<span class="w"> </span><span class="k">for</span><span class="w"> </span>thread<span class="w"> </span><span class="m">789</span><span class="w"> </span><span class="o">(</span>python3<span class="o">)</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="o">(</span>most<span class="w"> </span>recent<span class="w"> </span>call<span class="w"> </span>last<span class="o">)</span>:
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">966</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>_bootstrap
+<span class="w">        </span>self._bootstrap_inner<span class="o">()</span>
+<span class="w">    </span>Arguments:
+<span class="w">        </span>self:<span class="w"> </span>&lt;Thread<span class="w"> </span>at<span class="w"> </span>0x7f0c04b96080&gt;
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">1009</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>_bootstrap_inner
+<span class="w">        </span>self.run<span class="o">()</span>
+<span class="w">    </span>Arguments:
+<span class="w">        </span>self:<span class="w"> </span>&lt;Thread<span class="w"> </span>at<span class="w"> </span>0x7f0c04b96080&gt;
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">946</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>run
+<span class="w">        </span>self._target<span class="o">(</span>*self._args,<span class="w"> </span>**self._kwargs<span class="o">)</span>
+<span class="w">    </span>Arguments:
+<span class="w">        </span>self:<span class="w"> </span>&lt;Thread<span class="w"> </span>at<span class="w"> </span>0x7f0c04b96080&gt;
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;path_to_tutorials&gt;/deadlock.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">10</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>background
+<span class="w">        </span>with<span class="w"> </span>second_lock:
+<span class="w">    </span>Arguments:
+<span class="w">        </span>second_lock:<span class="w"> </span>&lt;_thread.lock<span class="w"> </span>at<span class="w"> </span>0x7f0c04b90900&gt;
+<span class="w">        </span>first_lock:<span class="w"> </span>&lt;_thread.lock<span class="w"> </span>at<span class="w"> </span>0x7f0c04b90b40&gt;
+
+Traceback<span class="w"> </span><span class="k">for</span><span class="w"> </span>thread<span class="w"> </span><span class="m">456</span><span class="w"> </span><span class="o">(</span>python3<span class="o">)</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="o">(</span>most<span class="w"> </span>recent<span class="w"> </span>call<span class="w"> </span>last<span class="o">)</span>:
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">966</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>_bootstrap
+<span class="w">        </span>self._bootstrap_inner<span class="o">()</span>
+<span class="w">    </span>Arguments:
+<span class="w">        </span>self:<span class="w"> </span>&lt;Thread<span class="w"> </span>at<span class="w"> </span>0x7f0c04b5bfd0&gt;
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">1009</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>_bootstrap_inner
+<span class="w">        </span>self.run<span class="o">()</span>
+<span class="w">    </span>Arguments:
+<span class="w">        </span>self:<span class="w"> </span>&lt;Thread<span class="w"> </span>at<span class="w"> </span>0x7f0c04b5bfd0&gt;
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">946</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>run
+<span class="w">        </span>self._target<span class="o">(</span>*self._args,<span class="w"> </span>**self._kwargs<span class="o">)</span>
+<span class="w">    </span>Arguments:
+<span class="w">        </span>self:<span class="w"> </span>&lt;Thread<span class="w"> </span>at<span class="w"> </span>0x7f0c04b5bfd0&gt;
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;path_to_tutorials&gt;/deadlock.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">10</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>background
+<span class="w">        </span>with<span class="w"> </span>second_lock:
+<span class="w">    </span>Arguments:
+<span class="w">        </span>second_lock:<span class="w"> </span>&lt;_thread.lock<span class="w"> </span>at<span class="w"> </span>0x7f0c04b90b40&gt;
+<span class="w">        </span>first_lock:<span class="w"> </span>&lt;_thread.lock<span class="w"> </span>at<span class="w"> </span>0x7f0c04b90900&gt;
+
+Traceback<span class="w"> </span><span class="k">for</span><span class="w"> </span>thread<span class="w"> </span><span class="m">123</span><span class="w"> </span><span class="o">(</span>python3<span class="o">)</span><span class="w"> </span><span class="o">[]</span><span class="w"> </span><span class="o">(</span>most<span class="w"> </span>recent<span class="w"> </span>call<span class="w"> </span>last<span class="o">)</span>:
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;path_to_tutorials&gt;/deadlock.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">28</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>&lt;module&gt;
+<span class="w">        </span>t1.join<span class="o">()</span>
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">1089</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>join
+<span class="w">        </span>self._wait_for_tstate_lock<span class="o">()</span>
+<span class="w">    </span>Arguments:
+<span class="w">        </span>timeout:<span class="w"> </span>None
+<span class="w">        </span>self:<span class="w"> </span>&lt;Thread<span class="w"> </span>at<span class="w"> </span>0x7f0c04b5bfd0&gt;
+<span class="w">    </span><span class="o">(</span>Python<span class="o">)</span><span class="w"> </span>File<span class="w"> </span><span class="s2">&quot;/&lt;python_stdlib_path&gt;/threading.py&quot;</span>,<span class="w"> </span>line<span class="w"> </span><span class="m">1109</span>,<span class="w"> </span><span class="k">in</span><span class="w"> </span>_wait_for_tstate_lock
+<span class="w">        </span><span class="k">if</span><span class="w"> </span>lock.acquire<span class="o">(</span>block,<span class="w"> </span>timeout<span class="o">)</span>:
+<span class="w">    </span>Arguments:
+<span class="w">        </span>timeout:<span class="w"> </span>-1
+<span class="w">        </span>block:<span class="w"> </span>True
+<span class="w">        </span>self:<span class="w"> </span>&lt;Thread<span class="w"> </span>at<span class="w"> </span>0x7f0c04b5bfd0&gt;
+<span class="w">    </span>Locals:
+<span class="w">        </span>lock:<span class="w"> </span>&lt;_thread.lock<span class="w"> </span>at<span class="w"> </span>0x7f0c04bae100&gt;
+</pre></div>
+</div>
+<p>Observe that we have the same format of result, with one section for each thread.
+However now, there is now more information: the local variables and function arguments.</p>
+<ul class="simple">
+<li><p>In thread 789 and 456 we can identify the ID of each lock.</p></li>
+<li><p>In the main thread 123 we can verify the arguments of <code class="docutils literal notranslate"><span class="pre">lock.acquire()</span></code>, and see that no timeout
+was set (<code class="docutils literal notranslate"><span class="pre">timeout:</span> <span class="pre">None</span></code>) and that <code class="docutils literal notranslate"><span class="pre">self</span></code> refers to the thread object <code class="docutils literal notranslate"><span class="pre">&lt;Thread</span> <span class="pre">at</span>
+<span class="pre">0x7f0c04b5bfd0&gt;</span></code>. Moreover, in <code class="docutils literal notranslate"><span class="pre">_wait_for_tstate_lock</span></code> we see that <code class="docutils literal notranslate"><span class="pre">timeout</span></code> is <code class="docutils literal notranslate"><span class="pre">-1</span></code>, which
+represents an indefinite <code class="docutils literal notranslate"><span class="pre">wait</span></code>, and <code class="docutils literal notranslate"><span class="pre">block</span></code> is <code class="docutils literal notranslate"><span class="pre">True</span></code>, meaning it will block until the lock
+is acquired.</p></li>
+</ul>
+</section>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="random_prime_number.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Prime Number Generation</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="../customizing_the_reports.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Customizing the reports</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Deadlock</a><ul>
+<li><a class="reference internal" href="#intro">Intro</a></li>
+<li><a class="reference internal" href="#development-environment-setup">Development Environment Setup</a></li>
+<li><a class="reference internal" href="#debugging-a-running-process">Debugging a running process</a><ul>
+<li><a class="reference internal" href="#triggering-the-deadlock">Triggering the deadlock</a></li>
+<li><a class="reference internal" href="#understanding-the-results">Understanding the results</a></li>
+<li><a class="reference internal" href="#exploring-more-features">Exploring more features</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="../_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="../_static/doctools.js?v=9a2dae69"></script>
+    <script src="../_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="../_static/scripts/furo.js?v=5fa4622c"></script>
+    </body>
+</html>
