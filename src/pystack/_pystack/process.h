@@ -128,6 +128,7 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     bool isValidDictionaryObject(remote_addr_t addr) const;
 
   private:
+    void warnIfOffsetsAreMismatched() const;
     remote_addr_t scanMemoryAreaForInterpreterState(const VirtualMap& map) const;
 };
 
