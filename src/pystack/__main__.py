@@ -163,6 +163,15 @@ def generate_cli_parser() -> argparse.ArgumentParser:
         "the interpreter (implies --native)",
     )
     remote_parser.add_argument(
+        "--native-last",
+        action="store_const",
+        dest="native_mode",
+        const=NativeReportingMode.LAST,
+        default=NativeReportingMode.OFF,
+        help="Include native (C) frames only after the last python frame "
+        "in the resulting stack trace",
+    )
+    remote_parser.add_argument(
         "--locals",
         action="store_true",
         default=False,
@@ -207,6 +216,15 @@ def generate_cli_parser() -> argparse.ArgumentParser:
         default=NativeReportingMode.OFF,
         help="Include native (C) frames from threads not registered with "
         "the interpreter (implies --native)",
+    )
+    core_parser.add_argument(
+        "--native-last",
+        action="store_const",
+        dest="native_mode",
+        const=NativeReportingMode.LAST,
+        default=NativeReportingMode.OFF,
+        help="Include native (C) frames only after the last python frame "
+        "in the resulting stack trace",
     )
     core_parser.add_argument(
         "--locals",
@@ -271,7 +289,8 @@ def process_remote(parser: argparse.ArgumentParser, args: argparse.Namespace) ->
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
     ):
         native = args.native_mode != NativeReportingMode.OFF
-        print_thread(thread, native)
+        native_last = args.native_mode == NativeReportingMode.LAST
+        print_thread(thread, native, native_last)
 
 
 def format_psinfo_information(psinfo: Dict[str, Any]) -> str:
@@ -403,7 +422,8 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
     ):
         native = args.native_mode != NativeReportingMode.OFF
-        print_thread(thread, native)
+        native_last = args.native_mode == NativeReportingMode.LAST
+        print_thread(thread, native, native_last)
 
 
 if __name__ == "__main__":  # pragma: no cover
