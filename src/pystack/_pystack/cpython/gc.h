@@ -83,8 +83,33 @@ struct _gc_runtime_state
 
 }  // namespace Python3_8
 
+namespace Python3_13 {
+
+using Python3_8::gc_generation;
+
+struct _gc_runtime_state
+{
+    PyObject* trash_delete_later;
+    int trash_delete_nesting;
+    int enabled;
+    int debug;
+    struct gc_generation young;
+    struct gc_generation old[2];
+    struct gc_generation permanent_generation;
+    struct gc_generation_stats generation_stats[NUM_GENERATIONS];
+    int collecting;
+    PyObject* garbage;
+    PyObject* callbacks;
+    Py_ssize_t heap_size;
+    Py_ssize_t work_to_do;
+    int visited_space;
+};
+
+}  // namespace Python3_13
+
 typedef union {
     struct Python3_7::_gc_runtime_state v3_7;
     struct Python3_8::_gc_runtime_state v3_8;
+    struct Python3_13::_gc_runtime_state v3_13;
 } GCRuntimeState;
 }  // namespace pystack
