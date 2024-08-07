@@ -63,84 +63,6 @@ class DirectoryReader
 }  // namespace
 namespace pystack {
 
-namespace {  // unnamed
-
-template<typename PyDebugOffsets>
-void
-warnIfOffsetsAreMismatchedImpl(
-        const PyDebugOffsets& debug_offsets,
-        const pystack::python_v& pystack_offsets)
-{
-    // Note: It's OK for pystack's size to be smaller, but not larger.
-#define compare_size(offset_struct, pystack_struct)                                                     \
-    if (debug_offsets.offset_struct.size < (uint64_t)pystack_offsets.pystack_struct.size) {             \
-        LOG(WARNING) << "Debug offsets mismatch: debug_offsets." #offset_struct ".size < "              \
-                     << "pystack_offsets." #pystack_struct ".size"                                      \
-                     << " (" << debug_offsets.offset_struct.size << " < "                               \
-                     << pystack_offsets.pystack_struct.size << ")";                                     \
-    } else                                                                                              \
-        do {                                                                                            \
-        } while (0)
-
-#define compare_offset(offset_field, pystack_field)                                                     \
-    if (debug_offsets.offset_field != (uint64_t)pystack_offsets.pystack_field.offset) {                 \
-        LOG(WARNING) << "Debug offsets mismatch: debug_offsets." #offset_field                          \
-                     << " != pystack_offsets." #pystack_field ".offset"                                 \
-                     << " (" << debug_offsets.offset_field                                              \
-                     << " != " << pystack_offsets.pystack_field.offset << ")";                          \
-    } else                                                                                              \
-        do {                                                                                            \
-        } while (0)
-
-    compare_size(runtime_state, py_runtime);
-    compare_offset(runtime_state.finalizing, py_runtime.o_finalizing);
-    compare_offset(runtime_state.interpreters_head, py_runtime.o_interp_head);
-
-    compare_size(interpreter_state, py_is);
-    compare_offset(interpreter_state.next, py_is.o_next);
-    compare_offset(interpreter_state.threads_head, py_is.o_tstate_head);
-    compare_offset(interpreter_state.gc, py_is.o_gc);
-    compare_offset(interpreter_state.imports_modules, py_is.o_modules);
-    compare_offset(interpreter_state.sysdict, py_is.o_sysdict);
-    compare_offset(interpreter_state.builtins, py_is.o_builtins);
-    compare_offset(interpreter_state.ceval_gil, py_is.o_gil_runtime_state);
-
-    compare_size(thread_state, py_thread);
-    compare_offset(thread_state.prev, py_thread.o_prev);
-    compare_offset(thread_state.next, py_thread.o_next);
-    compare_offset(thread_state.interp, py_thread.o_interp);
-    compare_offset(thread_state.current_frame, py_thread.o_frame);
-    compare_offset(thread_state.thread_id, py_thread.o_thread_id);
-    compare_offset(thread_state.native_thread_id, py_thread.o_native_thread_id);
-
-    compare_size(interpreter_frame, py_frame);
-    compare_offset(interpreter_frame.previous, py_frame.o_back);
-    compare_offset(interpreter_frame.executable, py_frame.o_code);
-    compare_offset(interpreter_frame.instr_ptr, py_frame.o_prev_instr);
-    compare_offset(interpreter_frame.localsplus, py_frame.o_localsplus);
-    compare_offset(interpreter_frame.owner, py_frame.o_owner);
-
-    compare_size(code_object, py_code);
-    compare_offset(code_object.filename, py_code.o_filename);
-    compare_offset(code_object.name, py_code.o_name);
-    compare_offset(code_object.linetable, py_code.o_lnotab);
-    compare_offset(code_object.firstlineno, py_code.o_firstlineno);
-    compare_offset(code_object.argcount, py_code.o_argcount);
-    compare_offset(code_object.localsplusnames, py_code.o_varnames);
-    compare_offset(code_object.co_code_adaptive, py_code.o_code_adaptive);
-
-    compare_size(type_object, py_type);
-    compare_offset(type_object.tp_name, py_type.o_tp_name);
-
-    compare_size(gc, py_gc);
-    compare_offset(gc.collecting, py_gc.o_collecting);
-
-#undef compare_size
-#undef compare_offset
-}
-
-}  // unnamed namespace
-
 static std::vector<int>
 getProcessTids(pid_t pid)
 {
@@ -700,7 +622,74 @@ AbstractProcessManager::warnIfOffsetsAreMismatched() const
         return;
     }
 
-    return warnIfOffsetsAreMismatchedImpl(py_runtime.v3_13.debug_offsets, offsets());
+    // Note: It's OK for pystack's size to be smaller, but not larger.
+#define compare_size(size_offset, pystack_struct)                                                       \
+    if (getFieldOffset(size_offset)                                                                     \
+        && ((uint64_t)offsets().pystack_struct.size > getField(py_runtime, size_offset)))               \
+    {                                                                                                   \
+        LOG(WARNING) << "Debug offsets mismatch: " #pystack_struct ".size "                             \
+                     << offsets().pystack_struct.size << " > " << getField(py_runtime, size_offset)     \
+                     << " reported by CPython";                                                         \
+    } else                                                                                              \
+        do {                                                                                            \
+        } while (0)
+
+#define compare_offset(field_offset_offset, pystack_field)                                              \
+    if (getFieldOffset(field_offset_offset)                                                             \
+        && (uint64_t)offsets().pystack_field.offset != getField(py_runtime, field_offset_offset))       \
+    {                                                                                                   \
+        LOG(WARNING) << "Debug offsets mismatch: " #pystack_field << " "                                \
+                     << offsets().pystack_field.offset                                                  \
+                     << " != " << getField(py_runtime, field_offset_offset) << " reported by CPython";  \
+    } else                                                                                              \
+        do {                                                                                            \
+        } while (0)
+
+    compare_size(&py_runtime_v::o_dbg_off_runtime_state_struct_size, py_runtime);
+    compare_offset(&py_runtime_v::o_dbg_off_runtime_state_finalizing, py_runtime.o_finalizing);
+    compare_offset(&py_runtime_v::o_dbg_off_runtime_state_interpreters_head, py_runtime.o_interp_head);
+
+    compare_size(&py_runtime_v::o_dbg_off_interpreter_state_struct_size, py_is);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_state_next, py_is.o_next);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_state_threads_head, py_is.o_tstate_head);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_state_gc, py_is.o_gc);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_state_imports_modules, py_is.o_modules);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_state_sysdict, py_is.o_sysdict);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_state_builtins, py_is.o_builtins);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_state_ceval_gil, py_is.o_gil_runtime_state);
+
+    compare_size(&py_runtime_v::o_dbg_off_thread_state_struct_size, py_thread);
+    compare_offset(&py_runtime_v::o_dbg_off_thread_state_prev, py_thread.o_prev);
+    compare_offset(&py_runtime_v::o_dbg_off_thread_state_next, py_thread.o_next);
+    compare_offset(&py_runtime_v::o_dbg_off_thread_state_interp, py_thread.o_interp);
+    compare_offset(&py_runtime_v::o_dbg_off_thread_state_current_frame, py_thread.o_frame);
+    compare_offset(&py_runtime_v::o_dbg_off_thread_state_thread_id, py_thread.o_thread_id);
+    compare_offset(&py_runtime_v::o_dbg_off_thread_state_native_thread_id, py_thread.o_native_thread_id);
+
+    compare_size(&py_runtime_v::o_dbg_off_interpreter_frame_struct_size, py_frame);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_frame_previous, py_frame.o_back);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_frame_executable, py_frame.o_code);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_frame_instr_ptr, py_frame.o_prev_instr);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_frame_localsplus, py_frame.o_localsplus);
+    compare_offset(&py_runtime_v::o_dbg_off_interpreter_frame_owner, py_frame.o_owner);
+
+    compare_size(&py_runtime_v::o_dbg_off_code_object_struct_size, py_code);
+    compare_offset(&py_runtime_v::o_dbg_off_code_object_filename, py_code.o_filename);
+    compare_offset(&py_runtime_v::o_dbg_off_code_object_name, py_code.o_name);
+    compare_offset(&py_runtime_v::o_dbg_off_code_object_linetable, py_code.o_lnotab);
+    compare_offset(&py_runtime_v::o_dbg_off_code_object_firstlineno, py_code.o_firstlineno);
+    compare_offset(&py_runtime_v::o_dbg_off_code_object_argcount, py_code.o_argcount);
+    compare_offset(&py_runtime_v::o_dbg_off_code_object_localsplusnames, py_code.o_varnames);
+    compare_offset(&py_runtime_v::o_dbg_off_code_object_co_code_adaptive, py_code.o_code_adaptive);
+
+    compare_size(&py_runtime_v::o_dbg_off_type_object_struct_size, py_type);
+    compare_offset(&py_runtime_v::o_dbg_off_type_object_tp_name, py_type.o_tp_name);
+
+    compare_size(&py_runtime_v::o_dbg_off_gc_struct_size, py_gc);
+    compare_offset(&py_runtime_v::o_dbg_off_gc_collecting, py_gc.o_collecting);
+
+#undef compare_size
+#undef compare_offset
 }
 
 bool
