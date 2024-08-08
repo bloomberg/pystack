@@ -34,6 +34,31 @@ struct py_list_v
     FieldOffset<PyObject**> o_ob_item;
 };
 
+struct py_dict_v
+{
+    typedef Python3::PyDictObject Structure;
+    ssize_t size;
+    FieldOffset<remote_addr_t> o_ma_keys;
+    FieldOffset<remote_addr_t> o_ma_values;
+};
+
+struct py_dictkeys_v
+{
+    typedef PyDictKeysObject Structure;
+    ssize_t size;
+    FieldOffset<Py_ssize_t> o_dk_size;
+    FieldOffset<uint8_t> o_dk_kind;
+    FieldOffset<Py_ssize_t> o_dk_nentries;
+    FieldOffset<char[1]> o_dk_indices;
+};
+
+struct py_dictvalues_v
+{
+    typedef PyDictValuesObject Structure;
+    ssize_t size;
+    FieldOffset<remote_addr_t[1]> o_values;
+};
+
 struct py_float_v
 {
     typedef PyFloatObject Structure;
@@ -214,6 +239,9 @@ struct python_v
 {
     py_tuple_v py_tuple;
     py_list_v py_list;
+    py_dict_v py_dict;
+    py_dictkeys_v py_dictkeys;
+    py_dictvalues_v py_dictvalues;
     py_float_v py_float;
     py_long_v py_long;
     py_unicode_v py_unicode;
@@ -240,6 +268,9 @@ struct python_v
 
 define_python_v_get_specialization(py_tuple);
 define_python_v_get_specialization(py_list);
+define_python_v_get_specialization(py_dict);
+define_python_v_get_specialization(py_dictkeys);
+define_python_v_get_specialization(py_dictvalues);
 define_python_v_get_specialization(py_float);
 define_python_v_get_specialization(py_long);
 define_python_v_get_specialization(py_unicode);

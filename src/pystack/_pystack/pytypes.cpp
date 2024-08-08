@@ -254,22 +254,21 @@ getDictEntries(
         ssize_t& num_items,
         std::vector<Python3::PyDictKeyEntry>& valid_entries)
 {
-    auto keys_addr = reinterpret_cast<remote_addr_t>(dict.ma_keys);
+    remote_addr_t keys_addr = manager->getField(dict, &py_dict_v::o_ma_keys);
     assert(manager->versionIsAtLeast(3, 0));
     ssize_t dk_size = 0;
     int dk_kind = 0;
 
+    PyDictKeysObject keys;
+    manager->copyMemoryFromProcess(keys_addr, manager->offsets().py_dictkeys.size, &keys);
+    num_items = manager->getField(keys, &py_dictkeys_v::o_dk_nentries);
+    dk_size = manager->getField(keys, &py_dictkeys_v::o_dk_size);
+
     if (manager->versionIsAtLeast(3, 11)) {
-        Python3_11::PyDictKeysObject keys;
-        manager->copyObjectFromProcess(keys_addr, &keys);
-        num_items = keys.dk_nentries;
-        dk_size = 1L << keys.dk_log2_size;
-        dk_kind = keys.dk_kind;
-    } else {
-        Python3_3::PyDictKeysObject keys;
-        manager->copyObjectFromProcess(keys_addr, &keys);
-        num_items = keys.dk_nentries;
-        dk_size = keys.dk_size;
+        // We're reusing the o_dk_size offset for dk_log2_size. Fix up the value.
+        dk_size = 1L << dk_size;
+        // Added in 3.11
+        dk_kind = manager->getField(keys, &py_dictkeys_v::o_dk_kind);
     }
     if (num_items == 0) {
         LOG(DEBUG) << std::hex << std::showbase << "There are no elements in this dict";
@@ -294,13 +293,7 @@ getDictEntries(
         offset = 8 * dk_size;
     }
 
-    offset_t dk_indices_offset = 0;
-    if (manager->versionIsAtLeast(3, 11)) {
-        dk_indices_offset = offsetof(Python3_11::PyDictKeysObject, dk_indices);
-    } else {
-        dk_indices_offset = offsetof(Python3_3::PyDictKeysObject, dk_indices);
-    }
-
+    offset_t dk_indices_offset = manager->getFieldOffset(&py_dictkeys_v::o_dk_indices);
     remote_addr_t entries_addr = keys_addr + dk_indices_offset + offset;
 
     std::vector<Python3::PyDictKeyEntry> raw_entries;
@@ -371,7 +364,7 @@ void
 DictObject::loadFromPython3(remote_addr_t addr)
 {
     Python3::PyDictObject dict;
-    d_manager->copyObjectFromProcess(addr, &dict);
+    d_manager->copyMemoryFromProcess(addr, d_manager->offsets().py_dict.size, &dict);
 
     ssize_t num_items;
     std::vector<Python3::PyDictKeyEntry> valid_entries;
@@ -400,15 +393,12 @@ DictObject::loadFromPython3(remote_addr_t addr)
      *          All dicts sharing same key must have same insertion order.
      */
 
-    auto dictvalues_addr = (remote_addr_t)dict.ma_values;
+    remote_addr_t dictvalues_addr = d_manager->getField(dict, &py_dict_v::o_ma_values);
 
     // Get the values in one copy if we are dealing with a split-table dictionary
     if (dictvalues_addr != 0) {
         d_values.resize(num_items);
-        auto values_offset =
-                (d_manager->versionIsAtLeast(3, 13) ? offsetof(Python3_13::PyDictValuesObject, values)
-                                                    : offsetof(Python3::PyDictValuesObject, values));
-
+        auto values_offset = d_manager->getFieldOffset(&py_dictvalues_v::o_values);
         auto values_addr = dictvalues_addr + values_offset;
         d_manager->copyMemoryFromProcess(values_addr, num_items * sizeof(PyObject*), d_values.data());
     } else {

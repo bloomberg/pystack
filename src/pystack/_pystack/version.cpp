@@ -332,6 +332,53 @@ py_list()
 }
 
 template<class T>
+constexpr py_dict_v
+py_dict()
+{
+    return {
+            sizeof(T),
+            offsetof(T, ma_keys),
+            offsetof(T, ma_values),
+    };
+}
+
+template<class T>
+constexpr py_dictkeys_v
+py_dictkeys()
+{
+    return {
+            sizeof(T),
+            offsetof(T, dk_size),
+            {},
+            offsetof(T, dk_nentries),
+            offsetof(T, dk_indices),
+    };
+}
+
+template<>
+constexpr py_dictkeys_v
+py_dictkeys<Python3_11::PyDictKeysObject>()
+{
+    return {
+            sizeof(Python3_11::PyDictKeysObject),
+            offsetof(Python3_11::PyDictKeysObject, dk_log2_size),
+            offsetof(Python3_11::PyDictKeysObject, dk_kind),
+            offsetof(Python3_11::PyDictKeysObject, dk_nentries),
+            offsetof(Python3_11::PyDictKeysObject, dk_indices),
+    };
+}
+
+template<class T>
+constexpr py_dictvalues_v
+py_dictvalues()
+{
+    return {
+            sizeof(T),
+            offsetof(T, values),
+    };
+}
+
+template<class T>
 constexpr py_float_v
 py_float()
 {
@@ -357,6 +404,9 @@ py_long()
 python_v python_v2 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        {},
+        {},
+        {},
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         {},
@@ -373,6 +423,9 @@ python_v python_v2 = {
 python_v python_v3_3 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_3::PyDictKeysObject>(),
+        py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
@@ -389,6 +442,9 @@ python_v python_v3_3 = {
 python_v python_v3_4 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_3::PyDictKeysObject>(),
+        py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
@@ -405,6 +461,9 @@ python_v python_v3_4 = {
 python_v python_v3_6 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_3::PyDictKeysObject>(),
+        py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
@@ -421,6 +480,9 @@ python_v python_v3_6 = {
 python_v python_v3_7 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_3::PyDictKeysObject>(),
+        py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
@@ -439,6 +501,9 @@ python_v python_v3_7 = {
 python_v python_v3_8 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_3::PyDictKeysObject>(),
+        py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
@@ -457,6 +522,9 @@ python_v python_v3_8 = {
 python_v python_v3_9 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_3::PyDictKeysObject>(),
+        py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
@@ -475,6 +543,9 @@ python_v python_v3_9 = {
 python_v python_v3_10 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_3::PyDictKeysObject>(),
+        py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
@@ -493,6 +564,9 @@ python_v python_v3_10 = {
 python_v python_v3_11 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_11::PyDictKeysObject>(),
+        py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
@@ -512,6 +586,9 @@ python_v python_v3_11 = {
 python_v python_v3_12 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_11::PyDictKeysObject>(),
+        py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3_12::PyUnicodeObject>(),
@@ -531,6 +608,9 @@ python_v python_v3_12 = {
 python_v python_v3_13 = {
         py_tuple<PyTupleObject>(),
         py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_11::PyDictKeysObject>(),
+        py_dictvalues<Python3_13::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         py_unicode<Python3_12::PyUnicodeObject>(),
