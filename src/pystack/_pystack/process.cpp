@@ -679,6 +679,9 @@ AbstractProcessManager::warnIfOffsetsAreMismatched() const
     compare_offset(&py_runtime_v::o_dbg_off_code_object_localsplusnames, py_code.o_varnames);
     compare_offset(&py_runtime_v::o_dbg_off_code_object_co_code_adaptive, py_code.o_code_adaptive);
 
+    compare_size(&py_runtime_v::o_dbg_off_pyobject_struct_size, py_object);
+    compare_offset(&py_runtime_v::o_dbg_off_pyobject_ob_type, py_object.o_ob_type);
+
     compare_size(&py_runtime_v::o_dbg_off_type_object_struct_size, py_type);
     compare_offset(&py_runtime_v::o_dbg_off_type_object_tp_name, py_type.o_tp_name);
 

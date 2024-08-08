@@ -43,6 +43,13 @@ struct py_unicode_v
     FieldOffset<remote_addr_t> o_ascii;
 };
 
+struct py_object_v
+{
+    typedef PyObject Structure;
+    ssize_t size;
+    FieldOffset<remote_addr_t> o_ob_type;
+};
+
 struct py_code_v
 {
     typedef PyCodeObject Structure;
@@ -193,6 +200,7 @@ struct python_v
     py_tuple_v py_tuple;
     py_list_v py_list;
     py_unicode_v py_unicode;
+    py_object_v py_object;
     py_type_v py_type;
     py_code_v py_code;
     py_frame_v py_frame;
@@ -216,6 +224,7 @@ struct python_v
 define_python_v_get_specialization(py_tuple);
 define_python_v_get_specialization(py_list);
 define_python_v_get_specialization(py_unicode);
+define_python_v_get_specialization(py_object);
 define_python_v_get_specialization(py_type);
 define_python_v_get_specialization(py_code);
 define_python_v_get_specialization(py_frame);
