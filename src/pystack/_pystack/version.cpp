@@ -269,6 +269,10 @@ py_runtimev313()
             offsetof(T, debug_offsets.pyobject.ob_type),
             offsetof(T, debug_offsets.type_object.size),
             offsetof(T, debug_offsets.type_object.tp_name),
+            offsetof(T, debug_offsets.unicode_object.size),
+            offsetof(T, debug_offsets.unicode_object.state),
+            offsetof(T, debug_offsets.unicode_object.length),
+            offsetof(T, debug_offsets.unicode_object.asciiobject_size),
             offsetof(T, debug_offsets.gc.size),
             offsetof(T, debug_offsets.gc.collecting),
     };
@@ -281,9 +285,22 @@ py_type()
     return {sizeof(T), offsetof(T, tp_name), offsetof(T, tp_repr), offsetof(T, tp_flags)};
 }
 
+template<class T>
+constexpr py_unicode_v
+py_unicode()
+{
+    return {
+            sizeof(T),
+            offsetof(T, _base._base.state),
+            offsetof(T, _base._base.length),
+            offsetof(T, _base) + sizeof(T::_base._base),
+    };
+}
+
 // ---- Python 2 --------------------------------------------------------------
 
 python_v python_v2 = {
+        {},
         py_type<Python2::PyTypeObject>(),
         py_code<Python2::PyCodeObject>(),
         py_frame<Python2::PyFrameObject>(),
@@ -294,6 +311,7 @@ python_v python_v2 = {
 // ---- Python 3.3 ------------------------------------------------------------
 
 python_v python_v3_3 = {
+        py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_3::PyTypeObject>(),
         py_code<Python3_3::PyCodeObject>(),
         py_frame<Python2::PyFrameObject>(),
@@ -304,6 +322,7 @@ python_v python_v3_3 = {
 // ---- Python 3.4 ------------------------------------------------------------
 
 python_v python_v3_4 = {
+        py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_3::PyTypeObject>(),
         py_code<Python3_3::PyCodeObject>(),
         py_frame<Python2::PyFrameObject>(),
@@ -314,6 +333,7 @@ python_v python_v3_4 = {
 // ---- Python 3.6 ------------------------------------------------------------
 
 python_v python_v3_6 = {
+        py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_3::PyTypeObject>(),
         py_code<Python3_6::PyCodeObject>(),
         py_frame<Python2::PyFrameObject>(),
@@ -324,6 +344,7 @@ python_v python_v3_6 = {
 // ---- Python 3.7 ------------------------------------------------------------
 
 python_v python_v3_7 = {
+        py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_3::PyTypeObject>(),
         py_code<Python3_6::PyCodeObject>(),
         py_frame<Python3_7::PyFrameObject>(),
@@ -336,6 +357,7 @@ python_v python_v3_7 = {
 // ---- Python 3.8 ------------------------------------------------------------
 
 python_v python_v3_8 = {
+        py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_code<Python3_8::PyCodeObject>(),
         py_frame<Python3_7::PyFrameObject>(),
@@ -348,6 +370,7 @@ python_v python_v3_8 = {
 // ---- Python 3.9 ------------------------------------------------------------
 
 python_v python_v3_9 = {
+        py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_code<Python3_8::PyCodeObject>(),
         py_frame<Python3_7::PyFrameObject>(),
@@ -360,6 +383,7 @@ python_v python_v3_9 = {
 // ---- Python 3.10 ------------------------------------------------------------
 
 python_v python_v3_10 = {
+        py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_code<Python3_8::PyCodeObject>(),
         py_frame<Python3_10::PyFrameObject>(),
@@ -372,6 +396,7 @@ python_v python_v3_10 = {
 // ---- Python 3.11 ------------------------------------------------------------
 
 python_v python_v3_11 = {
+        py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_codev311<Python3_11::PyCodeObject>(),
         py_framev311<Python3_11::PyFrameObject>(),
@@ -385,6 +410,7 @@ python_v python_v3_11 = {
 // ---- Python 3.12 ------------------------------------------------------------
 
 python_v python_v3_12 = {
+        py_unicode<Python3_12::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_codev311<Python3_12::PyCodeObject>(),
         py_framev312<Python3_12::PyFrameObject>(),
@@ -398,6 +424,7 @@ python_v python_v3_12 = {
 // ---- Python 3.13 ------------------------------------------------------------
 
 python_v python_v3_13 = {
+        py_unicode<Python3_12::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_codev311<Python3_13::PyCodeObject>(),
         py_framev312<Python3_12::PyFrameObject>(),
