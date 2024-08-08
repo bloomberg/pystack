@@ -269,6 +269,8 @@ py_runtimev313()
             offsetof(T, debug_offsets.pyobject.ob_type),
             offsetof(T, debug_offsets.type_object.size),
             offsetof(T, debug_offsets.type_object.tp_name),
+            offsetof(T, debug_offsets.tuple_object.size),
+            offsetof(T, debug_offsets.tuple_object.ob_item),
             offsetof(T, debug_offsets.unicode_object.size),
             offsetof(T, debug_offsets.unicode_object.state),
             offsetof(T, debug_offsets.unicode_object.length),
@@ -297,9 +299,21 @@ py_unicode()
     };
 }
 
+template<class T>
+constexpr py_tuple_v
+py_tuple()
+{
+    return {
+            sizeof(T),
+            offsetof(T, ob_base.ob_size),
+            offsetof(T, ob_item),
+    };
+}
+
 // ---- Python 2 --------------------------------------------------------------
 
 python_v python_v2 = {
+        py_tuple<PyTupleObject>(),
         {},
         py_type<Python2::PyTypeObject>(),
         py_code<Python2::PyCodeObject>(),
@@ -311,6 +325,7 @@ python_v python_v2 = {
 // ---- Python 3.3 ------------------------------------------------------------
 
 python_v python_v3_3 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_3::PyTypeObject>(),
         py_code<Python3_3::PyCodeObject>(),
@@ -322,6 +337,7 @@ python_v python_v3_3 = {
 // ---- Python 3.4 ------------------------------------------------------------
 
 python_v python_v3_4 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_3::PyTypeObject>(),
         py_code<Python3_3::PyCodeObject>(),
@@ -333,6 +349,7 @@ python_v python_v3_4 = {
 // ---- Python 3.6 ------------------------------------------------------------
 
 python_v python_v3_6 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_3::PyTypeObject>(),
         py_code<Python3_6::PyCodeObject>(),
@@ -344,6 +361,7 @@ python_v python_v3_6 = {
 // ---- Python 3.7 ------------------------------------------------------------
 
 python_v python_v3_7 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_3::PyTypeObject>(),
         py_code<Python3_6::PyCodeObject>(),
@@ -357,6 +375,7 @@ python_v python_v3_7 = {
 // ---- Python 3.8 ------------------------------------------------------------
 
 python_v python_v3_8 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_code<Python3_8::PyCodeObject>(),
@@ -370,6 +389,7 @@ python_v python_v3_8 = {
 // ---- Python 3.9 ------------------------------------------------------------
 
 python_v python_v3_9 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_code<Python3_8::PyCodeObject>(),
@@ -383,6 +403,7 @@ python_v python_v3_9 = {
 // ---- Python 3.10 ------------------------------------------------------------
 
 python_v python_v3_10 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_code<Python3_8::PyCodeObject>(),
@@ -396,6 +417,7 @@ python_v python_v3_10 = {
 // ---- Python 3.11 ------------------------------------------------------------
 
 python_v python_v3_11 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_codev311<Python3_11::PyCodeObject>(),
@@ -410,6 +432,7 @@ python_v python_v3_11 = {
 // ---- Python 3.12 ------------------------------------------------------------
 
 python_v python_v3_12 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3_12::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_codev311<Python3_12::PyCodeObject>(),
@@ -424,6 +447,7 @@ python_v python_v3_12 = {
 // ---- Python 3.13 ------------------------------------------------------------
 
 python_v python_v3_13 = {
+        py_tuple<PyTupleObject>(),
         py_unicode<Python3_12::PyUnicodeObject>(),
         py_type<Python3_8::PyTypeObject>(),
         py_codev311<Python3_13::PyCodeObject>(),
