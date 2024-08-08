@@ -682,6 +682,9 @@ AbstractProcessManager::warnIfOffsetsAreMismatched() const
     compare_size(&py_runtime_v::o_dbg_off_type_object_struct_size, py_type);
     compare_offset(&py_runtime_v::o_dbg_off_type_object_tp_name, py_type.o_tp_name);
 
+    compare_size(&py_runtime_v::o_dbg_off_tuple_object_struct_size, py_tuple);
+    compare_offset(&py_runtime_v::o_dbg_off_tuple_object_ob_item, py_tuple.o_ob_item);
+
     compare_size(&py_runtime_v::o_dbg_off_unicode_object_struct_size, py_unicode);
     compare_offset(&py_runtime_v::o_dbg_off_unicode_object_state, py_unicode.o_state);
     compare_offset(&py_runtime_v::o_dbg_off_unicode_object_length, py_unicode.o_length);

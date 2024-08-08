@@ -18,6 +18,14 @@ struct FieldOffset
     offset_t offset;
 };
 
+struct py_tuple_v
+{
+    typedef PyTupleObject Structure;
+    ssize_t size;
+    FieldOffset<Py_ssize_t> o_ob_size;
+    FieldOffset<PyObject* [1]> o_ob_item;
+};
+
 struct py_unicode_v
 {
     typedef PyUnicodeObject Structure;
@@ -124,6 +132,9 @@ struct py_runtime_v
     FieldOffset<uint64_t> o_dbg_off_type_object_struct_size;
     FieldOffset<uint64_t> o_dbg_off_type_object_tp_name;
 
+    FieldOffset<uint64_t> o_dbg_off_tuple_object_struct_size;
+    FieldOffset<uint64_t> o_dbg_off_tuple_object_ob_item;
+
     FieldOffset<uint64_t> o_dbg_off_unicode_object_struct_size;
     FieldOffset<uint64_t> o_dbg_off_unicode_object_state;
     FieldOffset<uint64_t> o_dbg_off_unicode_object_length;
@@ -171,6 +182,7 @@ struct py_cframe_v
 
 struct python_v
 {
+    py_tuple_v py_tuple;
     py_unicode_v py_unicode;
     py_type_v py_type;
     py_code_v py_code;
@@ -192,6 +204,7 @@ struct python_v
         return T;                                                                                       \
     }
 
+define_python_v_get_specialization(py_tuple);
 define_python_v_get_specialization(py_unicode);
 define_python_v_get_specialization(py_type);
 define_python_v_get_specialization(py_code);

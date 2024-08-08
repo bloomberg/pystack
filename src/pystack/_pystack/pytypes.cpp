@@ -89,16 +89,16 @@ TupleObject::TupleObject(
     d_manager = manager;
 
     PyTupleObject tuple;
-    manager->copyObjectFromProcess(addr, &tuple);
+    manager->copyMemoryFromProcess(addr, manager->offsets().py_tuple.size, &tuple);
 
-    ssize_t num_items = tuple.ob_base.ob_size;
+    ssize_t num_items = manager->getField(tuple, &py_tuple_v::o_ob_size);
     if (num_items == 0) {
         LOG(DEBUG) << std::hex << std::showbase << "There are no elements in this tuple";
         return;
     }
     d_items.resize(num_items);
     manager->copyMemoryFromProcess(
-            addr + offsetof(PyTupleObject, ob_item),
+            addr + manager->getFieldOffset(&py_tuple_v::o_ob_item),
             num_items * sizeof(PyObject*),
             d_items.data());
 }
