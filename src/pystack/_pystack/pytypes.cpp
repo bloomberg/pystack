@@ -121,16 +121,16 @@ ListObject::ListObject(const std::shared_ptr<const AbstractProcessManager>& mana
     d_manager = manager;
 
     PyListObject list;
-    manager->copyObjectFromProcess(addr, &list);
+    manager->copyMemoryFromProcess(addr, manager->offsets().py_list.size, &list);
 
-    ssize_t num_items = list.ob_base.ob_size;
+    ssize_t num_items = manager->getField(list, &py_list_v::o_ob_size);
     if (num_items == 0) {
         LOG(DEBUG) << std::hex << std::showbase << "There are no elements in this list";
         return;
     }
     d_items.resize(num_items);
     manager->copyMemoryFromProcess(
-            (remote_addr_t)list.ob_item,
+            (remote_addr_t)manager->getField(list, &py_list_v::o_ob_item),
             num_items * sizeof(PyObject*),
             d_items.data());
 }
