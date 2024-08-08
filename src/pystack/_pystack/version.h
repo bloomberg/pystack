@@ -34,6 +34,14 @@ struct py_list_v
     FieldOffset<PyObject**> o_ob_item;
 };
 
+struct py_long_v
+{
+    typedef _PyLongObject Structure;
+    ssize_t size;
+    FieldOffset<Py_ssize_t> o_ob_size;
+    FieldOffset<digit[1]> o_ob_digit;
+};
+
 struct py_unicode_v
 {
     typedef PyUnicodeObject Structure;
@@ -199,6 +207,7 @@ struct python_v
 {
     py_tuple_v py_tuple;
     py_list_v py_list;
+    py_long_v py_long;
     py_unicode_v py_unicode;
     py_object_v py_object;
     py_type_v py_type;
@@ -223,6 +232,7 @@ struct python_v
 
 define_python_v_get_specialization(py_tuple);
 define_python_v_get_specialization(py_list);
+define_python_v_get_specialization(py_long);
 define_python_v_get_specialization(py_unicode);
 define_python_v_get_specialization(py_object);
 define_python_v_get_specialization(py_type);

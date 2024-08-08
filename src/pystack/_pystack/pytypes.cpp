@@ -161,17 +161,18 @@ LongObject::LongObject(
 #endif
 
     _PyLongObject longobj;
-    manager->copyObjectFromProcess(addr, &longobj);
+    manager->copyMemoryFromProcess(addr, manager->offsets().py_long.size, &longobj);
     ssize_t size;
     bool negative;
 
+    Py_ssize_t ob_size = manager->getField(longobj, &py_long_v::o_ob_size);
     if (manager->versionIsAtLeast(3, 12)) {
-        auto lv_tag = *reinterpret_cast<uintptr_t*>(&longobj.ob_base.ob_size);
+        auto lv_tag = *reinterpret_cast<uintptr_t*>(&ob_size);
         negative = (lv_tag & 3) == 2;
         size = lv_tag >> 3;
     } else {
-        negative = longobj.ob_base.ob_size < 0;
-        size = std::abs(longobj.ob_base.ob_size);
+        negative = ob_size < 0;
+        size = std::abs(ob_size);
     }
 
     if (size == 0) {
@@ -199,7 +200,7 @@ LongObject::LongObject(
     std::vector<digit> digits;
     digits.resize(size);
     manager->copyMemoryFromProcess(
-            addr + offsetof(_PyLongObject, ob_digit),
+            addr + manager->getFieldOffset(&py_long_v::o_ob_digit),
             sizeof(digit) * size,
             digits.data());
     for (ssize_t i = 0; i < size; ++i) {
