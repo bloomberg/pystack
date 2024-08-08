@@ -530,7 +530,7 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
 
     PyObject obj;
     try {
-        manager->copyObjectFromProcess(d_addr, &obj);
+        manager->copyMemoryFromProcess(addr, manager->offsets().py_object.size, &obj);
     } catch (RemoteMemCopyError& ex) {
         LOG(WARNING) << std::hex << std::showbase << "Failed to read PyObject data from address "
                      << d_addr;
@@ -539,18 +539,15 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
     }
 
     PyTypeObject cls;
-    LOG(DEBUG) << std::hex << std::showbase << "Copying typeobject from address " << obj.ob_type;
-    d_type_addr = reinterpret_cast<remote_addr_t>(obj.ob_type);
+    d_type_addr = manager->getField(obj, &py_object_v::o_ob_type);
+    LOG(DEBUG) << std::hex << std::showbase << "Copying typeobject from address " << d_type_addr;
     try {
-        manager->copyMemoryFromProcess(
-                (remote_addr_t)obj.ob_type,
-                manager->offsets().py_type.size,
-                &cls);
+        manager->copyMemoryFromProcess(d_type_addr, manager->offsets().py_type.size, &cls);
 
         d_flags = manager->getField(cls, &py_type_v::o_tp_flags);
     } catch (RemoteMemCopyError& ex) {
         LOG(WARNING) << std::hex << std::showbase << "Failed to read typeobject from address "
-                     << obj.ob_type;
+                     << d_type_addr;
         d_classname = "invalid object";
         return;
     }
