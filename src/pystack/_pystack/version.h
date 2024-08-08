@@ -34,6 +34,13 @@ struct py_list_v
     FieldOffset<PyObject**> o_ob_item;
 };
 
+struct py_float_v
+{
+    typedef PyFloatObject Structure;
+    ssize_t size;
+    FieldOffset<double> o_ob_fval;
+};
+
 struct py_long_v
 {
     typedef _PyLongObject Structure;
@@ -207,6 +214,7 @@ struct python_v
 {
     py_tuple_v py_tuple;
     py_list_v py_list;
+    py_float_v py_float;
     py_long_v py_long;
     py_unicode_v py_unicode;
     py_object_v py_object;
@@ -232,6 +240,7 @@ struct python_v
 
 define_python_v_get_specialization(py_tuple);
 define_python_v_get_specialization(py_list);
+define_python_v_get_specialization(py_float);
 define_python_v_get_specialization(py_long);
 define_python_v_get_specialization(py_unicode);
 define_python_v_get_specialization(py_object);

@@ -636,8 +636,8 @@ double
 Object::toFloat() const
 {
     PyFloatObject the_float;
-    d_manager->copyObjectFromProcess(d_addr, &the_float);
-    return the_float.ob_fval;
+    d_manager->copyMemoryFromProcess(d_addr, d_manager->offsets().py_float.size, &the_float);
+    return d_manager->getField(the_float, &py_float_v::o_ob_fval);
 }
 
 bool
