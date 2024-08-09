@@ -411,7 +411,7 @@ std::string
 AbstractProcessManager::getStringFromAddress(remote_addr_t addr) const
 {
     Python2::_PyStringObject string;
-    Python3::PyUnicodeObject unicode;
+    PyUnicodeObject unicode;
     std::vector<char> buffer;
     ssize_t len;
     remote_addr_t data_addr;
@@ -430,24 +430,16 @@ AbstractProcessManager::getStringFromAddress(remote_addr_t addr) const
     } else {
         LOG(DEBUG) << std::hex << std::showbase << "Handling unicode object of version 3 from address "
                    << addr;
-        copyObjectFromProcess(addr, &unicode);
-        if (unicode._base._base.state.kind != 1u) {
+        copyMemoryFromProcess(addr, offsets().py_unicode.size, &unicode);
+
+        Python3::_PyUnicode_State state = getField(unicode, &py_unicode_v::o_state);
+        if (state.kind != 1 || state.compact != 1) {
             throw InvalidRemoteObject();
         }
-        if (unicode._base._base.state.compact != 1u) {
-            throw InvalidRemoteObject();
-        }
-        len = unicode._base._base.length;
+
+        len = getField(unicode, &py_unicode_v::o_length);
         buffer.resize(len);
-
-        size_t offset;
-        if (d_major > 3 || (d_major == 3 && d_minor >= 12)) {
-            offset = sizeof(Python3_12::PyASCIIObject);
-        } else {
-            offset = sizeof(Python3::PyASCIIObject);
-        }
-
-        data_addr = ((remote_addr_t)((char*)addr + offset));
+        data_addr = addr + getFieldOffset(&py_unicode_v::o_ascii);
         LOG(DEBUG) << std::hex << std::showbase << "Copying ASCII data for unicode object from address "
                    << data_addr;
         copyMemoryFromProcess(data_addr, len, buffer.data());
@@ -682,8 +674,19 @@ AbstractProcessManager::warnIfOffsetsAreMismatched() const
     compare_offset(&py_runtime_v::o_dbg_off_code_object_localsplusnames, py_code.o_varnames);
     compare_offset(&py_runtime_v::o_dbg_off_code_object_co_code_adaptive, py_code.o_code_adaptive);
 
+    compare_size(&py_runtime_v::o_dbg_off_pyobject_struct_size, py_object);
+    compare_offset(&py_runtime_v::o_dbg_off_pyobject_ob_type, py_object.o_ob_type);
+
     compare_size(&py_runtime_v::o_dbg_off_type_object_struct_size, py_type);
     compare_offset(&py_runtime_v::o_dbg_off_type_object_tp_name, py_type.o_tp_name);
+
+    compare_size(&py_runtime_v::o_dbg_off_tuple_object_struct_size, py_tuple);
+    compare_offset(&py_runtime_v::o_dbg_off_tuple_object_ob_item, py_tuple.o_ob_item);
+
+    compare_size(&py_runtime_v::o_dbg_off_unicode_object_struct_size, py_unicode);
+    compare_offset(&py_runtime_v::o_dbg_off_unicode_object_state, py_unicode.o_state);
+    compare_offset(&py_runtime_v::o_dbg_off_unicode_object_length, py_unicode.o_length);
+    compare_offset(&py_runtime_v::o_dbg_off_unicode_object_asciiobject_size, py_unicode.o_ascii);
 
     compare_size(&py_runtime_v::o_dbg_off_gc_struct_size, py_gc);
     compare_offset(&py_runtime_v::o_dbg_off_gc_collecting, py_gc.o_collecting);

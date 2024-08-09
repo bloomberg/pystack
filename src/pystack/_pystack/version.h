@@ -18,6 +18,78 @@ struct FieldOffset
     offset_t offset;
 };
 
+struct py_tuple_v
+{
+    typedef PyTupleObject Structure;
+    ssize_t size;
+    FieldOffset<Py_ssize_t> o_ob_size;
+    FieldOffset<PyObject* [1]> o_ob_item;
+};
+
+struct py_list_v
+{
+    typedef PyListObject Structure;
+    ssize_t size;
+    FieldOffset<Py_ssize_t> o_ob_size;
+    FieldOffset<PyObject**> o_ob_item;
+};
+
+struct py_dict_v
+{
+    typedef Python3::PyDictObject Structure;
+    ssize_t size;
+    FieldOffset<remote_addr_t> o_ma_keys;
+    FieldOffset<remote_addr_t> o_ma_values;
+};
+
+struct py_dictkeys_v
+{
+    typedef PyDictKeysObject Structure;
+    ssize_t size;
+    FieldOffset<Py_ssize_t> o_dk_size;
+    FieldOffset<uint8_t> o_dk_kind;
+    FieldOffset<Py_ssize_t> o_dk_nentries;
+    FieldOffset<char[1]> o_dk_indices;
+};
+
+struct py_dictvalues_v
+{
+    typedef PyDictValuesObject Structure;
+    ssize_t size;
+    FieldOffset<remote_addr_t[1]> o_values;
+};
+
+struct py_float_v
+{
+    typedef PyFloatObject Structure;
+    ssize_t size;
+    FieldOffset<double> o_ob_fval;
+};
+
+struct py_long_v
+{
+    typedef _PyLongObject Structure;
+    ssize_t size;
+    FieldOffset<Py_ssize_t> o_ob_size;
+    FieldOffset<digit[1]> o_ob_digit;
+};
+
+struct py_unicode_v
+{
+    typedef PyUnicodeObject Structure;
+    ssize_t size;
+    FieldOffset<Python3::_PyUnicode_State> o_state;
+    FieldOffset<Py_ssize_t> o_length;
+    FieldOffset<remote_addr_t> o_ascii;
+};
+
+struct py_object_v
+{
+    typedef PyObject Structure;
+    ssize_t size;
+    FieldOffset<remote_addr_t> o_ob_type;
+};
+
 struct py_code_v
 {
     typedef PyCodeObject Structure;
@@ -115,6 +187,14 @@ struct py_runtime_v
     FieldOffset<uint64_t> o_dbg_off_type_object_struct_size;
     FieldOffset<uint64_t> o_dbg_off_type_object_tp_name;
 
+    FieldOffset<uint64_t> o_dbg_off_tuple_object_struct_size;
+    FieldOffset<uint64_t> o_dbg_off_tuple_object_ob_item;
+
+    FieldOffset<uint64_t> o_dbg_off_unicode_object_struct_size;
+    FieldOffset<uint64_t> o_dbg_off_unicode_object_state;
+    FieldOffset<uint64_t> o_dbg_off_unicode_object_length;
+    FieldOffset<size_t> o_dbg_off_unicode_object_asciiobject_size;
+
     FieldOffset<uint64_t> o_dbg_off_gc_struct_size;
     FieldOffset<uint64_t> o_dbg_off_gc_collecting;
 };
@@ -157,6 +237,15 @@ struct py_cframe_v
 
 struct python_v
 {
+    py_tuple_v py_tuple;
+    py_list_v py_list;
+    py_dict_v py_dict;
+    py_dictkeys_v py_dictkeys;
+    py_dictvalues_v py_dictvalues;
+    py_float_v py_float;
+    py_long_v py_long;
+    py_unicode_v py_unicode;
+    py_object_v py_object;
     py_type_v py_type;
     py_code_v py_code;
     py_frame_v py_frame;
@@ -177,6 +266,15 @@ struct python_v
         return T;                                                                                       \
     }
 
+define_python_v_get_specialization(py_tuple);
+define_python_v_get_specialization(py_list);
+define_python_v_get_specialization(py_dict);
+define_python_v_get_specialization(py_dictkeys);
+define_python_v_get_specialization(py_dictvalues);
+define_python_v_get_specialization(py_float);
+define_python_v_get_specialization(py_long);
+define_python_v_get_specialization(py_unicode);
+define_python_v_get_specialization(py_object);
 define_python_v_get_specialization(py_type);
 define_python_v_get_specialization(py_code);
 define_python_v_get_specialization(py_frame);

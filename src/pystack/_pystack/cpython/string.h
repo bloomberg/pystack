@@ -37,19 +37,21 @@ typedef struct
 
 namespace Python3 {
 
+struct _PyUnicode_State
+{
+    unsigned int interned : 2;
+    unsigned int kind : 3;
+    unsigned int compact : 1;
+    unsigned int ascii : 1;
+    unsigned int ready : 1;
+    unsigned int : 24;
+};
+
 typedef struct
 {
     PyObject_HEAD Py_ssize_t length;
     Py_hash_t hash;
-    struct
-    {
-        unsigned int interned : 2;
-        unsigned int kind : 3;
-        unsigned int compact : 1;
-        unsigned int ascii : 1;
-        unsigned int ready : 1;
-        unsigned int : 24;
-    } state;
+    _PyUnicode_State state;
     wchar_t* wstr;
 } PyASCIIObject;
 
@@ -76,19 +78,13 @@ typedef struct
 
 namespace Python3_12 {
 
+using Python3::_PyUnicode_State;
+
 typedef struct
 {
     PyObject_HEAD Py_ssize_t length;
     Py_hash_t hash;
-    struct
-    {
-        unsigned int interned : 2;
-        unsigned int kind : 3;
-        unsigned int compact : 1;
-        unsigned int ascii : 1;
-        unsigned int ready : 1;
-        unsigned int : 24;
-    } state;
+    _PyUnicode_State state;
 } PyASCIIObject;
 
 typedef struct
@@ -100,6 +96,7 @@ typedef struct
 
 typedef struct
 {
+    PyCompactUnicodeObject _base;
     union {
         void* any;
         Py_UCS1* latin1;

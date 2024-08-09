@@ -89,16 +89,16 @@ TupleObject::TupleObject(
     d_manager = manager;
 
     PyTupleObject tuple;
-    manager->copyObjectFromProcess(addr, &tuple);
+    manager->copyMemoryFromProcess(addr, manager->offsets().py_tuple.size, &tuple);
 
-    ssize_t num_items = tuple.ob_base.ob_size;
+    ssize_t num_items = manager->getField(tuple, &py_tuple_v::o_ob_size);
     if (num_items == 0) {
         LOG(DEBUG) << std::hex << std::showbase << "There are no elements in this tuple";
         return;
     }
     d_items.resize(num_items);
     manager->copyMemoryFromProcess(
-            addr + offsetof(PyTupleObject, ob_item),
+            addr + manager->getFieldOffset(&py_tuple_v::o_ob_item),
             num_items * sizeof(PyObject*),
             d_items.data());
 }
@@ -121,16 +121,16 @@ ListObject::ListObject(const std::shared_ptr<const AbstractProcessManager>& mana
     d_manager = manager;
 
     PyListObject list;
-    manager->copyObjectFromProcess(addr, &list);
+    manager->copyMemoryFromProcess(addr, manager->offsets().py_list.size, &list);
 
-    ssize_t num_items = list.ob_base.ob_size;
+    ssize_t num_items = manager->getField(list, &py_list_v::o_ob_size);
     if (num_items == 0) {
         LOG(DEBUG) << std::hex << std::showbase << "There are no elements in this list";
         return;
     }
     d_items.resize(num_items);
     manager->copyMemoryFromProcess(
-            (remote_addr_t)list.ob_item,
+            (remote_addr_t)manager->getField(list, &py_list_v::o_ob_item),
             num_items * sizeof(PyObject*),
             d_items.data());
 }
@@ -161,17 +161,18 @@ LongObject::LongObject(
 #endif
 
     _PyLongObject longobj;
-    manager->copyObjectFromProcess(addr, &longobj);
+    manager->copyMemoryFromProcess(addr, manager->offsets().py_long.size, &longobj);
     ssize_t size;
     bool negative;
 
+    Py_ssize_t ob_size = manager->getField(longobj, &py_long_v::o_ob_size);
     if (manager->versionIsAtLeast(3, 12)) {
-        auto lv_tag = *reinterpret_cast<uintptr_t*>(&longobj.ob_base.ob_size);
+        auto lv_tag = *reinterpret_cast<uintptr_t*>(&ob_size);
         negative = (lv_tag & 3) == 2;
         size = lv_tag >> 3;
     } else {
-        negative = longobj.ob_base.ob_size < 0;
-        size = std::abs(longobj.ob_base.ob_size);
+        negative = ob_size < 0;
+        size = std::abs(ob_size);
     }
 
     if (size == 0) {
@@ -199,7 +200,7 @@ LongObject::LongObject(
     std::vector<digit> digits;
     digits.resize(size);
     manager->copyMemoryFromProcess(
-            addr + offsetof(_PyLongObject, ob_digit),
+            addr + manager->getFieldOffset(&py_long_v::o_ob_digit),
             sizeof(digit) * size,
             digits.data());
     for (ssize_t i = 0; i < size; ++i) {
@@ -253,22 +254,21 @@ getDictEntries(
         ssize_t& num_items,
         std::vector<Python3::PyDictKeyEntry>& valid_entries)
 {
-    auto keys_addr = reinterpret_cast<remote_addr_t>(dict.ma_keys);
+    remote_addr_t keys_addr = manager->getField(dict, &py_dict_v::o_ma_keys);
     assert(manager->versionIsAtLeast(3, 0));
     ssize_t dk_size = 0;
     int dk_kind = 0;
 
+    PyDictKeysObject keys;
+    manager->copyMemoryFromProcess(keys_addr, manager->offsets().py_dictkeys.size, &keys);
+    num_items = manager->getField(keys, &py_dictkeys_v::o_dk_nentries);
+    dk_size = manager->getField(keys, &py_dictkeys_v::o_dk_size);
+
     if (manager->versionIsAtLeast(3, 11)) {
-        Python3_11::PyDictKeysObject keys;
-        manager->copyObjectFromProcess(keys_addr, &keys);
-        num_items = keys.dk_nentries;
-        dk_size = 1L << keys.dk_log2_size;
-        dk_kind = keys.dk_kind;
-    } else {
-        Python3_3::PyDictKeysObject keys;
-        manager->copyObjectFromProcess(keys_addr, &keys);
-        num_items = keys.dk_nentries;
-        dk_size = keys.dk_size;
+        // We're reusing the o_dk_size offset for dk_log2_size. Fix up the value.
+        dk_size = 1L << dk_size;
+        // Added in 3.11
+        dk_kind = manager->getField(keys, &py_dictkeys_v::o_dk_kind);
     }
     if (num_items == 0) {
         LOG(DEBUG) << std::hex << std::showbase << "There are no elements in this dict";
@@ -293,13 +293,7 @@ getDictEntries(
         offset = 8 * dk_size;
     }
 
-    offset_t dk_indices_offset = 0;
-    if (manager->versionIsAtLeast(3, 11)) {
-        dk_indices_offset = offsetof(Python3_11::PyDictKeysObject, dk_indices);
-    } else {
-        dk_indices_offset = offsetof(Python3_3::PyDictKeysObject, dk_indices);
-    }
-
+    offset_t dk_indices_offset = manager->getFieldOffset(&py_dictkeys_v::o_dk_indices);
     remote_addr_t entries_addr = keys_addr + dk_indices_offset + offset;
 
     std::vector<Python3::PyDictKeyEntry> raw_entries;
@@ -370,7 +364,7 @@ void
 DictObject::loadFromPython3(remote_addr_t addr)
 {
     Python3::PyDictObject dict;
-    d_manager->copyObjectFromProcess(addr, &dict);
+    d_manager->copyMemoryFromProcess(addr, d_manager->offsets().py_dict.size, &dict);
 
     ssize_t num_items;
     std::vector<Python3::PyDictKeyEntry> valid_entries;
@@ -399,15 +393,12 @@ DictObject::loadFromPython3(remote_addr_t addr)
      *          All dicts sharing same key must have same insertion order.
      */
 
-    auto dictvalues_addr = (remote_addr_t)dict.ma_values;
+    remote_addr_t dictvalues_addr = d_manager->getField(dict, &py_dict_v::o_ma_values);
 
     // Get the values in one copy if we are dealing with a split-table dictionary
     if (dictvalues_addr != 0) {
         d_values.resize(num_items);
-        auto values_offset =
-                (d_manager->versionIsAtLeast(3, 13) ? offsetof(Python3_13::PyDictValuesObject, values)
-                                                    : offsetof(Python3::PyDictValuesObject, values));
-
+        auto values_offset = d_manager->getFieldOffset(&py_dictvalues_v::o_values);
         auto values_addr = dictvalues_addr + values_offset;
         d_manager->copyMemoryFromProcess(values_addr, num_items * sizeof(PyObject*), d_values.data());
     } else {
@@ -530,7 +521,7 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
 
     PyObject obj;
     try {
-        manager->copyObjectFromProcess(d_addr, &obj);
+        manager->copyMemoryFromProcess(addr, manager->offsets().py_object.size, &obj);
     } catch (RemoteMemCopyError& ex) {
         LOG(WARNING) << std::hex << std::showbase << "Failed to read PyObject data from address "
                      << d_addr;
@@ -539,18 +530,15 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
     }
 
     PyTypeObject cls;
-    LOG(DEBUG) << std::hex << std::showbase << "Copying typeobject from address " << obj.ob_type;
-    d_type_addr = reinterpret_cast<remote_addr_t>(obj.ob_type);
+    d_type_addr = manager->getField(obj, &py_object_v::o_ob_type);
+    LOG(DEBUG) << std::hex << std::showbase << "Copying typeobject from address " << d_type_addr;
     try {
-        manager->copyMemoryFromProcess(
-                (remote_addr_t)obj.ob_type,
-                manager->offsets().py_type.size,
-                &cls);
+        manager->copyMemoryFromProcess(d_type_addr, manager->offsets().py_type.size, &cls);
 
         d_flags = manager->getField(cls, &py_type_v::o_tp_flags);
     } catch (RemoteMemCopyError& ex) {
         LOG(WARNING) << std::hex << std::showbase << "Failed to read typeobject from address "
-                     << obj.ob_type;
+                     << d_type_addr;
         d_classname = "invalid object";
         return;
     }
@@ -638,8 +626,8 @@ double
 Object::toFloat() const
 {
     PyFloatObject the_float;
-    d_manager->copyObjectFromProcess(d_addr, &the_float);
-    return the_float.ob_fval;
+    d_manager->copyMemoryFromProcess(d_addr, d_manager->offsets().py_float.size, &the_float);
+    return d_manager->getField(the_float, &py_float_v::o_ob_fval);
 }
 
 bool
