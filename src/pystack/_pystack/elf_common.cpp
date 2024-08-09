@@ -388,6 +388,51 @@ getNoteData(Elf* elf, Elf64_Word note_type, Elf_Type note_data_type)
 }
 
 bool
+getLoadPointOffsetOfElf(const std::string& filename, Dwarf_Addr* result)
+{
+    file_unique_ptr file(fopen(filename.c_str(), "r"), fclose);
+    if (!file || fileno(file.get()) == -1) {
+        LOG(ERROR) << "Cannot open ELF file " << filename;
+        return false;
+    }
+    const int fd = fileno(file.get());
+
+    elf_unique_ptr elf = elf_unique_ptr(elf_begin(fd, ELF_C_READ_MMAP, nullptr), elf_end);
+    if (!elf) {
+        LOG(ERROR) << "Cannot read ELF file " << filename;
+        return false;
+    }
+
+    Elf* the_elf = elf.get();
+
+    size_t nphdr;
+    if (elf_getphdrnum(the_elf, &nphdr) != 0) {
+        LOG(ERROR) << "Failed to get program headers";
+        return false;
+    }
+
+    Dwarf_Addr load_point = 0;
+    for (size_t i = 0; i < nphdr; i++) {
+        GElf_Phdr phdr;
+        if (gelf_getphdr(the_elf, i, &phdr) != &phdr) {
+            continue;
+        }
+
+        if (phdr.p_type != PT_LOAD) {
+            continue;
+        }
+
+        load_point = phdr.p_offset;
+        LOG(DEBUG) << "Found load point of main Python " << filename << " at " << std::hex
+                   << std::showbase << load_point;
+        break;
+    }
+
+    *result = load_point;
+    return true;
+}
+
+bool
 getSectionInfo(const std::string& filename, const std::string& section_name, SectionInfo* result)
 {
     if (elf_version(EV_CURRENT) == EV_NONE) {

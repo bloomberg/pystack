@@ -421,8 +421,18 @@ CorefileRemoteMemoryManager::getMemoryLocationFromElf(
     if (shared_libs_it == d_shared_libs.cend()) {
         return StatusCode::ERROR;
     }
+
+    Dwarf_Addr load_point = 0;
+    auto it = d_load_point_cache.find(shared_libs_it->filename);
+    if (it == d_load_point_cache.end() && getLoadPointOffsetOfElf(shared_libs_it->filename, &load_point)) {
+        d_load_point_cache[shared_libs_it->filename] = load_point;
+        LOG(DEBUG) << "Found load point for copying data from module " << shared_libs_it->filename
+                   << ": " << std::hex << std::showbase << load_point;
+    }
+
     *filename = &shared_libs_it->filename;
-    *offset_in_file = addr - shared_libs_it->start;
+    *offset_in_file = addr - shared_libs_it->start + load_point;
+    LOG(DEBUG) << "Offset in file: " << std::hex << std::showbase << *offset_in_file;
     return StatusCode::SUCCESS;
 }
 
