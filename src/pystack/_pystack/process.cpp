@@ -584,7 +584,12 @@ AbstractProcessManager::findPythonVersion() const
         return {-1, -1};
     }
     unsigned long version;
-    copyObjectFromProcess(version_symbol, &version);
+    try {
+        copyObjectFromProcess(version_symbol, &version);
+    } catch (RemoteMemCopyError& ex) {
+        LOG(DEBUG) << "Failed to determine Python version from symbols";
+        return {-1, -1};
+    }
     int major = (version >> 24) & 0xFF;
     int minor = (version >> 16) & 0xFF;
     LOG(DEBUG) << "Python version determined from symbols: " << major << "." << minor;

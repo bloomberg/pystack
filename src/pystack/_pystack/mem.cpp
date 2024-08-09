@@ -368,7 +368,7 @@ CorefileRemoteMemoryManager::copyMemoryFromProcess(remote_addr_t addr, size_t si
     StatusCode ret = getMemoryLocationFromCore(addr, &offset_in_file);
 
     if (ret == StatusCode::SUCCESS) {
-        if (static_cast<size_t>(offset_in_file) > d_corefile_size) {
+        if (size > d_corefile_size || static_cast<size_t>(offset_in_file) > d_corefile_size - size) {
             throw InvalidRemoteAddress();
         }
         memcpy(destination, d_corefile_data.get() + offset_in_file, size);
