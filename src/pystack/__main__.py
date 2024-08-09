@@ -12,6 +12,7 @@ from typing import NoReturn
 from typing import Optional
 from typing import Set
 
+from pystack import __version__
 from pystack.errors import InvalidPythonProcess
 from pystack.process import decompress_gzip
 from pystack.process import is_elf
@@ -117,6 +118,9 @@ def generate_cli_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "-v", "--verbose", action="count", default=0, dest="global_verbose"
+    )
+    parser.add_argument(
+        "--version", action="version", version=__version__, help="Show version"
     )
     parser.add_argument(
         "--no-color",
