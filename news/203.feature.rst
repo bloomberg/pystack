@@ -1,0 +1,1 @@
+Add a new ``--version`` command line flag to show the version of pystack
