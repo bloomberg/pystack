@@ -25,6 +25,7 @@ class FrameObject
     const std::unordered_map<std::string, std::string>& Arguments() const;
     const std::unordered_map<std::string, std::string>& Locals() const;
     bool IsEntryFrame() const;
+    bool IsShim() const;
 
     // Methods
     void resolveLocalVariables();
@@ -37,10 +38,8 @@ class FrameObject
     static std::unique_ptr<CodeObject>
     getCode(const std::shared_ptr<const AbstractProcessManager>& manager, const PyFrameObject& frame);
 
-    static std::pair<std::shared_ptr<FrameObject>, bool> getPrevAndIsEntry(
-            const std::shared_ptr<const AbstractProcessManager>& manager,
-            const PyFrameObject& frame,
-            ssize_t frame_no);
+    bool
+    isEntry(const std::shared_ptr<const AbstractProcessManager>& manager, const PyFrameObject& frame);
 
     // Data members
     const std::shared_ptr<const AbstractProcessManager> d_manager{};

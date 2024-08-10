@@ -410,6 +410,14 @@ cdef object _construct_frame_stack_from_thread_object(
     while current_frame != NULL:
         current_code = current_frame.Code().get()
 
+        if not current_code:
+            current_frame = (
+                current_frame.PreviousFrame().get()
+                if current_frame.PreviousFrame()
+                else NULL
+            )
+            continue
+
         filename = current_code.Filename()
         location_info = LocationInfo(
                 current_code.Location().lineno,
@@ -425,7 +433,8 @@ cdef object _construct_frame_stack_from_thread_object(
         args = _safe_cppmap_to_py(current_frame.Arguments())
         locals = _safe_cppmap_to_py(current_frame.Locals())
         is_entry = current_frame.IsEntryFrame()
-        py_frame = PyFrame(None, None, py_code, args, locals, is_entry)
+        is_shim = current_frame.IsShim()
+        py_frame = PyFrame(None, None, py_code, args, locals, is_entry, is_shim)
 
         py_frame.next = last_frame
         if last_frame:

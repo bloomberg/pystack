@@ -33,10 +33,16 @@ FrameObject::FrameObject(
     if (d_is_shim) {
         LOG(DEBUG) << "Skipping over a shim frame inserted by the interpreter";
         next_frame_no = frame_no;
-    } else {
-        d_code = getCode(manager, frame);
     }
-    std::tie(d_prev, d_is_entry) = getPrevAndIsEntry(manager, frame, next_frame_no);
+
+    d_code = getCode(manager, frame);
+
+    auto prev_addr = manager->getField(frame, &py_frame_v::o_back);
+    LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << prev_addr;
+    if (prev_addr) {
+        d_prev = std::make_shared<FrameObject>(manager, prev_addr, next_frame_no);
+    }
+    d_is_entry = isEntry(manager, frame);
 }
 
 bool
@@ -70,43 +76,32 @@ FrameObject::getCode(
     return std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
 }
 
-std::pair<std::shared_ptr<FrameObject>, bool>
-FrameObject::getPrevAndIsEntry(
+bool
+FrameObject::isEntry(
         const std::shared_ptr<const AbstractProcessManager>& manager,
-        const PyFrameObject& frame,
-        ssize_t next_frame_no)
+        const PyFrameObject& frame)
 {
-    auto prev_addr = manager->getField(frame, &py_frame_v::o_back);
-    LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << prev_addr;
-
-    std::shared_ptr<FrameObject> prev;
-    if (prev_addr) {
-        prev = std::make_shared<FrameObject>(manager, prev_addr, next_frame_no);
-    }
-
-    bool is_entry;
     if (manager->versionIsAtLeast(3, 12)) {
-        // This is an entry frame if the previous frame was a shim.
-        // The previous frame should also be skipped in that case.
-        is_entry = prev && prev->d_is_shim;
-        if (is_entry) {
-            prev = prev->d_prev;
-        }
+        // This is an entry frame if the previous frame was a shim, or if
+        // this is the most recent frame and is itself a shim (meaning that
+        // the entry frame this shim was created for hasn't been pushed yet,
+        // so the latest _PyEval_EvalFrameDefault call has no Python frames).
+        return (d_prev && d_prev->d_is_shim) || (d_frame_no == 0 && d_is_shim);
     } else if (manager->versionIsAtLeast(3, 11)) {
         // This is an entry frame if it has an entry flag set.
-        is_entry = manager->getField(frame, &py_frame_v::o_is_entry);
-    } else {
-        // This is an entry frame, as all frames prior to 3.11 were.
-        is_entry = true;
+        return manager->getField(frame, &py_frame_v::o_is_entry);
     }
-
-    return std::make_pair(prev, is_entry);
+    return true;
 }
 
 void
 FrameObject::resolveLocalVariables()
 {
     LOG(DEBUG) << "Resolving local variables from frame number " << d_frame_no;
+    if (d_code == nullptr) {
+        LOG(INFO) << "Frame is a shim frame, skipping local variable resolution";
+        return;
+    }
 
     const size_t n_arguments = d_code->NArguments();
     const size_t n_locals = d_code->Varnames().size();
@@ -177,6 +172,12 @@ bool
 FrameObject::IsEntryFrame() const
 {
     return this->d_is_entry;
+}
+
+bool
+FrameObject::IsShim() const
+{
+    return this->d_is_shim;
 }
 
 }  // namespace pystack

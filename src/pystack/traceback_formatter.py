@@ -58,12 +58,12 @@ def _are_the_stacks_mergeable(thread: PyThread) -> bool:
         if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL
     )
     n_eval_frames = sum(1 for _ in eval_frames)
-    n_entry_frames = sum(1 for frame in thread.frames if frame.is_entry)
+    n_entry_frames = sum(1 for frame in thread.all_frames if frame.is_entry)
     return n_eval_frames == n_entry_frames
 
 
 def format_thread(thread: PyThread, native: bool) -> Iterable[str]:
-    current_frame: Optional[PyFrame] = thread.frame
+    current_frame: Optional[PyFrame] = thread.first_frame
     if current_frame is None and not native:
         yield f"The frame stack for thread {thread.tid} is empty"
         return
@@ -78,7 +78,8 @@ def format_thread(thread: PyThread, native: bool) -> Iterable[str]:
         if native:
             yield "* - Unable to merge native stack due to insufficient native information - *"
         while current_frame is not None:
-            yield from format_frame(current_frame)
+            if not current_frame.is_shim:
+                yield from format_frame(current_frame)
             current_frame = current_frame.next
     else:
         yield from _format_merged_stacks(thread, current_frame)

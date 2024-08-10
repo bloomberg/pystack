@@ -48,6 +48,7 @@ def test_traceback_formatter_no_native():
             arguments={},
             locals={},
             is_entry=True,
+            is_shim=False,
         )
 
     native_frames = [
@@ -203,6 +204,7 @@ def test_traceback_formatter_no_mergeable_native_frames():
             arguments={},
             locals={},
             is_entry=True,
+            is_shim=False,
         )
 
     native_frames = [
@@ -268,6 +270,7 @@ def test_traceback_formatter_with_source():
             arguments={},
             locals={},
             is_entry=True,
+            is_shim=False,
         )
 
     native_frames = [
@@ -340,6 +343,7 @@ def test_traceback_formatter_native_matching_simple_eval_frames():
             arguments={},
             locals={},
             is_entry=True,
+            is_shim=False,
         )
 
     native_frames = [
@@ -416,6 +420,7 @@ def test_traceback_formatter_native_matching_composite_eval_frames():
             arguments={},
             locals={},
             is_entry=True,
+            is_shim=False,
         )
 
     native_frames = [
@@ -509,6 +514,7 @@ def test_traceback_formatter_native_matching_eval_frames_ignore_frames():
             arguments={},
             locals={},
             is_entry=True,
+            is_shim=False,
         )
 
     ignorelist_frames = [
@@ -604,6 +610,7 @@ def test_traceback_formatter_gil_detection():
         arguments={},
         locals={},
         is_entry=True,
+        is_shim=False,
     )
     thread = PyThread(
         tid=1,
@@ -641,6 +648,7 @@ def test_traceback_formatter_gc_detection_with_native():
         arguments={},
         locals={},
         is_entry=True,
+        is_shim=False,
     )
     thread = PyThread(
         tid=1,
@@ -680,6 +688,7 @@ def test_traceback_formatter_gc_detection_without_native():
         arguments={},
         locals={},
         is_entry=True,
+        is_shim=False,
     )
     thread = PyThread(
         tid=1,
@@ -716,6 +725,7 @@ def test_traceback_formatter_dropping_the_gil_detection():
         arguments={},
         locals={},
         is_entry=True,
+        is_shim=False,
     )
     native_frames = [
         NativeFrame(0x0, "native_function1", "native_file1.c", 1, 0, "library.so"),
@@ -762,6 +772,7 @@ def test_traceback_formatter_taking_the_gil_detection():
         arguments={},
         locals={},
         is_entry=True,
+        is_shim=False,
     )
     native_frames = [
         NativeFrame(0x0, "native_function1", "native_file1.c", 1, 0, "library.so"),
@@ -825,6 +836,7 @@ def test_traceback_formatter_native_not_matching_simple_eval_frames():
             arguments={},
             locals={},
             is_entry=True,
+            is_shim=False,
         )
 
     native_frames = [
@@ -889,6 +901,7 @@ def test_traceback_formatter_native_not_matching_composite_eval_frames():
             arguments={},
             locals={},
             is_entry=True,
+            is_shim=False,
         )
 
     native_frames = [
@@ -977,6 +990,7 @@ def test_traceback_formatter_mixed_inlined_frames():
             arguments={},
             locals={},
             is_entry=code.scope in entry_funcs,
+            is_shim=False,
         )
 
     native_frames = [
@@ -1063,6 +1077,7 @@ def test_traceback_formatter_all_inlined_frames():
             arguments={},
             locals={},
             is_entry=False,
+            is_shim=False,
         )
     current_frame.is_entry = True
 
@@ -1187,6 +1202,7 @@ def test_traceback_formatter_locals(
         arguments=arguments,
         locals=locals,
         is_entry=True,
+        is_shim=False,
     )
 
     thread = PyThread(
@@ -1230,6 +1246,7 @@ def test_traceback_formatter_thread_names():
         arguments=[],
         locals=[],
         is_entry=True,
+        is_shim=False,
     )
 
     thread = PyThread(
@@ -1284,6 +1301,7 @@ def test_traceback_formatter_position_infomation():
             arguments={},
             locals={},
             is_entry=True,
+            is_shim=False,
         )
 
     thread = PyThread(
@@ -1319,6 +1337,210 @@ def test_traceback_formatter_position_infomation():
         '        x = "This is the line 3" or (1+1)',
         "",
     ]
+    colored_mock.assert_any_call("x =", color="blue")
+    colored_mock.assert_any_call('"This is the line 2" ', color="blue")
+    colored_mock.assert_any_call("(1+1)", color="blue")
+
+
+def test_shim_frames_are_ingored():
+    # GIVEN
+
+    codes = [
+        PyCodeObject(
+            filename="file1.py",
+            scope="function1",
+            location=LocationInfo(1, 1, 0, 3),
+        ),
+        PyCodeObject(
+            filename="<shim>",
+            scope="<shim>",
+            location=LocationInfo(0, 0, 0, 0),
+        ),
+        PyCodeObject(
+            filename="file2.py",
+            scope="function2",
+            location=LocationInfo(2, 2, 4, 25),
+        ),
+        PyCodeObject(
+            filename="<shim>",
+            scope="<shim>",
+            location=LocationInfo(0, 0, 0, 0),
+        ),
+        PyCodeObject(
+            filename="file3.py",
+            scope="function3",
+            location=LocationInfo(3, 3, 28, 33),
+        ),
+        PyCodeObject(
+            filename="<shim>",
+            scope="<shim>",
+            location=LocationInfo(0, 0, 0, 0),
+        ),
+        PyCodeObject(
+            filename="file4.py",
+            scope="function4",
+            location=LocationInfo(4, 4, 60, 45),
+        ),
+    ]
+
+    current_frame = None
+    for code in reversed(codes):
+        current_frame = PyFrame(
+            prev=None,
+            next=current_frame,
+            code=code,
+            arguments={},
+            locals={},
+            is_entry=True,
+            is_shim=code.scope == "<shim>",
+        )
+
+    thread = PyThread(
+        tid=1,
+        frame=current_frame,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+    )
+
+    # WHEN
+    source_data = "\n".join(
+        f'x = "This is the line {line}" or (1+1)' for line in range(1, 5)
+    )
+    with patch("builtins.open", mock_open(read_data=source_data)), patch(
+        "os.path.exists", return_value=True
+    ), patch(
+        "pystack.traceback_formatter.colored",
+        side_effect=lambda x, *args, **kwargs: x,
+    ) as colored_mock:
+        lines = list(format_thread(thread, native=False))
+
+    # THEN
+
+    assert lines == [
+        "Traceback for thread 1 [] (most recent call last):",
+        '    (Python) File "file1.py", line 1, in function1',
+        '        x = "This is the line 1" or (1+1)',
+        '    (Python) File "file2.py", line 2, in function2',
+        '        x = "This is the line 2" or (1+1)',
+        '    (Python) File "file3.py", line 3, in function3',
+        '        x = "This is the line 3" or (1+1)',
+        '    (Python) File "file4.py", line 4, in function4',
+        '        x = "This is the line 4" or (1+1)',
+        "",
+    ]
+    colored_mock.assert_any_call("x =", color="blue")
+    colored_mock.assert_any_call('"This is the line 2" ', color="blue")
+    colored_mock.assert_any_call("(1+1)", color="blue")
+
+
+def test_native_traceback_with_shim_frames():
+    # GIVEN
+
+    codes = [
+        PyCodeObject(
+            filename="<shim>",
+            scope="<shim>",
+            location=LocationInfo(0, 0, 0, 0),
+        ),
+        PyCodeObject(
+            filename="file1.py",
+            scope="function1",
+            location=LocationInfo(1, 1, 0, 3),
+        ),
+        PyCodeObject(
+            filename="<shim>",
+            scope="<shim>",
+            location=LocationInfo(0, 0, 0, 0),
+        ),
+        PyCodeObject(
+            filename="file2.py",
+            scope="function2",
+            location=LocationInfo(2, 2, 4, 25),
+        ),
+        PyCodeObject(
+            filename="<shim>",
+            scope="<shim>",
+            location=LocationInfo(0, 0, 0, 0),
+        ),
+        PyCodeObject(
+            filename="file3.py",
+            scope="function3",
+            location=LocationInfo(3, 3, 28, 33),
+        ),
+    ]
+
+    current_frame = None
+    for code in reversed(codes):
+        current_frame = PyFrame(
+            prev=None,
+            next=current_frame,
+            code=code,
+            arguments={},
+            locals={},
+            is_entry=code.scope != "<shim>",
+            is_shim=code.scope == "<shim>",
+        )
+
+    native_frames = [
+        NativeFrame(0x0, "native_function1", "native_file1.c", 1, 0, "library.so"),
+        NativeFrame(
+            0x1, "_PyEval_EvalFrameDefault", "Python/ceval.c", 123, 0, "library.so"
+        ),
+        NativeFrame(0x2, "native_function2", "native_file2.c", 2, 0, "library.so"),
+        NativeFrame(
+            0x3, "_PyEval_EvalFrameDefault", "Python/ceval.c", 123, 0, "library.so"
+        ),
+        NativeFrame(0x4, "native_function3", "native_file3.c", 3, 0, "library.so"),
+        NativeFrame(
+            0x5, "_PyEval_EvalFrameDefault", "Python/ceval.c", 123, 0, "library.so"
+        ),
+        NativeFrame(0x6, "native_function4", "native_file4.c", 4, 0, "library.so"),
+    ]
+
+    thread = PyThread(
+        tid=1,
+        frame=current_frame,
+        native_frames=native_frames,
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+    )
+
+    # WHEN
+    source_data = "\n".join(
+        f'x = "This is the line {line}" or (1+1)' for line in range(1, 5)
+    )
+    with patch("builtins.open", mock_open(read_data=source_data)), patch(
+        "os.path.exists", return_value=True
+    ), patch(
+        "pystack.traceback_formatter.colored",
+        side_effect=lambda x, *args, **kwargs: x,
+    ) as colored_mock:
+        lines = list(format_thread(thread, native=True))
+
+    # THEN
+
+    assert lines == [
+        "Traceback for thread 1 [] (most recent call last):",
+        '    (C) File "native_file1.c", line 1, in native_function1 (library.so)',
+        '    (Python) File "file1.py", line 1, in function1',
+        '        x = "This is the line 1" or (1+1)',
+        '    (Python) File "<shim>", line 0, in <shim>',
+        '        x = "This is the line 4" or (1+1)',
+        '    (C) File "native_file2.c", line 2, in native_function2 (library.so)',
+        '    (Python) File "file2.py", line 2, in function2',
+        '        x = "This is the line 2" or (1+1)',
+        '    (Python) File "<shim>", line 0, in <shim>',
+        '        x = "This is the line 4" or (1+1)',
+        '    (C) File "native_file3.c", line 3, in native_function3 (library.so)',
+        '    (Python) File "file3.py", line 3, in function3',
+        '        x = "This is the line 3" or (1+1)',
+        '    (C) File "native_file4.c", line 4, in native_function4 (library.so)',
+        "",
+    ]
+
     colored_mock.assert_any_call("x =", color="blue")
     colored_mock.assert_any_call('"This is the line 2" ', color="blue")
     colored_mock.assert_any_call("(1+1)", color="blue")

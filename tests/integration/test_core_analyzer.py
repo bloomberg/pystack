@@ -24,6 +24,8 @@ from tests.utils import ALL_PYTHONS_THAT_DO_NOT_SUPPORT_ELF_DATA
 from tests.utils import ALL_PYTHONS_THAT_SUPPORT_ELF_DATA
 from tests.utils import PythonVersion
 from tests.utils import all_pystack_combinations
+from tests.utils import all_pythons_since
+from tests.utils import generate_core_after_crash
 from tests.utils import generate_core_file
 from tests.utils import python_has_inlined_eval_frames
 from tests.utils import python_has_position_information
@@ -41,6 +43,7 @@ TEST_POSITION_INFO_FILE = Path(__file__).parent / "position_information_program.
 TEST_NO_FRAMES_AT_SHUTDOWN_FILE = (
     Path(__file__).parent / "no_frames_at_shutdown_program.py"
 )
+TEST_SHIM_DEALLOCATION_FILE = Path(__file__).parent / "shim_deallocation_program.py"
 
 
 @all_pystack_combinations(corefile=True)
@@ -197,7 +200,7 @@ def test_multiple_thread_stack_native(
     main_thread = [
         thread
         for thread in threads
-        if thread.frame and "threading" not in thread.frame.code.filename
+        if thread.first_frame and "threading" not in thread.first_frame.code.filename
     ][0]
     other_threads = [thread for thread in threads if thread != main_thread]
 
@@ -680,3 +683,50 @@ def test_get_build_ids_from_core(tmpdir: Path) -> None:
     for filename, core_id, elf_id in build_ids:
         assert filename is not None and filename != ""
         assert core_id == elf_id
+
+
+@all_pythons_since(3, 11)
+def test_shim_frame_before_new_python_function_is_scheduled(
+    python: PythonVersion, tmpdir: Path
+) -> None:
+    # GIVEN
+
+    (major_version, minor_version), python_executable = python
+
+    # WHEN
+
+    with generate_core_after_crash(
+        python_executable, TEST_SHIM_DEALLOCATION_FILE, tmpdir
+    ) as core_file:
+        threads = list(get_process_threads_for_core(core_file, python_executable))
+
+    # THEN
+    assert len(threads) == 1
+    (thread,) = threads
+
+    frames = list(thread.frames)
+    assert (len(frames)) == 7
+
+    filenames = {frame.code.filename for frame in frames}
+    assert str(TEST_SHIM_DEALLOCATION_FILE) in filenames
+
+    functions = [frame.code.scope for frame in frames]
+    assert functions == [
+        "<module>",
+        "run",
+        "run",
+        "run_until_complete",
+        "run_forever",
+        "_run_once",
+        "_run",
+    ]
+
+    assert thread.native_frames
+    eval_frames = [
+        frame
+        for frame in thread.native_frames
+        if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL
+    ]
+    assert len(eval_frames) >= 1
+    assert all("?" not in frame.symbol for frame in eval_frames)
+    assert all(frame.linenumber != 0 for frame in eval_frames if "?" not in frame.path)

@@ -14,5 +14,6 @@ cdef extern from "pyframe.h" namespace "pystack":
         unordered_map[cppstring, cppstring] Arguments()
         unordered_map[cppstring, cppstring] Locals()
         bool IsEntryFrame()
+        bool IsShim()
 
         void resolveLocalVariables() except+
