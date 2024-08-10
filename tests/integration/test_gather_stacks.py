@@ -126,7 +126,9 @@ def test_multiple_thread_stack(python, blocking, method, tmpdir):
 
     assert len(threads) == 4
     main_thread = [
-        thread for thread in threads if "threading" not in thread.frame.code.filename
+        thread
+        for thread in threads
+        if "threading" not in thread.first_frame.code.filename
     ][0]
     other_threads = [thread for thread in threads if thread != main_thread]
 
@@ -245,7 +247,9 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
 
     assert len(threads) == 4
     main_thread = [
-        thread for thread in threads if "threading" not in thread.frame.code.filename
+        thread
+        for thread in threads
+        if "threading" not in thread.first_frame.code.filename
     ][0]
     other_threads = [thread for thread in threads if thread != main_thread]
 

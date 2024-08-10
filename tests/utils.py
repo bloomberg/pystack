@@ -6,6 +6,7 @@ import pathlib
 import shutil
 import subprocess
 import sys
+import textwrap
 import time
 from typing import Generator
 from typing import Iterable
@@ -135,6 +136,38 @@ def generate_core_file(
             process.terminate()
             process.kill()
             process.wait(timeout=TIMEOUT)
+
+
+@contextlib.contextmanager
+def generate_core_after_crash(
+    python: pathlib.Path,
+    test_file: pathlib.Path,
+    tmpdir: pathlib.Path,
+) -> Generator[pathlib.Path, None, None]:
+    gdb_commands = textwrap.dedent(
+        f"""
+        set pagination off
+        run
+        generate-core-file {tmpdir}/core.%p
+        quit
+        """
+    )
+
+    gdb_script = tmpdir / "gdb_script.txt"
+    with open(gdb_script, "w") as f:
+        f.write(gdb_commands)
+
+    subprocess.run(
+        ["gdb", "-x", str(gdb_script), "-batch", "--args", str(python), str(test_file)],
+        check=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
+        timeout=TIMEOUT,
+        text=True,
+    )
+
+    (core,) = pathlib.Path(tmpdir).glob("core.*")
+    yield core
 
 
 @contextlib.contextmanager
@@ -268,3 +301,19 @@ ALL_PYTHONS_THAT_DO_NOT_SUPPORT_ELF_DATA = pytest.mark.parametrize(
     [python[:2] for python in AVAILABLE_PYTHONS if python.version < (3, 10)],
     ids=[python[1].name for python in AVAILABLE_PYTHONS if python.version < (3, 10)],
 )
+
+
+def all_pythons_since(major: int, minor: int):
+    return pytest.mark.parametrize(
+        "python",
+        [
+            python[:2]
+            for python in AVAILABLE_PYTHONS
+            if python.version >= (major, minor)
+        ],
+        ids=[
+            python[1].name
+            for python in AVAILABLE_PYTHONS
+            if python.version >= (major, minor)
+        ],
+    )

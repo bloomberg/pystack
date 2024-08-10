@@ -97,6 +97,7 @@ class PyFrame:
     arguments: Dict[str, str]
     locals: Dict[str, str]
     is_entry: bool
+    is_shim: bool
 
 
 @dataclass
@@ -111,6 +112,14 @@ class PyThread:
 
     @property
     def frames(self) -> Iterable[PyFrame]:
+        yield from filter(lambda frame: not frame.is_shim, self.all_frames)
+
+    @property
+    def first_frame(self) -> Optional[PyFrame]:
+        return next(iter(self.frames), None)
+
+    @property
+    def all_frames(self) -> Iterable[PyFrame]:
         current_frame = self.frame
         while current_frame is not None:
             yield current_frame
