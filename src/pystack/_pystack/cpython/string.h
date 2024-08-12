@@ -12,11 +12,13 @@ typedef uint8_t Py_UCS1;
 typedef Py_UCS4 Py_UNICODE;
 typedef Py_ssize_t Py_hash_t;
 
+namespace Python3 {
 typedef struct
 {
     PyObject_VAR_HEAD Py_hash_t ob_shash;
     char ob_sval[1];
 } PyBytesObject;
+}  // namespace Python3
 
 namespace Python2 {
 typedef struct
@@ -106,6 +108,10 @@ typedef struct
 } PyUnicodeObject;
 
 }  // namespace Python3_12
+
+typedef union {
+    Python3::PyBytesObject v3;
+} PyBytesObject;
 
 typedef union {
     Python2::PyUnicodeObject v2;
