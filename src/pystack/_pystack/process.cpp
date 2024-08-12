@@ -471,13 +471,14 @@ AbstractProcessManager::getBytesFromAddress(remote_addr_t addr) const
                    << addr;
         PyBytesObject bytes;
 
-        copyObjectFromProcess(addr, &bytes);
-
-        if ((len = bytes.ob_base.ob_size + 1) < 1) {
-            throw std::runtime_error("Incorrect size of the fetches bytes object");
+        copyMemoryFromProcess(addr, offsets().py_bytes.size, &bytes);
+        len = getField(bytes, &py_bytes_v::o_ob_size) + 1;
+        if (len < 1) {
+            throw std::runtime_error("Incorrect size of the fetched bytes object");
         }
         buffer.resize(len);
-        data_addr = (remote_addr_t)((char*)addr + offsetof(PyBytesObject, ob_sval));
+        data_addr = addr + getFieldOffset(&py_bytes_v::o_ob_sval);
+
         LOG(DEBUG) << std::hex << std::showbase << "Copying data for bytes object from address "
                    << data_addr;
         copyMemoryFromProcess(data_addr, len, buffer.data());

@@ -298,6 +298,17 @@ py_object()
 }
 
 template<class T>
+constexpr py_bytes_v
+py_bytes()
+{
+    return {
+            sizeof(T),
+            offsetof(T, ob_base.ob_size),
+            offsetof(T, ob_sval),
+    };
+}
+
+template<class T>
 constexpr py_unicode_v
 py_unicode()
 {
@@ -410,6 +421,7 @@ python_v python_v2 = {
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
         {},
+        {},
         py_object<PyObject>(),
         py_type<Python2::PyTypeObject>(),
         py_code<Python2::PyCodeObject>(),
@@ -428,6 +440,7 @@ python_v python_v3_3 = {
         py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_3::PyTypeObject>(),
@@ -447,6 +460,7 @@ python_v python_v3_4 = {
         py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_3::PyTypeObject>(),
@@ -466,6 +480,7 @@ python_v python_v3_6 = {
         py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_3::PyTypeObject>(),
@@ -485,6 +500,7 @@ python_v python_v3_7 = {
         py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_3::PyTypeObject>(),
@@ -506,6 +522,7 @@ python_v python_v3_8 = {
         py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_8::PyTypeObject>(),
@@ -527,6 +544,7 @@ python_v python_v3_9 = {
         py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_8::PyTypeObject>(),
@@ -548,6 +566,7 @@ python_v python_v3_10 = {
         py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_8::PyTypeObject>(),
@@ -569,6 +588,7 @@ python_v python_v3_11 = {
         py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_8::PyTypeObject>(),
@@ -591,6 +611,7 @@ python_v python_v3_12 = {
         py_dictvalues<Python3::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3_12::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_8::PyTypeObject>(),
@@ -613,6 +634,7 @@ python_v python_v3_13 = {
         py_dictvalues<Python3_13::PyDictValuesObject>(),
         py_float<PyFloatObject>(),
         py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
         py_unicode<Python3_12::PyUnicodeObject>(),
         py_object<PyObject>(),
         py_type<Python3_8::PyTypeObject>(),

@@ -74,6 +74,14 @@ struct py_long_v
     FieldOffset<digit[1]> o_ob_digit;
 };
 
+struct py_bytes_v
+{
+    typedef PyBytesObject Structure;
+    ssize_t size;
+    FieldOffset<Py_ssize_t> o_ob_size;
+    FieldOffset<char[1]> o_ob_sval;
+};
+
 struct py_unicode_v
 {
     typedef PyUnicodeObject Structure;
@@ -244,6 +252,7 @@ struct python_v
     py_dictvalues_v py_dictvalues;
     py_float_v py_float;
     py_long_v py_long;
+    py_bytes_v py_bytes;
     py_unicode_v py_unicode;
     py_object_v py_object;
     py_type_v py_type;
@@ -273,6 +282,7 @@ define_python_v_get_specialization(py_dictkeys);
 define_python_v_get_specialization(py_dictvalues);
 define_python_v_get_specialization(py_float);
 define_python_v_get_specialization(py_long);
+define_python_v_get_specialization(py_bytes);
 define_python_v_get_specialization(py_unicode);
 define_python_v_get_specialization(py_object);
 define_python_v_get_specialization(py_type);
