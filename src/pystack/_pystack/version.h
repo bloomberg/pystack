@@ -142,8 +142,11 @@ struct py_runtime_v
     ssize_t size;
     FieldOffset<remote_addr_t> o_finalizing;
     FieldOffset<remote_addr_t> o_interp_head;
-    FieldOffset<GCRuntimeState> o_gc;
+    FieldOffset<char> o_gc;  // Using char because we can only use the offset,
+                             // as the size and members change between versions
     FieldOffset<uintptr_t> o_tstate_current;
+
+    FieldOffset<char[8]> o_dbg_off_cookie;
 
     FieldOffset<uint64_t> o_dbg_off_runtime_state_struct_size;
     FieldOffset<uint64_t> o_dbg_off_runtime_state_finalizing;
@@ -222,7 +225,8 @@ struct py_is_v
     ssize_t size;
     FieldOffset<remote_addr_t> o_next;
     FieldOffset<remote_addr_t> o_tstate_head;
-    FieldOffset<GCRuntimeState> o_gc;
+    FieldOffset<char> o_gc;  // Using char because we can only use the offset,
+                             // as the size and members change between versions
     FieldOffset<remote_addr_t> o_modules;
     FieldOffset<remote_addr_t> o_sysdict;
     FieldOffset<remote_addr_t> o_builtins;

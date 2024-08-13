@@ -7,6 +7,7 @@
 
 #include "logging.h"
 #include "pytypes.h"
+#include "structure.h"
 #include "version.h"
 
 namespace pystack {
@@ -88,17 +89,15 @@ TupleObject::TupleObject(
 {
     d_manager = manager;
 
-    PyTupleObject tuple;
-    manager->copyMemoryFromProcess(addr, manager->offsets().py_tuple.size, &tuple);
-
-    ssize_t num_items = manager->getField(tuple, &py_tuple_v::o_ob_size);
+    Structure<py_tuple_v> tuple(manager, addr);
+    ssize_t num_items = tuple.getField(&py_tuple_v::o_ob_size);
     if (num_items == 0) {
         LOG(DEBUG) << std::hex << std::showbase << "There are no elements in this tuple";
         return;
     }
     d_items.resize(num_items);
     manager->copyMemoryFromProcess(
-            addr + manager->getFieldOffset(&py_tuple_v::o_ob_item),
+            tuple.getFieldRemoteAddress(&py_tuple_v::o_ob_item),
             num_items * sizeof(PyObject*),
             d_items.data());
 }
@@ -120,17 +119,15 @@ ListObject::ListObject(const std::shared_ptr<const AbstractProcessManager>& mana
 {
     d_manager = manager;
 
-    PyListObject list;
-    manager->copyMemoryFromProcess(addr, manager->offsets().py_list.size, &list);
-
-    ssize_t num_items = manager->getField(list, &py_list_v::o_ob_size);
+    Structure<py_list_v> list(manager, addr);
+    ssize_t num_items = list.getField(&py_list_v::o_ob_size);
     if (num_items == 0) {
         LOG(DEBUG) << std::hex << std::showbase << "There are no elements in this list";
         return;
     }
     d_items.resize(num_items);
     manager->copyMemoryFromProcess(
-            (remote_addr_t)manager->getField(list, &py_list_v::o_ob_item),
+            (remote_addr_t)list.getField(&py_list_v::o_ob_item),
             num_items * sizeof(PyObject*),
             d_items.data());
 }
@@ -160,12 +157,11 @@ LongObject::LongObject(
     constexpr unsigned int shift = 15;
 #endif
 
-    _PyLongObject longobj;
-    manager->copyMemoryFromProcess(addr, manager->offsets().py_long.size, &longobj);
+    Structure<py_long_v> longobj(manager, addr);
     ssize_t size;
     bool negative;
 
-    Py_ssize_t ob_size = manager->getField(longobj, &py_long_v::o_ob_size);
+    Py_ssize_t ob_size = longobj.getField(&py_long_v::o_ob_size);
     if (manager->versionIsAtLeast(3, 12)) {
         auto lv_tag = *reinterpret_cast<uintptr_t*>(&ob_size);
         negative = (lv_tag & 3) == 2;
@@ -200,7 +196,7 @@ LongObject::LongObject(
     std::vector<digit> digits;
     digits.resize(size);
     manager->copyMemoryFromProcess(
-            addr + manager->getFieldOffset(&py_long_v::o_ob_digit),
+            longobj.getFieldRemoteAddress(&py_long_v::o_ob_digit),
             sizeof(digit) * size,
             digits.data());
     for (ssize_t i = 0; i < size; ++i) {
@@ -250,25 +246,24 @@ LongObject::Overflowed() const
 void
 getDictEntries(
         const std::shared_ptr<const AbstractProcessManager>& manager,
-        const Python3::PyDictObject& dict,
+        Structure<py_dict_v>& dict,
         ssize_t& num_items,
         std::vector<Python3::PyDictKeyEntry>& valid_entries)
 {
-    remote_addr_t keys_addr = manager->getField(dict, &py_dict_v::o_ma_keys);
     assert(manager->versionIsAtLeast(3, 0));
+    remote_addr_t keys_addr = dict.getField(&py_dict_v::o_ma_keys);
     ssize_t dk_size = 0;
     int dk_kind = 0;
 
-    PyDictKeysObject keys;
-    manager->copyMemoryFromProcess(keys_addr, manager->offsets().py_dictkeys.size, &keys);
-    num_items = manager->getField(keys, &py_dictkeys_v::o_dk_nentries);
-    dk_size = manager->getField(keys, &py_dictkeys_v::o_dk_size);
+    Structure<py_dictkeys_v> keys(manager, keys_addr);
+    num_items = keys.getField(&py_dictkeys_v::o_dk_nentries);
+    dk_size = keys.getField(&py_dictkeys_v::o_dk_size);
 
     if (manager->versionIsAtLeast(3, 11)) {
         // We're reusing the o_dk_size offset for dk_log2_size. Fix up the value.
         dk_size = 1L << dk_size;
         // Added in 3.11
-        dk_kind = manager->getField(keys, &py_dictkeys_v::o_dk_kind);
+        dk_kind = keys.getField(&py_dictkeys_v::o_dk_kind);
     }
     if (num_items == 0) {
         LOG(DEBUG) << std::hex << std::showbase << "There are no elements in this dict";
@@ -293,8 +288,8 @@ getDictEntries(
         offset = 8 * dk_size;
     }
 
-    offset_t dk_indices_offset = manager->getFieldOffset(&py_dictkeys_v::o_dk_indices);
-    remote_addr_t entries_addr = keys_addr + dk_indices_offset + offset;
+    offset_t dk_indices_addr = keys.getFieldRemoteAddress(&py_dictkeys_v::o_dk_indices);
+    remote_addr_t entries_addr = dk_indices_addr + offset;
 
     std::vector<Python3::PyDictKeyEntry> raw_entries;
     raw_entries.resize(num_items);
@@ -363,8 +358,7 @@ DictObject::DictObject(std::shared_ptr<const AbstractProcessManager> manager, re
 void
 DictObject::loadFromPython3(remote_addr_t addr)
 {
-    Python3::PyDictObject dict;
-    d_manager->copyMemoryFromProcess(addr, d_manager->offsets().py_dict.size, &dict);
+    Structure<py_dict_v> dict(d_manager, addr);
 
     ssize_t num_items;
     std::vector<Python3::PyDictKeyEntry> valid_entries;
@@ -393,13 +387,13 @@ DictObject::loadFromPython3(remote_addr_t addr)
      *          All dicts sharing same key must have same insertion order.
      */
 
-    remote_addr_t dictvalues_addr = d_manager->getField(dict, &py_dict_v::o_ma_values);
+    remote_addr_t dictvalues_addr = dict.getField(&py_dict_v::o_ma_values);
+    Structure<py_dictvalues_v> dictvalues(d_manager, dictvalues_addr);
 
     // Get the values in one copy if we are dealing with a split-table dictionary
     if (dictvalues_addr != 0) {
         d_values.resize(num_items);
-        auto values_offset = d_manager->getFieldOffset(&py_dictvalues_v::o_values);
-        auto values_addr = dictvalues_addr + values_offset;
+        auto values_addr = dictvalues.getFieldRemoteAddress(&py_dictvalues_v::o_values);
         d_manager->copyMemoryFromProcess(values_addr, num_items * sizeof(PyObject*), d_values.data());
     } else {
         std::transform(
@@ -519,9 +513,9 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
 {
     LOG(DEBUG) << std::hex << std::showbase << "Copying PyObject data from address " << addr;
 
-    PyObject obj;
+    Structure<py_object_v> obj(manager, addr);
     try {
-        manager->copyMemoryFromProcess(addr, manager->offsets().py_object.size, &obj);
+        obj.copyFromRemote();
     } catch (RemoteMemCopyError& ex) {
         LOG(WARNING) << std::hex << std::showbase << "Failed to read PyObject data from address "
                      << d_addr;
@@ -529,13 +523,11 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
         return;
     }
 
-    PyTypeObject cls;
-    d_type_addr = manager->getField(obj, &py_object_v::o_ob_type);
+    d_type_addr = obj.getField(&py_object_v::o_ob_type);
     LOG(DEBUG) << std::hex << std::showbase << "Copying typeobject from address " << d_type_addr;
+    Structure<py_type_v> cls(manager, d_type_addr);
     try {
-        manager->copyMemoryFromProcess(d_type_addr, manager->offsets().py_type.size, &cls);
-
-        d_flags = manager->getField(cls, &py_type_v::o_tp_flags);
+        d_flags = cls.getField(&py_type_v::o_tp_flags);
     } catch (RemoteMemCopyError& ex) {
         LOG(WARNING) << std::hex << std::showbase << "Failed to read typeobject from address "
                      << d_type_addr;
@@ -543,7 +535,7 @@ Object::Object(const std::shared_ptr<const AbstractProcessManager>& manager, rem
         return;
     }
 
-    remote_addr_t name_addr = manager->getField(cls, &py_type_v::o_tp_name);
+    remote_addr_t name_addr = cls.getField(&py_type_v::o_tp_name);
     try {
         d_classname = manager->getCStringFromAddress(name_addr);
     } catch (RemoteMemCopyError& ex) {
@@ -625,9 +617,8 @@ Object::toInteger() const
 double
 Object::toFloat() const
 {
-    PyFloatObject the_float;
-    d_manager->copyMemoryFromProcess(d_addr, d_manager->offsets().py_float.size, &the_float);
-    return d_manager->getField(the_float, &py_float_v::o_ob_fval);
+    Structure<py_float_v> the_float(d_manager, d_addr);
+    return the_float.getField(&py_float_v::o_ob_fval);
 }
 
 bool
@@ -728,9 +719,9 @@ Object::toConcreteObject() const
 }
 
 std::string
-Object::guessClassName(PyTypeObject& type) const
+Object::guessClassName(Structure<py_type_v>& type) const
 {
-    remote_addr_t tp_repr = d_manager->getField(type, &py_type_v::o_tp_repr);
+    remote_addr_t tp_repr = type.getField(&py_type_v::o_tp_repr);
     if (tp_repr == d_manager->findSymbol("float_repr")) {
         return "float";
     }

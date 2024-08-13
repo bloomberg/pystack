@@ -6,9 +6,9 @@
 #include "mem.h"
 #include "native_frame.h"
 #include "process.h"
-#include "pycompat.h"
 #include "pyframe.h"
 #include "pythread.h"
+#include "structure.h"
 #include "version.h"
 
 #include "cpython/pthread.h"
@@ -47,10 +47,9 @@ findPthreadTidOffset(
         remote_addr_t interp_state_addr)
 {
     LOG(DEBUG) << "Attempting to locate tid offset in pthread structure";
-    PyInterpreterState is;
-    manager->copyObjectFromProcess(interp_state_addr, &is);
+    Structure<py_is_v> is(manager, interp_state_addr);
 
-    auto current_thread_addr = manager->getField(is, &py_is_v::o_tstate_head);
+    auto current_thread_addr = is.getField(&py_is_v::o_tstate_head);
 
     auto thread_head = current_thread_addr;
 
@@ -64,9 +63,8 @@ findPthreadTidOffset(
     // pthread' that we know about to avoid having to do guess-work by doing a
     // linear scan over the struct.
     while (current_thread_addr != (remote_addr_t) nullptr) {
-        PyThreadState current_thread;
-        manager->copyObjectFromProcess(current_thread_addr, &current_thread);
-        auto pthread_id_addr = manager->getField(current_thread, &py_thread_v::o_thread_id);
+        Structure<py_thread_v> current_thread(manager, current_thread_addr);
+        auto pthread_id_addr = current_thread.getField(&py_thread_v::o_thread_id);
 
         pid_t the_tid;
         std::vector<off_t> glibc_pthread_offset_candidates = {
@@ -80,7 +78,7 @@ findPthreadTidOffset(
                 return candidate;
             }
         }
-        remote_addr_t next_thread_addr = manager->getField(current_thread, &py_thread_v::o_next);
+        remote_addr_t next_thread_addr = current_thread.getField(&py_thread_v::o_next);
         if (next_thread_addr == current_thread_addr) {
             break;
         }
@@ -91,9 +89,8 @@ findPthreadTidOffset(
     current_thread_addr = thread_head;
 
     while (current_thread_addr != (remote_addr_t) nullptr) {
-        PyThreadState current_thread;
-        manager->copyObjectFromProcess(current_thread_addr, &current_thread);
-        auto pthread_id_addr = manager->getField(current_thread, &py_thread_v::o_thread_id);
+        Structure<py_thread_v> current_thread(manager, current_thread_addr);
+        auto pthread_id_addr = current_thread.getField(&py_thread_v::o_thread_id);
 
         // Attempt to locate a field in the pthread struct that's equal to the pid.
         uintptr_t buffer[100];
@@ -118,7 +115,7 @@ findPthreadTidOffset(
             }
         }
 
-        remote_addr_t next_thread_addr = manager->getField(current_thread, &py_thread_v::o_next);
+        remote_addr_t next_thread_addr = current_thread.getField(&py_thread_v::o_next);
         if (next_thread_addr == current_thread_addr) {
             break;
         }
@@ -133,9 +130,8 @@ PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager,
 {
     d_pid = manager->Pid();
 
-    PyThreadState ts;
     LOG(DEBUG) << std::hex << std::showbase << "Copying main thread struct from address " << addr;
-    manager->copyObjectFromProcess(addr, &ts);
+    Structure<py_thread_v> ts(manager, addr);
 
     remote_addr_t frame_addr = getFrameAddr(manager, ts);
     if (frame_addr != (remote_addr_t) nullptr) {
@@ -145,11 +141,11 @@ PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager,
     }
 
     d_addr = addr;
-    remote_addr_t candidate_next_addr = manager->getField(ts, &py_thread_v::o_next);
+    remote_addr_t candidate_next_addr = ts.getField(&py_thread_v::o_next);
     d_next_addr = candidate_next_addr == addr ? (remote_addr_t) nullptr : candidate_next_addr;
 
-    d_pthread_id = manager->getField(ts, &py_thread_v::o_thread_id);
-    d_tid = getThreadTid(manager, addr, d_pthread_id);
+    d_pthread_id = ts.getField(&py_thread_v::o_thread_id);
+    d_tid = getThreadTid(manager, ts, d_pthread_id);
     d_next = nullptr;
 
     if (d_next_addr != (remote_addr_t)NULL) {
@@ -165,14 +161,12 @@ PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager,
 int
 PyThread::getThreadTid(
         const std::shared_ptr<const AbstractProcessManager>& manager,
-        remote_addr_t thread_addr,
+        Structure<py_thread_v>& ts,
         unsigned long pthread_id)
 {
     int the_tid = -1;
     if (manager->versionIsAtLeast(3, 11)) {
-        manager->copyObjectFromProcess(
-                (remote_addr_t)(thread_addr + manager->getFieldOffset(&py_thread_v::o_native_thread_id)),
-                &the_tid);
+        the_tid = ts.getField(&py_thread_v::o_native_thread_id);
     } else {
         the_tid = inferTidFromPThreadStructure(manager, pthread_id);
     }
@@ -219,19 +213,18 @@ PyThread::inferTidFromPThreadStructure(
 remote_addr_t
 PyThread::getFrameAddr(
         const std::shared_ptr<const AbstractProcessManager>& manager,
-        const PyThreadState& ts)
+        Structure<py_thread_v>& ts)
 {
     if (manager->versionIsAtLeast(3, 11) && !manager->versionIsAtLeast(3, 13)) {
-        remote_addr_t cframe_addr = manager->getField(ts, &py_thread_v::o_frame);
+        remote_addr_t cframe_addr = ts.getField(&py_thread_v::o_frame);
         if (!manager->isAddressValid(cframe_addr)) {
             return reinterpret_cast<remote_addr_t>(nullptr);
         }
 
-        CFrame cframe;
-        manager->copyObjectFromProcess(cframe_addr, &cframe);
-        return manager->getField(cframe, &py_cframe_v::current_frame);
+        Structure<py_cframe_v> cframe(manager, cframe_addr);
+        return cframe.getField(&py_cframe_v::current_frame);
     } else {
-        return manager->getField(ts, &py_thread_v::o_frame);
+        return ts.getField(&py_thread_v::o_frame);
     }
 }
 
@@ -261,7 +254,7 @@ PyThread::isGCCollecting() const
 
 PyThread::GilStatus
 PyThread::calculateGilStatus(
-        PyThreadState& ts,
+        Structure<py_thread_v>& ts,
         const std::shared_ptr<const AbstractProcessManager>& manager) const
 {
     LOG(DEBUG) << "Attempting to determine GIL Status";
@@ -277,11 +270,10 @@ PyThread::calculateGilStatus(
             // a ceval state, which points to a GIL runtime state.
             // If that GIL state has `locked` set and `last_holder` is d_addr,
             // then the thread represented by this PyThread holds the GIL.
-            PyInterpreterState interp;
-            auto is_addr = manager->getField(ts, &py_thread_v::o_interp);
-            manager->copyObjectFromProcess(is_addr, &interp);
+            auto is_addr = ts.getField(&py_thread_v::o_interp);
+            Structure<py_is_v> interp(manager, is_addr);
 
-            auto gil_addr = manager->getField(interp, &py_is_v::o_gil_runtime_state);
+            auto gil_addr = interp.getField(&py_is_v::o_gil_runtime_state);
 
             Python3_9::_gil_runtime_state gil;
             manager->copyObjectFromProcess(gil_addr, &gil);
@@ -293,9 +285,8 @@ PyThread::calculateGilStatus(
         } else if (manager->versionIsAtLeast(3, 8)) {
             // Fast, exact method by checking the gilstate structure in _PyRuntime
             LOG(DEBUG) << "Searching for the GIL by checking the value of 'tstate_current'";
-            PyRuntimeState runtime;
-            manager->copyObjectFromProcess(pyruntime, &runtime);
-            uintptr_t tstate_current = manager->getField(runtime, &py_runtime_v::o_tstate_current);
+            Structure<py_runtime_v> runtime(manager, pyruntime);
+            uintptr_t tstate_current = runtime.getField(&py_runtime_v::o_tstate_current);
             return (tstate_current == d_addr ? GilStatus::HELD : GilStatus::NOT_HELD);
         } else {
             LOG(DEBUG) << "Searching for the GIL by scanning the _PyRuntime structure";
@@ -338,32 +329,31 @@ PyThread::calculateGilStatus(
 
 PyThread::GCStatus
 PyThread::calculateGCStatus(
-        PyThreadState& ts,
+        Structure<py_thread_v>& ts,
         const std::shared_ptr<const AbstractProcessManager>& manager) const
 {
     LOG(DEBUG) << "Attempting to determine GC Status";
-    GCRuntimeState gcstate;
 
+    remote_addr_t gcstate_addr;
     if (manager->versionIsAtLeast(3, 9)) {
-        PyInterpreterState interp;
-        auto is_addr = manager->getField(ts, &py_thread_v::o_interp);
-        manager->copyObjectFromProcess(is_addr, &interp);
-        gcstate = manager->getField(interp, &py_is_v ::o_gc);
+        auto is_addr = ts.getField(&py_thread_v::o_interp);
+        Structure<py_is_v> interp(manager, is_addr);
+        gcstate_addr = interp.getFieldRemoteAddress(&py_is_v::o_gc);
     } else if (manager->versionIsAtLeast(3, 7)) {
         remote_addr_t pyruntime = manager->findSymbol("_PyRuntime");
         if (!pyruntime) {
             LOG(DEBUG) << "Failed to get GC status because the _PyRuntime symbol is unavailable";
             return GCStatus::COLLECTING_UNKNOWN;
         }
-        PyRuntimeState runtime;
-        manager->copyObjectFromProcess(pyruntime, &runtime);
-        gcstate = manager->getField(runtime, &py_runtime_v::o_gc);
+        Structure<py_runtime_v> runtime(manager, pyruntime);
+        gcstate_addr = runtime.getFieldRemoteAddress(&py_runtime_v::o_gc);
     } else {
         LOG(DEBUG) << "GC Status retrieval not supported by this Python version";
         return GCStatus::COLLECTING_UNKNOWN;
     }
 
-    auto collecting = manager->getField(gcstate, &py_gc_v::o_collecting);
+    Structure<py_gc_v> gcstate(manager, gcstate_addr);
+    auto collecting = gcstate.getField(&py_gc_v::o_collecting);
     LOG(DEBUG) << "GC status correctly retrieved: " << collecting;
     return collecting ? GCStatus::COLLECTING : GCStatus::NOT_COLLECTING;
 }
@@ -380,10 +370,8 @@ getThreadFromInterpreterState(
     }
 
     LOG(DEBUG) << std::hex << std::showbase << "Copying PyInterpreterState struct from address " << addr;
-    PyInterpreterState is;
-    manager->copyObjectFromProcess(addr, &is);
-
-    auto thread_addr = manager->getField(is, &py_is_v::o_tstate_head);
+    Structure<py_is_v> is(manager, addr);
+    auto thread_addr = is.getField(&py_is_v::o_tstate_head);
     return std::make_shared<PyThread>(manager, thread_addr);
 }
 

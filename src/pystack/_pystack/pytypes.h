@@ -1,14 +1,13 @@
 #pragma once
 
 #include <memory>
-#include <ostream>
 #include <string>
 #include <variant>
 #include <vector>
 
 #include "mem.h"
 #include "process.h"
-#include "pycompat.h"
+#include "structure.h"
 
 namespace pystack {
 
@@ -181,7 +180,7 @@ class Object
     bool toBool() const;
     long toInteger() const;
     double toFloat() const;
-    std::string guessClassName(PyTypeObject& type) const;
+    std::string guessClassName(Structure<py_type_v>& type) const;
 };
 
 }  // namespace pystack

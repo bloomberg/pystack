@@ -19,11 +19,9 @@ FrameObject::FrameObject(
         ssize_t frame_no)
 : d_manager(manager)
 {
-    PyFrameObject frame;
     LOG(DEBUG) << "Copying frame number " << frame_no;
     LOG(DEBUG) << std::hex << std::showbase << "Copying frame struct from address " << addr;
-
-    manager->copyMemoryFromProcess(addr, manager->offsets().py_frame.size, &frame);
+    Structure<py_frame_v> frame(manager, addr);
 
     d_addr = addr;
     d_frame_no = frame_no;
@@ -37,7 +35,7 @@ FrameObject::FrameObject(
 
     d_code = getCode(manager, frame);
 
-    auto prev_addr = manager->getField(frame, &py_frame_v::o_back);
+    auto prev_addr = frame.getField(&py_frame_v::o_back);
     LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << prev_addr;
     if (prev_addr) {
         d_prev = std::make_shared<FrameObject>(manager, prev_addr, next_frame_no);
@@ -48,11 +46,11 @@ FrameObject::FrameObject(
 bool
 FrameObject::getIsShim(
         const std::shared_ptr<const AbstractProcessManager>& manager,
-        const PyFrameObject& frame)
+        Structure<py_frame_v>& frame)
 {
     if (manager->versionIsAtLeast(3, 12)) {
         constexpr int FRAME_OWNED_BY_CSTACK = 3;
-        return manager->getField(frame, &py_frame_v::o_owner) == FRAME_OWNED_BY_CSTACK;
+        return frame.getField(&py_frame_v::o_owner) == FRAME_OWNED_BY_CSTACK;
     }
     return false;  // Versions before 3.12 don't have shim frames.
 }
@@ -60,18 +58,18 @@ FrameObject::getIsShim(
 std::unique_ptr<CodeObject>
 FrameObject::getCode(
         const std::shared_ptr<const AbstractProcessManager>& manager,
-        const PyFrameObject& frame)
+        Structure<py_frame_v>& frame)
 {
-    remote_addr_t py_code_addr = manager->getField(frame, &py_frame_v::o_code);
+    remote_addr_t py_code_addr = frame.getField(&py_frame_v::o_code);
 
     LOG(DEBUG) << std::hex << std::showbase << "Attempting to construct code object from address "
                << py_code_addr;
 
     uintptr_t last_instruction;
     if (manager->versionIsAtLeast(3, 11)) {
-        last_instruction = manager->getField(frame, &py_frame_v::o_prev_instr);
+        last_instruction = frame.getField(&py_frame_v::o_prev_instr);
     } else {
-        last_instruction = manager->getField(frame, &py_frame_v::o_lasti);
+        last_instruction = frame.getField(&py_frame_v::o_lasti);
     }
     return std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
 }
@@ -79,7 +77,7 @@ FrameObject::getCode(
 bool
 FrameObject::isEntry(
         const std::shared_ptr<const AbstractProcessManager>& manager,
-        const PyFrameObject& frame)
+        Structure<py_frame_v>& frame)
 {
     if (manager->versionIsAtLeast(3, 12)) {
         // This is an entry frame if the previous frame was a shim, or if
@@ -89,7 +87,7 @@ FrameObject::isEntry(
         return (d_prev && d_prev->d_is_shim) || (d_frame_no == 0 && d_is_shim);
     } else if (manager->versionIsAtLeast(3, 11)) {
         // This is an entry frame if it has an entry flag set.
-        return manager->getField(frame, &py_frame_v::o_is_entry);
+        return frame.getField(&py_frame_v::o_is_entry);
     }
     return true;
 }
@@ -105,7 +103,8 @@ FrameObject::resolveLocalVariables()
 
     const size_t n_arguments = d_code->NArguments();
     const size_t n_locals = d_code->Varnames().size();
-    const remote_addr_t locals_addr = d_addr + d_manager->getFieldOffset(&py_frame_v::o_localsplus);
+    Structure<py_frame_v> frame(d_manager, d_addr);
+    const remote_addr_t locals_addr = frame.getFieldRemoteAddress(&py_frame_v::o_localsplus);
 
     if (n_locals < n_arguments) {
         throw std::runtime_error("Found more arguments than local variables");
