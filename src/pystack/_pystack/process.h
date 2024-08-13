@@ -92,21 +92,6 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     bool versionIsAtLeast(int required_major, int required_minor) const;
     const python_v& offsets() const;
 
-    template<typename OffsetsStruct, typename FieldPointer>
-    inline offset_t getFieldOffset(FieldPointer OffsetsStruct::*field) const
-    {
-        return (d_py_v->get<OffsetsStruct>().*field).offset;
-    }
-
-    template<typename OffsetsStruct, typename FieldPointer>
-    inline const typename FieldPointer::Type&
-    getField(const typename OffsetsStruct::Structure& obj, FieldPointer OffsetsStruct::*field) const
-    {
-        offset_t offset = getFieldOffset(field);
-        auto address = reinterpret_cast<const char*>(&obj) + offset;
-        return *reinterpret_cast<const typename FieldPointer::Type*>(address);
-    }
-
   protected:
     // Data members
     pid_t d_pid;

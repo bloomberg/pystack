@@ -234,30 +234,30 @@ AbstractProcessManager::isValidInterpreterState(remote_addr_t addr) const
         return false;
     }
 
-    PyInterpreterState is;
+    Structure<py_is_v> is(shared_from_this(), addr);
     // The check for valid addresses may fail if the address falls in the stack
     // space (there are "holes" in the address map space so just checking for
     // min_addr < addr < max_addr does not guarantee a valid address) so we need
     // to catch InvalidRemoteAddress exceptions.
     try {
-        copyObjectFromProcess(addr, &is);
+        is.copyFromRemote();
     } catch (RemoteMemCopyError& ex) {
         return false;
     }
 
-    PyThreadState current_thread;
-    auto current_thread_addr = getField(is, &py_is_v::o_tstate_head);
+    auto current_thread_addr = is.getField(&py_is_v::o_tstate_head);
     if (!isAddressValid(current_thread_addr)) {
         return false;
     }
 
+    Structure<py_thread_v> current_thread(shared_from_this(), current_thread_addr);
     try {
-        copyObjectFromProcess(current_thread_addr, &current_thread);
+        current_thread.copyFromRemote();
     } catch (RemoteMemCopyError& ex) {
         return false;
     }
 
-    if (getField(current_thread, &py_thread_v::o_interp) != addr) {
+    if (current_thread.getField(&py_thread_v::o_interp) != addr) {
         return false;
     }
 
@@ -266,9 +266,9 @@ AbstractProcessManager::isValidInterpreterState(remote_addr_t addr) const
 
     // Validate dictionaries in the interpreter state
     std::unordered_map<std::string, remote_addr_t> dictionaries(
-            {{"modules", getField(is, &py_is_v::o_modules)},
-             {"sysdict", getField(is, &py_is_v::o_sysdict)},
-             {"builtins", getField(is, &py_is_v::o_builtins)}});
+            {{"modules", is.getField(&py_is_v::o_modules)},
+             {"sysdict", is.getField(&py_is_v::o_sysdict)},
+             {"builtins", is.getField(&py_is_v::o_builtins)}});
     for (const auto& [dictname, addr] : dictionaries) {
         if (!isValidDictionaryObject(addr)) {
             LOG(DEBUG) << "The '" << dictname << "' dictionary object is not valid";
@@ -304,9 +304,8 @@ AbstractProcessManager::findInterpreterStateFromPyRuntime(remote_addr_t runtime_
     LOG(INFO) << "Searching for PyInterpreterState based on PyRuntime address " << std::hex
               << std::showbase << runtime_addr;
 
-    PyRuntimeState py_runtime;
-    copyObjectFromProcess(runtime_addr, &py_runtime);
-    remote_addr_t interp_state = getField(py_runtime, &py_runtime_v::o_interp_head);
+    Structure<py_runtime_v> py_runtime(shared_from_this(), runtime_addr);
+    remote_addr_t interp_state = py_runtime.getField(&py_runtime_v::o_interp_head);
 
     if (!isValidInterpreterState(interp_state)) {
         LOG(INFO) << "Failing to resolve PyInterpreterState based on PyRuntime address " << std::hex
@@ -411,35 +410,34 @@ std::string
 AbstractProcessManager::getStringFromAddress(remote_addr_t addr) const
 {
     Python2::_PyStringObject string;
-    PyUnicodeObject unicode;
     std::vector<char> buffer;
     ssize_t len;
     remote_addr_t data_addr;
 
     if (d_major == 2) {
-        LOG(DEBUG) << std::hex << std::showbase << "Handling unicode object of version 2 from address "
+        LOG(DEBUG) << std::hex << std::showbase << "Handling string object of version 2 from address "
                    << addr;
         copyObjectFromProcess(addr, &string);
 
         len = string.ob_base.ob_size;
         buffer.resize(len);
         data_addr = (remote_addr_t)((char*)addr + offsetof(Python2::_PyStringObject, ob_sval));
-        LOG(DEBUG) << std::hex << std::showbase << "Copying ASCII data for unicode object from address "
+        LOG(DEBUG) << std::hex << std::showbase << "Copying ASCII data for string object from address "
                    << data_addr;
         copyMemoryFromProcess(data_addr, len, buffer.data());
     } else {
         LOG(DEBUG) << std::hex << std::showbase << "Handling unicode object of version 3 from address "
                    << addr;
-        copyMemoryFromProcess(addr, offsets().py_unicode.size, &unicode);
+        Structure<py_unicode_v> unicode(shared_from_this(), addr);
 
-        Python3::_PyUnicode_State state = getField(unicode, &py_unicode_v::o_state);
+        Python3::_PyUnicode_State state = unicode.getField(&py_unicode_v::o_state);
         if (state.kind != 1 || state.compact != 1) {
             throw InvalidRemoteObject();
         }
 
-        len = getField(unicode, &py_unicode_v::o_length);
+        len = unicode.getField(&py_unicode_v::o_length);
         buffer.resize(len);
-        data_addr = addr + getFieldOffset(&py_unicode_v::o_ascii);
+        data_addr = unicode.getFieldRemoteAddress(&py_unicode_v::o_ascii);
         LOG(DEBUG) << std::hex << std::showbase << "Copying ASCII data for unicode object from address "
                    << data_addr;
         copyMemoryFromProcess(data_addr, len, buffer.data());
@@ -469,15 +467,13 @@ AbstractProcessManager::getBytesFromAddress(remote_addr_t addr) const
     } else {
         LOG(DEBUG) << std::hex << std::showbase << "Handling bytes object of version 3 from address "
                    << addr;
-        PyBytesObject bytes;
-
-        copyMemoryFromProcess(addr, offsets().py_bytes.size, &bytes);
-        len = getField(bytes, &py_bytes_v::o_ob_size) + 1;
+        Structure<py_bytes_v> bytes(shared_from_this(), addr);
+        len = bytes.getField(&py_bytes_v::o_ob_size) + 1;
         if (len < 1) {
             throw std::runtime_error("Incorrect size of the fetched bytes object");
         }
         buffer.resize(len);
-        data_addr = addr + getFieldOffset(&py_bytes_v::o_ob_sval);
+        data_addr = bytes.getFieldRemoteAddress(&py_bytes_v::o_ob_sval);
 
         LOG(DEBUG) << std::hex << std::showbase << "Copying data for bytes object from address "
                    << data_addr;
@@ -559,9 +555,8 @@ AbstractProcessManager::isInterpreterActive() const
 {
     remote_addr_t runtime_addr = findSymbol("_PyRuntime");
     if (runtime_addr) {
-        PyRuntimeState py_runtime;
-        copyObjectFromProcess(runtime_addr, &py_runtime);
-        remote_addr_t p = getField(py_runtime, &py_runtime_v::o_finalizing);
+        Structure<py_runtime_v> py_runtime(shared_from_this(), runtime_addr);
+        remote_addr_t p = py_runtime.getField(&py_runtime_v::o_finalizing);
         return p == 0 ? InterpreterStatus::RUNNING : InterpreterStatus::FINALIZED;
     }
 
@@ -612,33 +607,32 @@ AbstractProcessManager::warnIfOffsetsAreMismatched() const
         return;  // We need to start from the _PyRuntime structure
     }
 
-    PyRuntimeState py_runtime;
-    copyObjectFromProcess(runtime_addr, &py_runtime);
+    Structure<py_runtime_v> py_runtime(shared_from_this(), runtime_addr);
 
-    if (0 != memcmp(&py_runtime, "xdebugpy", 8)) {
+    if (0 != memcmp(py_runtime.getField(&py_runtime_v::o_dbg_off_cookie), "xdebugpy", 8)) {
         LOG(WARNING) << "Debug offsets cookie doesn't match!";
         return;
     }
 
     // Note: It's OK for pystack's size to be smaller, but not larger.
 #define compare_size(size_offset, pystack_struct)                                                       \
-    if (getFieldOffset(size_offset)                                                                     \
-        && ((uint64_t)offsets().pystack_struct.size > getField(py_runtime, size_offset)))               \
+    if ((d_py_v->py_runtime.*size_offset).offset                                                        \
+        && ((uint64_t)offsets().pystack_struct.size > py_runtime.getField(size_offset)))                \
     {                                                                                                   \
         LOG(WARNING) << "Debug offsets mismatch: " #pystack_struct ".size "                             \
-                     << offsets().pystack_struct.size << " > " << getField(py_runtime, size_offset)     \
+                     << offsets().pystack_struct.size << " > " << py_runtime.getField(size_offset)      \
                      << " reported by CPython";                                                         \
     } else                                                                                              \
         do {                                                                                            \
         } while (0)
 
 #define compare_offset(field_offset_offset, pystack_field)                                              \
-    if (getFieldOffset(field_offset_offset)                                                             \
-        && (uint64_t)offsets().pystack_field.offset != getField(py_runtime, field_offset_offset))       \
+    if ((d_py_v->py_runtime.*field_offset_offset).offset                                                \
+        && (uint64_t)offsets().pystack_field.offset != py_runtime.getField(field_offset_offset))        \
     {                                                                                                   \
         LOG(WARNING) << "Debug offsets mismatch: " #pystack_field << " "                                \
                      << offsets().pystack_field.offset                                                  \
-                     << " != " << getField(py_runtime, field_offset_offset) << " reported by CPython";  \
+                     << " != " << py_runtime.getField(field_offset_offset) << " reported by CPython";   \
     } else                                                                                              \
         do {                                                                                            \
         } while (0)

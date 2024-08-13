@@ -47,8 +47,9 @@ class PyThread : public Thread
     GCStatus isGCCollecting() const;
 
     // Static Methods
-    static remote_addr_t
-    getFrameAddr(const std::shared_ptr<const AbstractProcessManager>& manager, const PyThreadState& ts);
+    static remote_addr_t getFrameAddr(
+            const std::shared_ptr<const AbstractProcessManager>& manager,
+            Structure<py_thread_v>& ts);
 
   private:
     // Data members
@@ -62,10 +63,10 @@ class PyThread : public Thread
 
     // Methods
     GilStatus calculateGilStatus(
-            PyThreadState& ts,
+            Structure<py_thread_v>& ts,
             const std::shared_ptr<const AbstractProcessManager>& manager) const;
     GCStatus calculateGCStatus(
-            PyThreadState& ts,
+            Structure<py_thread_v>& ts,
             const std::shared_ptr<const AbstractProcessManager>& manager) const;
 
     // Static Methods
@@ -74,7 +75,7 @@ class PyThread : public Thread
             unsigned long pthread_id);
     static int getThreadTid(
             const std::shared_ptr<const AbstractProcessManager>& manager,
-            remote_addr_t thread_addr,
+            Structure<py_thread_v>& ts,
             unsigned long pthread_id);
 };
 

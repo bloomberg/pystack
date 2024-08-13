@@ -1,11 +1,12 @@
 #pragma once
 
-#include "memory"
-#include "unordered_map"
+#include <memory>
+#include <unordered_map>
 
 #include "mem.h"
 #include "process.h"
 #include "pycode.h"
+#include "structure.h"
 
 namespace pystack {
 
@@ -32,14 +33,15 @@ class FrameObject
 
   private:
     // Methods
-    static bool
-    getIsShim(const std::shared_ptr<const AbstractProcessManager>& manager, const PyFrameObject& frame);
+    static bool getIsShim(
+            const std::shared_ptr<const AbstractProcessManager>& manager,
+            Structure<py_frame_v>& frame);
 
     static std::unique_ptr<CodeObject>
-    getCode(const std::shared_ptr<const AbstractProcessManager>& manager, const PyFrameObject& frame);
+    getCode(const std::shared_ptr<const AbstractProcessManager>& manager, Structure<py_frame_v>& frame);
 
     bool
-    isEntry(const std::shared_ptr<const AbstractProcessManager>& manager, const PyFrameObject& frame);
+    isEntry(const std::shared_ptr<const AbstractProcessManager>& manager, Structure<py_frame_v>& frame);
 
     // Data members
     const std::shared_ptr<const AbstractProcessManager> d_manager{};
