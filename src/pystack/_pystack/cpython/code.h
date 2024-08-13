@@ -197,14 +197,4 @@ typedef struct
 } PyCodeObject;
 }  // namespace Python3_13
 
-typedef union {
-    Python2::PyCodeObject v2;
-    Python3_3::PyCodeObject v3_3;
-    Python3_6::PyCodeObject v3_6;
-    Python3_8::PyCodeObject v3_8;
-    Python3_11::PyCodeObject v3_11;
-    Python3_12::PyCodeObject v3_12;
-    Python3_13::PyCodeObject v3_13;
-} PyCodeObject;
-
 }  // namespace pystack

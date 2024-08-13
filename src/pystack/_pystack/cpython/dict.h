@@ -29,7 +29,7 @@ typedef struct _dictobject
 
 namespace Python3 {
 typedef Py_ssize_t (*dict_lookup_func)(void* mp, PyObject* key, Py_hash_t hash, PyObject** value_addr);
-union PyDictKeysObject;
+struct PyDictKeysObject;
 
 typedef struct
 {
@@ -98,15 +98,5 @@ typedef struct _dictvalues
 } PyDictValuesObject;
 
 }  // namespace Python3_13
-
-typedef union {
-    Python3_3::PyDictKeysObject v3_3;
-    Python3_11::PyDictKeysObject v3_11;
-} PyDictKeysObject;
-
-typedef union {
-    Python3::PyDictValuesObject v3_3;
-    Python3_13::PyDictValuesObject v3_13;
-} PyDictValuesObject;
 
 }  // namespace pystack

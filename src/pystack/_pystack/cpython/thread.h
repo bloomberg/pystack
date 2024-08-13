@@ -295,18 +295,4 @@ typedef struct _pythreadstate
 } PyThreadState;
 }  // namespace Python3_13
 
-typedef union {
-    Python2::PyThreadState v2;
-    Python3_4::PyThreadState v3_4;
-    Python3_7::PyThreadState v3_7;
-    Python3_11::PyThreadState v3_11;
-    Python3_12::PyThreadState v3_12;
-    Python3_13::PyThreadState v3_13;
-} PyThreadState;
-
-union CFrame {
-    Python3_11::CFrame v3_11;
-    Python3_12::CFrame v3_12;
-};
-
 }  // namespace pystack

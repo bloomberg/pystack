@@ -338,15 +338,4 @@ typedef struct _is
     struct _import_state imports;
 } PyInterpreterState;
 }  // namespace Python3_13
-
-typedef union {
-    Python2::PyInterpreterState v2;
-    Python3_5::PyInterpreterState v3_5;
-    Python3_7::PyInterpreterState v3_7;
-    Python3_8::PyInterpreterState v3_8;
-    Python3_9::PyInterpreterState v3_9;
-    Python3_11::PyInterpreterState v3_11;
-    Python3_12::PyInterpreterState v3_12;
-    Python3_13::PyInterpreterState v3_13;
-} PyInterpreterState;
 }  // namespace pystack

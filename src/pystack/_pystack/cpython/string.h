@@ -109,14 +109,4 @@ typedef struct
 
 }  // namespace Python3_12
 
-typedef union {
-    Python3::PyBytesObject v3;
-} PyBytesObject;
-
-typedef union {
-    Python2::PyUnicodeObject v2;
-    Python3::PyUnicodeObject v3;
-    Python3_12::PyUnicodeObject v3_12;
-} PyUnicodeObject;
-
 }  // namespace pystack
