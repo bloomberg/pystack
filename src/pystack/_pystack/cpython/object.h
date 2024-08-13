@@ -205,12 +205,6 @@ typedef struct _typeobject
 } PyTypeObject;
 }  // namespace Python3_8
 
-typedef union {
-    Python2::PyTypeObject v2;
-    Python3_3::PyTypeObject v3_3;
-    Python3_8::PyTypeObject v3_8;
-} PyTypeObject;
-
 /* These flags are used to determine if a type is a subclass. */
 constexpr long Pystack_TPFLAGS_INT_SUBCLASS = 1ul << 23u;
 constexpr long Pystack_TPFLAGS_LONG_SUBCLASS = 1ul << 24u;

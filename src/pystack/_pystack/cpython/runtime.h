@@ -105,13 +105,15 @@ struct _ceval_runtime_state
     struct _gil_runtime_state gil;
 };
 
+struct PyThreadState;
+
 typedef struct pyruntimestate
 {
     int preinitializing;
     int preinitialized;
     int core_initialized;
     int initialized;
-    PyThreadState* finalizing;
+    void* finalizing;
 
     struct pyinterpreters
     {
@@ -171,7 +173,7 @@ typedef struct pyruntimestate
     int preinitialized;
     int core_initialized;
     int initialized;
-    PyThreadState* finalizing;
+    void* finalizing;
 
     struct pyinterpreters
     {

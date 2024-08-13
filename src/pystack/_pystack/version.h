@@ -20,7 +20,6 @@ struct FieldOffset
 
 struct py_tuple_v
 {
-    typedef PyTupleObject Structure;
     ssize_t size;
     FieldOffset<Py_ssize_t> o_ob_size;
     FieldOffset<PyObject* [1]> o_ob_item;
@@ -28,7 +27,6 @@ struct py_tuple_v
 
 struct py_list_v
 {
-    typedef PyListObject Structure;
     ssize_t size;
     FieldOffset<Py_ssize_t> o_ob_size;
     FieldOffset<PyObject**> o_ob_item;
@@ -36,7 +34,6 @@ struct py_list_v
 
 struct py_dict_v
 {
-    typedef Python3::PyDictObject Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> o_ma_keys;
     FieldOffset<remote_addr_t> o_ma_values;
@@ -44,7 +41,6 @@ struct py_dict_v
 
 struct py_dictkeys_v
 {
-    typedef PyDictKeysObject Structure;
     ssize_t size;
     FieldOffset<Py_ssize_t> o_dk_size;
     FieldOffset<uint8_t> o_dk_kind;
@@ -54,21 +50,18 @@ struct py_dictkeys_v
 
 struct py_dictvalues_v
 {
-    typedef PyDictValuesObject Structure;
     ssize_t size;
     FieldOffset<remote_addr_t[1]> o_values;
 };
 
 struct py_float_v
 {
-    typedef PyFloatObject Structure;
     ssize_t size;
     FieldOffset<double> o_ob_fval;
 };
 
 struct py_long_v
 {
-    typedef _PyLongObject Structure;
     ssize_t size;
     FieldOffset<Py_ssize_t> o_ob_size;
     FieldOffset<digit[1]> o_ob_digit;
@@ -76,7 +69,6 @@ struct py_long_v
 
 struct py_bytes_v
 {
-    typedef PyBytesObject Structure;
     ssize_t size;
     FieldOffset<Py_ssize_t> o_ob_size;
     FieldOffset<char[1]> o_ob_sval;
@@ -84,7 +76,6 @@ struct py_bytes_v
 
 struct py_unicode_v
 {
-    typedef PyUnicodeObject Structure;
     ssize_t size;
     FieldOffset<Python3::_PyUnicode_State> o_state;
     FieldOffset<Py_ssize_t> o_length;
@@ -93,14 +84,12 @@ struct py_unicode_v
 
 struct py_object_v
 {
-    typedef PyObject Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> o_ob_type;
 };
 
 struct py_code_v
 {
-    typedef PyCodeObject Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> o_filename;
     FieldOffset<remote_addr_t> o_name;
@@ -113,7 +102,6 @@ struct py_code_v
 
 struct py_frame_v
 {
-    typedef PyFrameObject Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> o_back;
     FieldOffset<remote_addr_t> o_code;
@@ -126,7 +114,6 @@ struct py_frame_v
 
 struct py_thread_v
 {
-    typedef PyThreadState Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> o_prev;
     FieldOffset<remote_addr_t> o_next;
@@ -138,7 +125,6 @@ struct py_thread_v
 
 struct py_runtime_v
 {
-    typedef PyRuntimeState Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> o_finalizing;
     FieldOffset<remote_addr_t> o_interp_head;
@@ -212,7 +198,6 @@ struct py_runtime_v
 
 struct py_type_v
 {
-    typedef PyTypeObject Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> o_tp_name;
     FieldOffset<remote_addr_t> o_tp_repr;
@@ -221,7 +206,6 @@ struct py_type_v
 
 struct py_is_v
 {
-    typedef PyInterpreterState Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> o_next;
     FieldOffset<remote_addr_t> o_tstate_head;
@@ -235,14 +219,12 @@ struct py_is_v
 
 struct py_gc_v
 {
-    typedef GCRuntimeState Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> o_collecting;
 };
 
 struct py_cframe_v
 {
-    typedef CFrame Structure;
     ssize_t size;
     FieldOffset<remote_addr_t> current_frame;
 };

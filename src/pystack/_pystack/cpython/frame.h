@@ -39,7 +39,7 @@ namespace Python3_7 {
 typedef struct _pyframeobject
 {
     PyObject_VAR_HEAD struct _pyframeobject* f_back;
-    PyCodeObject* f_code;
+    PyObject* f_code;
     PyObject* f_builtins;
     PyObject* f_globals;
     PyObject* f_locals;
@@ -64,7 +64,7 @@ typedef signed char PyFrameState;
 typedef struct _pyframeobject
 {
     PyObject_VAR_HEAD struct _pyframeobject* f_back;
-    PyCodeObject* f_code;
+    PyObject* f_code;
     PyObject* f_builtins;
     PyObject* f_globals;
     PyObject* f_locals;
@@ -125,13 +125,5 @@ typedef struct _interpreter_frame
 } PyFrameObject;
 
 }  // namespace Python3_12
-
-typedef union {
-    Python2::PyFrameObject v2;
-    Python3_7::PyFrameObject v3_7;
-    Python3_10::PyFrameObject v3_10;
-    Python3_11::PyFrameObject v3_11;
-    Python3_12::PyFrameObject v3_12;
-} PyFrameObject;
 
 }  // namespace pystack

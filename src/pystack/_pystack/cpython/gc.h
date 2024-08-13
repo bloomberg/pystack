@@ -106,10 +106,4 @@ struct _gc_runtime_state
 };
 
 }  // namespace Python3_13
-
-typedef union {
-    struct Python3_7::_gc_runtime_state v3_7;
-    struct Python3_8::_gc_runtime_state v3_8;
-    struct Python3_13::_gc_runtime_state v3_13;
-} GCRuntimeState;
 }  // namespace pystack
