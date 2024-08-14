@@ -229,6 +229,13 @@ struct py_cframe_v
     FieldOffset<remote_addr_t> current_frame;
 };
 
+struct py_gilruntimestate_v
+{
+    ssize_t size;
+    FieldOffset<int> o_locked;
+    FieldOffset<remote_addr_t> o_last_holder;
+};
+
 struct python_v
 {
     py_tuple_v py_tuple;
@@ -249,6 +256,7 @@ struct python_v
     py_runtime_v py_runtime;
     py_gc_v py_gc;
     py_cframe_v py_cframe;
+    py_gilruntimestate_v py_gilruntimestate;
 
     template<typename T>
     inline const T& get() const;
@@ -279,6 +287,7 @@ define_python_v_get_specialization(py_is);
 define_python_v_get_specialization(py_runtime);
 define_python_v_get_specialization(py_gc);
 define_python_v_get_specialization(py_cframe);
+define_python_v_get_specialization(py_gilruntimestate);
 
 #undef define_python_v_get_specialization
 
