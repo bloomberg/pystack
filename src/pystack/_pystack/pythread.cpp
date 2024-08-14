@@ -274,13 +274,10 @@ PyThread::calculateGilStatus(
             Structure<py_is_v> interp(manager, is_addr);
 
             auto gil_addr = interp.getField(&py_is_v::o_gil_runtime_state);
+            Structure<py_gilruntimestate_v> gil(manager, gil_addr);
 
-            Python3_9::_gil_runtime_state gil;
-            manager->copyObjectFromProcess(gil_addr, &gil);
-
-            auto locked = *reinterpret_cast<int*>(&gil.locked);
-            auto holder = *reinterpret_cast<remote_addr_t*>(&gil.last_holder);
-
+            auto locked = gil.getField(&py_gilruntimestate_v::o_locked);
+            auto holder = gil.getField(&py_gilruntimestate_v::o_last_holder);
             return (locked && holder == d_addr ? GilStatus::HELD : GilStatus::NOT_HELD);
         } else if (manager->versionIsAtLeast(3, 8)) {
             // Fast, exact method by checking the gilstate structure in _PyRuntime
