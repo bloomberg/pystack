@@ -619,9 +619,9 @@ AbstractProcessManager::warnIfOffsetsAreMismatched() const
     if ((d_py_v->py_runtime.*size_offset).offset                                                        \
         && ((uint64_t)offsets().pystack_struct.size > py_runtime.getField(size_offset)))                \
     {                                                                                                   \
-        LOG(WARNING) << "Debug offsets mismatch: " #pystack_struct ".size "                             \
-                     << offsets().pystack_struct.size << " > " << py_runtime.getField(size_offset)      \
-                     << " reported by CPython";                                                         \
+        LOG(INFO) << "Debug offsets mismatch: compiled-in " << sizeof(void*) * 8 << "-bit python3."     \
+                  << d_minor << " " #pystack_struct ".size " << offsets().pystack_struct.size << " > "  \
+                  << py_runtime.getField(size_offset) << " loaded from _Py_DebugOffsets";               \
     } else                                                                                              \
         do {                                                                                            \
         } while (0)
@@ -630,9 +630,10 @@ AbstractProcessManager::warnIfOffsetsAreMismatched() const
     if ((d_py_v->py_runtime.*field_offset_offset).offset                                                \
         && (uint64_t)offsets().pystack_field.offset != py_runtime.getField(field_offset_offset))        \
     {                                                                                                   \
-        LOG(WARNING) << "Debug offsets mismatch: " #pystack_field << " "                                \
-                     << offsets().pystack_field.offset                                                  \
-                     << " != " << py_runtime.getField(field_offset_offset) << " reported by CPython";   \
+        LOG(INFO) << "Debug offsets mismatch: compiled-in " << sizeof(void*) * 8 << "-bit python3."     \
+                  << d_minor << " " #pystack_field << " " << offsets().pystack_field.offset             \
+                  << " != " << py_runtime.getField(field_offset_offset)                                 \
+                  << " loaded from _Py_DebugOffsets";                                                   \
     } else                                                                                              \
         do {                                                                                            \
         } while (0)
