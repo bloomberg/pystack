@@ -398,7 +398,7 @@ CorefileRemoteMemoryManager::StatusCode
 CorefileRemoteMemoryManager::getMemoryLocationFromCore(remote_addr_t addr, off_t* offset_in_file) const
 {
     auto corefile_it = std::find_if(d_vmaps.cbegin(), d_vmaps.cend(), [&](auto& map) {
-        return (map.Start() <= addr && addr <= map.End()) && (map.FileSize() != 0 && map.Offset() != 0);
+        return (map.Start() <= addr && addr < map.End()) && (map.FileSize() != 0 && map.Offset() != 0);
     });
     if (corefile_it == d_vmaps.cend()) {
         return StatusCode::ERROR;
