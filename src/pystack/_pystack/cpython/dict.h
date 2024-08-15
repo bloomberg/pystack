@@ -82,7 +82,7 @@ typedef struct _dictkeysobject
     uint32_t dk_version;
     Py_ssize_t dk_usable;
     Py_ssize_t dk_nentries;
-    char dk_indices[]; /* char is required to avoid strict aliasing. */
+    char dk_indices[1]; /* char is required to avoid strict aliasing. */
 } PyDictKeysObject;
 }  // namespace Python3_11
 
