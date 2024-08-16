@@ -19,8 +19,12 @@ LIBPYTHON_REGEXP = re.compile(
     r".*libpython(?P<major>\d+)\.(?P<minor>\d+).*", re.IGNORECASE
 )
 
+# Strings like "3.8.10 (default, May 26 2023, 14:05:08)"
+# or "2.7.18rc1 (v2.7.18rc1:8d21aa21f2, Apr 20 2020, 13:19:08)"
+# or "3.13.0+ experimental free-threading build (Python)"
 BSS_VERSION_REGEXP = re.compile(
-    rb"((2|3)\.(\d+)\.(\d{1,2}))((a|b|c|rc)\d{1,2})?\+? (\(.{1,64}\))"
+    rb"((2|3)\.(\d+)\.(\d{1,2}))((a|b|c|rc)\d{1,2})?\+?"
+    rb"(?: experimental free-threading build)? (\(.{1,64}\))"
 )
 
 LOGGER = logging.getLogger(__file__)
