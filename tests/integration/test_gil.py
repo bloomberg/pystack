@@ -1,4 +1,7 @@
+import subprocess
 from pathlib import Path
+
+import pytest
 
 from pystack.engine import get_process_threads
 from pystack.engine import get_process_threads_for_core
@@ -12,6 +15,15 @@ TEST_MULTIPLE_THREADS_GIL_FILE = (
 TEST_MULTIPLE_THREADS_FILE = Path(__file__).parent / "multiple_thread_program.py"
 TEST_SINGLE_THREAD_GIL_FILE = Path(__file__).parent / "single_thread_program_gil.py"
 TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
+
+
+@pytest.fixture(autouse=True)
+def enable_gil_if_free_threading(python, monkeypatch):
+    _, python_executable = python
+    proc = subprocess.run([python_executable, "-Xgil=1", "-cpass"], capture_output=True)
+    free_threading = proc.returncode == 0
+    if free_threading:
+        monkeypatch.setenv("PYTHON_GIL", "1")
 
 
 @ALL_PYTHONS
