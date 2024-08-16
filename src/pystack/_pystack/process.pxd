@@ -24,6 +24,7 @@ cdef extern from "process.h" namespace "pystack":
         remote_addr_t scanBSS() except+
         remote_addr_t scanHeap() except+
         remote_addr_t scanAllAnonymousMaps() except+
+        remote_addr_t findInterpreterStateFromDebugOffsets() except+
         remote_addr_t findInterpreterStateFromSymbols() except+
         remote_addr_t findInterpreterStateFromElfData() except+
         ssize_t copyMemoryFromProcess(remote_addr_t addr, ssize_t size, void *destination) except+

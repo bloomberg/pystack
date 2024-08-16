@@ -78,6 +78,7 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     remote_addr_t findInterpreterStateFromPyRuntime(remote_addr_t runtime_addr) const;
     remote_addr_t findInterpreterStateFromSymbols() const;
     remote_addr_t findInterpreterStateFromElfData() const;
+    remote_addr_t findInterpreterStateFromDebugOffsets() const;
     remote_addr_t findSymbol(const std::string& symbol) const;
     ssize_t copyMemoryFromProcess(remote_addr_t addr, size_t size, void* destination) const;
     template<typename T>
