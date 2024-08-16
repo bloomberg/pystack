@@ -36,6 +36,7 @@ class StackMethod(enum.Enum):
     ELF_DATA: int
     HEAP: int
     SYMBOLS: int
+    DEBUG_OFFSETS: int
 
 class ProcessManager: ...
 

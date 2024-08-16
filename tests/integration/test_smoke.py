@@ -20,9 +20,20 @@ if sys.version_info < (3, 10):  # pragma: no cover
 elif sys.version_info < (3, 11):  # pragma: no cover
     STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA, StackMethod.HEAP)
     CORE_STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA)
-else:  # pragma: no cover
+elif sys.version_info < (3, 13):  # pragma: no cover
     STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA)
     CORE_STACK_METHODS = (StackMethod.SYMBOLS, StackMethod.ELF_DATA)
+else:  # pragma: no cover
+    STACK_METHODS = (
+        StackMethod.DEBUG_OFFSETS,
+        StackMethod.SYMBOLS,
+        StackMethod.ELF_DATA,
+    )
+    CORE_STACK_METHODS = (
+        StackMethod.DEBUG_OFFSETS,
+        StackMethod.SYMBOLS,
+        StackMethod.ELF_DATA,
+    )
 
 
 @pytest.mark.parametrize("method", STACK_METHODS)

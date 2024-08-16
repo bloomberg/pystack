@@ -218,6 +218,7 @@ def generate_all_pystack_combinations(
 ]:  # pragma: no cover
     if corefile:
         stack_methods = (
+            StackMethod.DEBUG_OFFSETS,
             StackMethod.SYMBOLS,
             StackMethod.BSS,
             StackMethod.ELF_DATA,
@@ -225,6 +226,7 @@ def generate_all_pystack_combinations(
         )
     else:
         stack_methods = (
+            StackMethod.DEBUG_OFFSETS,
             StackMethod.SYMBOLS,
             StackMethod.BSS,
             StackMethod.HEAP,
@@ -243,6 +245,10 @@ def generate_all_pystack_combinations(
         AVAILABLE_PYTHONS,
     ):
         (major_version, minor_version) = python.version
+        if method == StackMethod.DEBUG_OFFSETS and (
+            major_version < 3 or (major_version == 3 and minor_version < 13)
+        ):
+            continue
         if method == StackMethod.BSS and (
             major_version > 3 or (major_version == 3 and minor_version >= 10)
         ):

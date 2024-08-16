@@ -77,7 +77,8 @@ class StackMethod(enum.Enum):
     BSS = 1 << 2
     ANONYMOUS_MAPS = 1 << 3
     HEAP = 1 << 4
-    AUTO = ELF_DATA | SYMBOLS | BSS
+    DEBUG_OFFSETS = 1 << 5
+    AUTO = DEBUG_OFFSETS | ELF_DATA | SYMBOLS | BSS
     ALL = AUTO | ANONYMOUS_MAPS | HEAP
 
 
@@ -530,6 +531,7 @@ cdef remote_addr_t _get_interpreter_state_addr(
 ) except*:
     cdef remote_addr_t head = 0
     possible_methods = [
+        StackMethod.DEBUG_OFFSETS,
         StackMethod.ELF_DATA,
         StackMethod.SYMBOLS,
         StackMethod.BSS,
@@ -542,7 +544,10 @@ cdef remote_addr_t _get_interpreter_state_addr(
             continue
 
         try:
-            if possible_method == StackMethod.ELF_DATA:
+            if possible_method == StackMethod.DEBUG_OFFSETS:
+                how = "using debug offsets data"
+                head = manager.findInterpreterStateFromDebugOffsets()
+            elif possible_method == StackMethod.ELF_DATA:
                 how = "using ELF data"
                 head = manager.findInterpreterStateFromElfData()
             elif possible_method == StackMethod.SYMBOLS:

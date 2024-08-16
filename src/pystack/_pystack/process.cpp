@@ -1295,6 +1295,36 @@ AbstractProcessManager::findInterpreterStateFromElfData() const
     return findInterpreterStateFromPyRuntime(pyruntime);
 }
 
+remote_addr_t
+AbstractProcessManager::findInterpreterStateFromDebugOffsets() const
+{
+    if (!d_debug_offsets_addr) {
+        LOG(DEBUG) << "Debug offsets were never found";
+        return 0;
+    }
+
+    LOG(INFO) << "Searching for PyInterpreterState based on PyRuntime address " << std::hex
+              << std::showbase << d_debug_offsets_addr
+              << " found when searching for 3.13+ debug offsets";
+
+    try {
+        Structure<py_runtime_v> runtime(shared_from_this(), d_debug_offsets_addr);
+        remote_addr_t interp_state = runtime.getField(&py_runtime_v::o_interp_head);
+        LOG(DEBUG) << "Checking interpreter state at " << std::hex << std::showbase << interp_state
+                   << " found at address "
+                   << runtime.getFieldRemoteAddress(&py_runtime_v::o_interp_head);
+        if (isValidInterpreterState(interp_state)) {
+            LOG(DEBUG) << "Interpreter head reference from debug offsets dereferences successfully";
+            return interp_state;
+        }
+    } catch (...) {
+        // Swallow exceptions and fall through to return failure
+    }
+    LOG(INFO) << "Failed to resolve PyInterpreterState based on PyRuntime address " << std::hex
+              << std::showbase << d_debug_offsets_addr;
+    return 0;
+}
+
 ProcessManager::ProcessManager(
         pid_t pid,
         const std::shared_ptr<ProcessTracer>& tracer,
