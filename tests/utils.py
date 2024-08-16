@@ -23,6 +23,7 @@ TIMEOUT = 30
 PythonVersion = Tuple[Tuple[int, int], pathlib.Path]
 
 ALL_VERSIONS = [
+    ((3, 13), "python3.13t"),
     ((3, 13), "python3.13"),
     ((3, 12), "python3.12"),
     ((3, 11), "python3.11"),
@@ -44,6 +45,8 @@ def find_all_available_pythons() -> Iterable[Interpreter]:  # pragma: no cover
         versions = [((sys.version_info[0], sys.version_info[1]), sys.executable)]
     elif test_version is not None:
         major, minor = test_version.split(".")
+        if minor.endswith("t"):
+            minor = minor[:-1]
         versions = [((int(major), int(minor)), f"python{test_version}")]
     else:
         versions = ALL_VERSIONS
