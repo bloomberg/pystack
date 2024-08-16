@@ -573,7 +573,6 @@ import time
 
 class ListObject(ctypes.Structure):
     _fields_ = [
-        ("ob_refcnt", ctypes.c_ssize_t),
         ("ob_type", ctypes.c_void_p),
         ("ob_size", ctypes.c_ssize_t),
         ("ob_item", ctypes.c_void_p),
@@ -581,12 +580,15 @@ class ListObject(ctypes.Structure):
 
 class TupleObject(ctypes.Structure):
     _fields_ = [
-        ("ob_refcnt", ctypes.c_ssize_t),
         ("ob_type", ctypes.c_void_p),
         ("ob_size", ctypes.c_ssize_t),
         ("ob_item0", ctypes.c_void_p),
         ("ob_item1", ctypes.c_void_p),
     ]
+
+def ob_type_field(obj):
+    # Assume ob_type is the last field of PyObject
+    return id(obj) + sys.getsizeof(None) - ctypes.sizeof(ctypes.c_void_p)
 
 def main():
     bad_type = (1, 2, 3)
@@ -594,10 +596,10 @@ def main():
     nullelem = (7, 8, 9)
     bad_list = [0, 1, 2]
 
-    TupleObject.from_address(id(bad_type)).ob_type = 0xded
-    TupleObject.from_address(id(bad_elem)).ob_item1 = 0xbad
-    TupleObject.from_address(id(nullelem)).ob_item1 = 0x0
-    ListObject.from_address(id(bad_list)).ob_item = 0x0
+    TupleObject.from_address(ob_type_field(bad_type)).ob_type = 0xded
+    TupleObject.from_address(ob_type_field(bad_elem)).ob_item1 = 0xbad
+    TupleObject.from_address(ob_type_field(nullelem)).ob_item1 = 0x0
+    ListObject.from_address(ob_type_field(bad_list)).ob_item = 0x0
 
     fifo = sys.argv[1]
     with open(sys.argv[1], "w") as fifo:
