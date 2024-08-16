@@ -30,7 +30,8 @@ cdef extern from "process.h" namespace "pystack":
         vector[int] Tids() except+
         InterpreterStatus isInterpreterActive() except+
         pair[int, int] findPythonVersion()
-        void setPythonVersion(pair[int, int] version)
+        void setPythonVersion(pair[int, int] version) except +
+        void setPythonVersionFromDebugOffsets() except +
 
     cdef cppclass ProcessManager(AbstractProcessManager):
         ProcessManager(int pid, shared_ptr[ProcessTracer] tracer, shared_ptr[ProcessAnalyzer] analyzer, vector[VirtualMap] memory_maps, MemoryMapInformation map_info) except+

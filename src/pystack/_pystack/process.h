@@ -20,6 +20,9 @@
 
 namespace pystack {
 
+template<typename OffsetsStruct>
+class Structure;
+
 struct InvalidRemoteObject : public InvalidCopiedMemory
 {
     const char* what() const noexcept override
@@ -88,6 +91,7 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     InterpreterStatus isInterpreterActive() const;
     std::pair<int, int> findPythonVersion() const;
 
+    void setPythonVersionFromDebugOffsets();
     void setPythonVersion(const std::pair<int, int>& version);
     bool versionIsAtLeast(int required_major, int required_minor) const;
     const python_v& offsets() const;
@@ -106,6 +110,8 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     int d_major{};
     int d_minor{};
     const python_v* d_py_v{};
+    remote_addr_t d_debug_offsets_addr{};
+    std::unique_ptr<python_v> d_debug_offsets{};
     mutable std::unordered_map<std::string, remote_addr_t> d_type_cache;
 
     // Methods
@@ -113,8 +119,16 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     bool isValidDictionaryObject(remote_addr_t addr) const;
 
   private:
-    void warnIfOffsetsAreMismatched() const;
+    void warnIfOffsetsAreMismatched(remote_addr_t addr) const;
+    remote_addr_t findPyRuntimeFromElfData() const;
+    remote_addr_t findDebugOffsetsFromMaps() const;
+
+    std::unique_ptr<python_v> loadDebugOffsets(Structure<py_runtime_v>& py_runtime) const;
+    bool copyDebugOffsets(Structure<py_runtime_v>& py_runtime, python_v& debug_offsets) const;
+    bool validateDebugOffsets(const Structure<py_runtime_v>& py_runtime, python_v& debug_offsets) const;
+    void clampSizes(python_v& debug_offsets) const;
     remote_addr_t scanMemoryAreaForInterpreterState(const VirtualMap& map) const;
+    remote_addr_t scanMemoryAreaForDebugOffsets(const VirtualMap& map) const;
 };
 
 template<typename T>

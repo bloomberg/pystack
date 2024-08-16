@@ -307,6 +307,7 @@ cdef class ProcessManager:
             )
         )
 
+        native_manager.get().setPythonVersionFromDebugOffsets()
         python_version = native_manager.get().findPythonVersion()
         if python_version == (-1, -1):
             python_version = get_python_version_for_process(pid, map_info)
@@ -353,10 +354,12 @@ cdef class ProcessManager:
             make_shared[CoreFileProcessManager](pid, analyzer, maps, native_map_info)
         )
 
+        native_manager.get().setPythonVersionFromDebugOffsets()
         python_version = native_manager.get().findPythonVersion()
         if python_version == (-1, -1):
             python_version = get_python_version_for_core(core_file, executable, map_info)
         native_manager.get().setPythonVersion(python_version)
+
         cdef ProcessManager new_manager = cls(
             pid, python_version, virtual_maps, map_info
         )

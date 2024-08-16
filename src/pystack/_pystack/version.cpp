@@ -238,6 +238,7 @@ py_runtimev313()
             {},
             {},
             offsetof(T, debug_offsets.cookie),
+            offsetof(T, debug_offsets.version),
             offsetof(T, debug_offsets.runtime_state.size),
             offsetof(T, debug_offsets.runtime_state.finalizing),
             offsetof(T, debug_offsets.runtime_state.interpreters_head),
