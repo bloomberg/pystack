@@ -133,6 +133,7 @@ struct py_runtime_v
     FieldOffset<uintptr_t> o_tstate_current;
 
     FieldOffset<char[8]> o_dbg_off_cookie;
+    FieldOffset<uint64_t> o_dbg_off_py_version_hex;
 
     FieldOffset<uint64_t> o_dbg_off_runtime_state_struct_size;
     FieldOffset<uint64_t> o_dbg_off_runtime_state_finalizing;

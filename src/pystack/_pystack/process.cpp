@@ -63,6 +63,61 @@ class DirectoryReader
 }  // namespace
 namespace pystack {
 
+namespace {  // unnamed
+
+struct ParsedPyVersion
+{
+    int major;
+    int minor;
+    int patch;
+    const char* release_level;
+    int serial;
+};
+
+std::ostream&
+operator<<(std::ostream& out, const ParsedPyVersion& version)
+{
+    // Use a temporary stringstream in case `out` is using hex or showbase
+    std::ostringstream oss;
+    oss << version.major << "." << version.minor << "." << version.patch;
+    if (version.release_level) {
+        oss << version.release_level << version.serial;
+    }
+
+    out << oss.str();
+    return out;
+}
+
+bool
+parsePyVersionHex(uint64_t version, ParsedPyVersion& parsed)
+{
+    int major = (version >> 24) & 0xFF;
+    int minor = (version >> 16) & 0xFF;
+    int patch = (version >> 8) & 0xFF;
+    int level = (version >> 4) & 0x0F;
+    int count = (version >> 0) & 0x0F;
+
+    const char* level_str = nullptr;
+    if (level == 0xA) {
+        level_str = "a";
+    } else if (level == 0xB) {
+        level_str = "b";
+    } else if (level == 0xC) {
+        level_str = "rc";
+    } else if (level == 0xF) {
+        level_str = "";
+    }
+
+    if (major < 2 || major > 3 || level_str == nullptr || (level == 0xF && count != 0)) {
+        return false;  // Doesn't look valid.
+    }
+
+    parsed = ParsedPyVersion{major, minor, patch, level_str, count};
+    return true;
+}
+
+}  // unnamed namespace
+
 static std::vector<int>
 getProcessTids(pid_t pid)
 {
@@ -353,6 +408,40 @@ AbstractProcessManager::scanMemoryAreaForInterpreterState(const VirtualMap& map)
 }
 
 remote_addr_t
+AbstractProcessManager::scanMemoryAreaForDebugOffsets(const VirtualMap& map) const
+{
+    size_t size = map.Size();
+    std::vector<char> memory_buffer(size);
+    remote_addr_t base = map.Start();
+    copyMemoryFromProcess(base, size, memory_buffer.data());
+
+    LOG(INFO) << std::showbase << std::hex << "Searching for debug offsets in memory area spanning from "
+              << map.Start() << " to " << map.End();
+
+    uint64_t* lower_bound = (uint64_t*)&memory_buffer.data()[0];
+    uint64_t* upper_bound = (uint64_t*)&memory_buffer.data()[size];
+
+    uint64_t cookie;
+    memcpy(&cookie, "xdebugpy", sizeof(cookie));
+
+    for (uint64_t* raddr = lower_bound; raddr < upper_bound; raddr++) {
+        if (raddr[0] == cookie) {
+            uint64_t version = raddr[1];
+
+            ParsedPyVersion parsed;
+            if (parsePyVersionHex(version, parsed) && parsed.major == 3 && parsed.minor >= 13) {
+                auto offset = (remote_addr_t)raddr - (remote_addr_t)memory_buffer.data();
+                auto addr = offset + base;
+                LOG(DEBUG) << std::hex << std::showbase << "Possible debug offsets found at address "
+                           << addr << " in a mapping of " << map.Path();
+                return addr;
+            }
+        }
+    }
+    return 0;
+}
+
+remote_addr_t
 AbstractProcessManager::scanBSS() const
 {
     LOG(INFO) << "Scanning BSS section for PyInterpreterState";
@@ -390,6 +479,27 @@ AbstractProcessManager::scanHeap() const
         return (remote_addr_t) nullptr;
     }
     return scanMemoryAreaForInterpreterState(d_heap.value());
+}
+
+remote_addr_t
+AbstractProcessManager::findDebugOffsetsFromMaps() const
+{
+    LOG(INFO) << "Scanning all writable path-backed maps for _Py_DebugOffsets";
+    for (auto& map : d_memory_maps) {
+        if (map.Flags().find("w") != std::string::npos && !map.Path().empty()) {
+            LOG(DEBUG) << std::hex << std::showbase << "Attempting to locate _Py_DebugOffsets in map of "
+                       << map.Path() << " starting at " << map.Start() << " and ending at " << map.End();
+            LOG(DEBUG) << "Flags: " << map.Flags();
+            try {
+                if (remote_addr_t result = scanMemoryAreaForDebugOffsets(map)) {
+                    return result;
+                }
+            } catch (RemoteMemCopyError& ex) {
+                LOG(INFO) << "Failed to scan map starting at " << map.Start();
+            }
+        }
+    }
+    return 0;
 }
 
 ssize_t
@@ -563,12 +673,72 @@ AbstractProcessManager::isInterpreterActive() const
     return InterpreterStatus::UNKNOWN;
 }
 
+void
+AbstractProcessManager::setPythonVersionFromDebugOffsets()
+{
+    remote_addr_t pyruntime_addr = findSymbol("_PyRuntime");
+    if (!pyruntime_addr) {
+        pyruntime_addr = findPyRuntimeFromElfData();
+    }
+    if (!pyruntime_addr) {
+        pyruntime_addr = findDebugOffsetsFromMaps();
+    }
+
+    if (!pyruntime_addr) {
+        LOG(DEBUG) << "Unable to find _Py_DebugOffsets";
+        return;
+    }
+
+    try {
+        uint64_t cookie;
+        copyObjectFromProcess(pyruntime_addr, &cookie);
+        if (0 != memcmp(&cookie, "xdebugpy", 8)) {
+            LOG(DEBUG) << "Found a _PyRuntime structure without _Py_DebugOffsets";
+            return;
+        }
+
+        uint64_t version;
+        copyObjectFromProcess(pyruntime_addr + 8, &version);
+
+        ParsedPyVersion parsed;
+        if (parsePyVersionHex(version, parsed) && parsed.major == 3 && parsed.minor >= 13) {
+            LOG(INFO) << std::hex << std::showbase << "_Py_DebugOffsets at " << pyruntime_addr
+                      << " identify the version as " << parsed;
+            setPythonVersion(std::make_pair(parsed.major, parsed.minor));
+            Structure<py_runtime_v> py_runtime(shared_from_this(), pyruntime_addr);
+            std::unique_ptr<python_v> offsets = loadDebugOffsets(py_runtime);
+            if (offsets) {
+                LOG(INFO) << "_Py_DebugOffsets appear to be valid and will be used";
+                warnIfOffsetsAreMismatched(pyruntime_addr);
+                d_debug_offsets_addr = pyruntime_addr;
+                d_debug_offsets = std::move(offsets);
+                return;
+            }
+        }
+    } catch (const RemoteMemCopyError& ex) {
+        LOG(DEBUG) << std::hex << std::showbase << "Found apparently invalid _Py_DebugOffsets at "
+                   << pyruntime_addr;
+    }
+
+    LOG(DEBUG) << "Failed to validate _PyDebugOffsets structure";
+    d_major = 0;
+    d_minor = 0;
+    d_py_v = nullptr;
+    d_debug_offsets_addr = 0;
+    d_debug_offsets.reset();
+}
+
 std::pair<int, int>
 AbstractProcessManager::findPythonVersion() const
 {
+    if (d_py_v) {
+        // Already set or previously found (probably via _Py_DebugOffsets)
+        return std::make_pair(d_major, d_minor);
+    }
+
     auto version_symbol = findSymbol("Py_Version");
     if (!version_symbol) {
-        LOG(DEBUG) << "Faled to determine Python version from symbols";
+        LOG(DEBUG) << "Failed to determine Python version from symbols";
         return {-1, -1};
     }
     unsigned long version;
@@ -591,22 +761,11 @@ AbstractProcessManager::setPythonVersion(const std::pair<int, int>& version)
     // Note: getCPythonOffsets can throw. Don't set these if it does.
     d_major = version.first;
     d_minor = version.second;
-
-    warnIfOffsetsAreMismatched();
 }
 
 void
-AbstractProcessManager::warnIfOffsetsAreMismatched() const
+AbstractProcessManager::warnIfOffsetsAreMismatched(remote_addr_t runtime_addr) const
 {
-    if (!versionIsAtLeast(3, 13)) {
-        return;  // Nothing to cross-reference; _Py_DebugOffsets was added in 3.13
-    }
-
-    remote_addr_t runtime_addr = findSymbol("_PyRuntime");
-    if (!runtime_addr) {
-        return;  // We need to start from the _PyRuntime structure
-    }
-
     Structure<py_runtime_v> py_runtime(shared_from_this(), runtime_addr);
 
     if (0 != memcmp(py_runtime.getField(&py_runtime_v::o_dbg_off_cookie), "xdebugpy", 8)) {
@@ -696,6 +855,402 @@ AbstractProcessManager::warnIfOffsetsAreMismatched() const
 #undef compare_offset
 }
 
+std::unique_ptr<python_v>
+AbstractProcessManager::loadDebugOffsets(Structure<py_runtime_v>& py_runtime) const
+{
+    if (!versionIsAtLeast(3, 13)) {
+        return {};  // _Py_DebugOffsets was added in 3.13
+    }
+
+    if (0 != memcmp(py_runtime.getField(&py_runtime_v::o_dbg_off_cookie), "xdebugpy", 8)) {
+        LOG(WARNING) << "Debug offsets cookie doesn't match!";
+        return {};
+    }
+
+    uint64_t version = py_runtime.getField(&py_runtime_v::o_dbg_off_py_version_hex);
+    int major = (version >> 24) & 0xff;
+    int minor = (version >> 16) & 0xff;
+
+    if (major != d_major || minor != d_minor) {
+        LOG(WARNING) << "Detected version " << d_major << "." << d_minor
+                     << " doesn't match debug offsets version " << major << "." << minor << "!";
+        return {};
+    }
+
+    python_v debug_offsets{};
+    if (!copyDebugOffsets(py_runtime, debug_offsets)) {
+        return {};
+    }
+
+    if (!validateDebugOffsets(py_runtime, debug_offsets)) {
+        return {};
+    }
+
+    auto ret = std::make_unique<python_v>();
+    *ret = debug_offsets;
+    clampSizes(*ret);
+    return ret;
+}
+
+bool
+AbstractProcessManager::copyDebugOffsets(Structure<py_runtime_v>& py_runtime, python_v& debug_offsets)
+        const
+{
+    // Fill in a temporary python_v with the offsets from the remote.
+    // For fields that aren't in _Py_DebugOffsets, make some assumptions, based
+    // in part on the size delta between the sizeof(PyObject) baked into our
+    // static offsets and the sizeof(PyObject) in the remote process/core.
+    Py_ssize_t new_pyobject_size = py_runtime.getField(&py_runtime_v::o_dbg_off_pyobject_struct_size);
+    Py_ssize_t pyobject_size_delta = -d_py_v->py_object.size + new_pyobject_size;
+
+#define set_size(pystack_struct, size_offset)                                                           \
+    debug_offsets.pystack_struct.size = py_runtime.getField(size_offset)
+
+#define set_offset(pystack_field, field_offset_offset)                                                  \
+    debug_offsets.pystack_field = {(offset_t)py_runtime.getField(field_offset_offset)}
+
+    set_size(py_runtime, &py_runtime_v::o_dbg_off_runtime_state_struct_size);
+    set_offset(py_runtime.o_finalizing, &py_runtime_v::o_dbg_off_runtime_state_finalizing);
+    set_offset(py_runtime.o_interp_head, &py_runtime_v::o_dbg_off_runtime_state_interpreters_head);
+
+    set_size(py_is, &py_runtime_v::o_dbg_off_interpreter_state_struct_size);
+    set_offset(py_is.o_next, &py_runtime_v::o_dbg_off_interpreter_state_next);
+    set_offset(py_is.o_tstate_head, &py_runtime_v::o_dbg_off_interpreter_state_threads_head);
+    set_offset(py_is.o_gc, &py_runtime_v::o_dbg_off_interpreter_state_gc);
+    set_offset(py_is.o_modules, &py_runtime_v::o_dbg_off_interpreter_state_imports_modules);
+    set_offset(py_is.o_sysdict, &py_runtime_v::o_dbg_off_interpreter_state_sysdict);
+    set_offset(py_is.o_builtins, &py_runtime_v::o_dbg_off_interpreter_state_builtins);
+    set_offset(py_is.o_gil_runtime_state, &py_runtime_v::o_dbg_off_interpreter_state_ceval_gil);
+
+    set_size(py_thread, &py_runtime_v::o_dbg_off_thread_state_struct_size);
+    set_offset(py_thread.o_prev, &py_runtime_v::o_dbg_off_thread_state_prev);
+    set_offset(py_thread.o_next, &py_runtime_v::o_dbg_off_thread_state_next);
+    set_offset(py_thread.o_interp, &py_runtime_v::o_dbg_off_thread_state_interp);
+    set_offset(py_thread.o_frame, &py_runtime_v::o_dbg_off_thread_state_current_frame);
+    set_offset(py_thread.o_thread_id, &py_runtime_v::o_dbg_off_thread_state_thread_id);
+    set_offset(py_thread.o_native_thread_id, &py_runtime_v::o_dbg_off_thread_state_native_thread_id);
+
+    set_size(py_frame, &py_runtime_v::o_dbg_off_interpreter_frame_struct_size);
+    set_offset(py_frame.o_back, &py_runtime_v::o_dbg_off_interpreter_frame_previous);
+    set_offset(py_frame.o_code, &py_runtime_v::o_dbg_off_interpreter_frame_executable);
+    set_offset(py_frame.o_prev_instr, &py_runtime_v::o_dbg_off_interpreter_frame_instr_ptr);
+    set_offset(py_frame.o_localsplus, &py_runtime_v::o_dbg_off_interpreter_frame_localsplus);
+    set_offset(py_frame.o_owner, &py_runtime_v::o_dbg_off_interpreter_frame_owner);
+
+    set_size(py_code, &py_runtime_v::o_dbg_off_code_object_struct_size);
+    set_offset(py_code.o_filename, &py_runtime_v::o_dbg_off_code_object_filename);
+    set_offset(py_code.o_name, &py_runtime_v::o_dbg_off_code_object_name);
+    set_offset(py_code.o_lnotab, &py_runtime_v::o_dbg_off_code_object_linetable);
+    set_offset(py_code.o_firstlineno, &py_runtime_v::o_dbg_off_code_object_firstlineno);
+    set_offset(py_code.o_argcount, &py_runtime_v::o_dbg_off_code_object_argcount);
+    set_offset(py_code.o_varnames, &py_runtime_v::o_dbg_off_code_object_localsplusnames);
+    set_offset(py_code.o_code_adaptive, &py_runtime_v::o_dbg_off_code_object_co_code_adaptive);
+
+    set_size(py_object, &py_runtime_v::o_dbg_off_pyobject_struct_size);
+    set_offset(py_object.o_ob_type, &py_runtime_v::o_dbg_off_pyobject_ob_type);
+
+    set_size(py_type, &py_runtime_v::o_dbg_off_type_object_struct_size);
+    set_offset(py_type.o_tp_name, &py_runtime_v::o_dbg_off_type_object_tp_name);
+    // Assume our static offsets are correct about the distance from tp_name to the other fields
+    debug_offsets.py_type.o_tp_repr = {
+            d_py_v->py_type.o_tp_repr.offset - d_py_v->py_type.o_tp_name.offset
+            + debug_offsets.py_type.o_tp_name.offset};
+    debug_offsets.py_type.o_tp_flags = {
+            d_py_v->py_type.o_tp_flags.offset - d_py_v->py_type.o_tp_name.offset
+            + debug_offsets.py_type.o_tp_name.offset};
+
+    set_size(py_tuple, &py_runtime_v::o_dbg_off_tuple_object_struct_size);
+    // Assume ob_base is the first field of PyVarObject and ob_size is the second
+    static_assert(sizeof(PyTupleObject::ob_base.ob_base) == offsetof(PyTupleObject, ob_base.ob_size));
+    debug_offsets.py_tuple.o_ob_size = {(offset_t)new_pyobject_size};
+    set_offset(py_tuple.o_ob_item, &py_runtime_v::o_dbg_off_tuple_object_ob_item);
+
+    set_size(py_unicode, &py_runtime_v::o_dbg_off_unicode_object_struct_size);
+    set_offset(py_unicode.o_state, &py_runtime_v::o_dbg_off_unicode_object_state);
+    set_offset(py_unicode.o_length, &py_runtime_v::o_dbg_off_unicode_object_length);
+    set_offset(py_unicode.o_ascii, &py_runtime_v::o_dbg_off_unicode_object_asciiobject_size);
+
+    set_size(py_gc, &py_runtime_v::o_dbg_off_gc_struct_size);
+    set_offset(py_gc.o_collecting, &py_runtime_v::o_dbg_off_gc_collecting);
+
+    // Assume ob_size and ob_item are at the same location for list as for tuple
+    static_assert(
+            offsetof(PyListObject, ob_item) + sizeof(PyListObject::ob_item) <= sizeof(PyTupleObject));
+    debug_offsets.py_list.size = debug_offsets.py_tuple.size;
+
+    static_assert(offsetof(PyListObject, ob_base.ob_size) == offsetof(PyTupleObject, ob_base.ob_size));
+    debug_offsets.py_list.o_ob_size = debug_offsets.py_tuple.o_ob_size;
+
+    static_assert(offsetof(PyListObject, ob_item) == offsetof(PyTupleObject, ob_item));
+    debug_offsets.py_list.o_ob_item = {debug_offsets.py_tuple.o_ob_item.offset};
+
+    // Assume our static offsets for dict are correct save possibly for sizeof(PyObject) changing
+    debug_offsets.py_dictkeys = d_py_v->py_dictkeys;
+    debug_offsets.py_dictvalues = d_py_v->py_dictvalues;
+    debug_offsets.py_dict = d_py_v->py_dict;
+    debug_offsets.py_dict.size += pyobject_size_delta;
+    debug_offsets.py_dict.o_ma_keys.offset += pyobject_size_delta;
+    debug_offsets.py_dict.o_ma_values.offset += pyobject_size_delta;
+
+    // Assume our static offsets for float are correct save possibly for sizeof(PyObject) changing
+    debug_offsets.py_float = d_py_v->py_float;
+    debug_offsets.py_float.size += pyobject_size_delta;
+    debug_offsets.py_float.o_ob_fval.offset += pyobject_size_delta;
+
+    // Assume our static offsets for long are correct save possibly for sizeof(PyObject) changing
+    debug_offsets.py_long = d_py_v->py_long;
+    debug_offsets.py_long.size += pyobject_size_delta;
+    debug_offsets.py_long.o_ob_size.offset += pyobject_size_delta;
+    debug_offsets.py_long.o_ob_digit.offset += pyobject_size_delta;
+
+    // Assume our static offsets for bytes are correct save possibly for sizeof(PyObject) changing
+    debug_offsets.py_bytes = d_py_v->py_bytes;
+    debug_offsets.py_bytes.size += pyobject_size_delta;
+    debug_offsets.py_bytes.o_ob_size.offset += pyobject_size_delta;
+    debug_offsets.py_bytes.o_ob_sval.offset += pyobject_size_delta;
+
+    // Assume our static offsets for cframe are all correct
+    debug_offsets.py_cframe = d_py_v->py_cframe;
+
+    // Assume our static offsets for gilruntimestate are off by 8 bytes in a free-threading build.
+    // This is quite a hack...
+    debug_offsets.py_gilruntimestate = d_py_v->py_gilruntimestate;
+    bool is_free_threading = static_cast<size_t>(debug_offsets.py_object.size) > 2 * sizeof(void*);
+    if (is_free_threading) {
+        debug_offsets.py_gilruntimestate.size += 8;
+        debug_offsets.py_gilruntimestate.o_last_holder.offset += 8;
+        debug_offsets.py_gilruntimestate.o_locked.offset += 8;
+    }
+
+#undef set_size
+#undef set_offset
+
+    return true;
+}
+
+bool
+AbstractProcessManager::validateDebugOffsets(
+        const Structure<py_runtime_v>& py_runtime,
+        python_v& debug_offsets) const
+{
+    // Simple sanity checks on the decoded offsets:
+    // - No structure is larger than 1 MB
+    // - Every field falls within its structure's size
+#define check_size(pystack_struct, size_offset)                                                         \
+    do {                                                                                                \
+        if (debug_offsets.pystack_struct.size > 1024 * 1024) {                                          \
+            LOG(WARNING) << "Ignoring debug offsets because " #pystack_struct ".size ("                 \
+                         << debug_offsets.pystack_struct.size << ") reported at byte offset "           \
+                         << (d_py_v->py_runtime.*size_offset).offset                                    \
+                         << " in detected _Py_DebugOffsets structure at " << std::hex << std::showbase  \
+                         << py_runtime.getFieldRemoteAddress(&py_runtime_v::o_dbg_off_cookie)           \
+                         << " is implausibly large";                                                    \
+            return {};                                                                                  \
+        }                                                                                               \
+    } while (0)
+
+#define check_field_bounds(structure, field)                                                            \
+    do {                                                                                                \
+        if (debug_offsets.structure.size < 0                                                            \
+            || (size_t)debug_offsets.structure.size < debug_offsets.structure.field.offset              \
+            || debug_offsets.structure.size - debug_offsets.structure.field.offset                      \
+                       < sizeof(decltype(debug_offsets.structure.field)::Type))                         \
+        {                                                                                               \
+            LOG(WARNING) << "Ignoring debug offsets because " #structure ".size ("                      \
+                         << debug_offsets.structure.size << ") - " #structure "." #field ".offset ("    \
+                         << debug_offsets.structure.field.offset << ") < the field's size ("            \
+                         << sizeof(decltype(debug_offsets.structure.field)::Type) << ")";               \
+            return {};                                                                                  \
+        }                                                                                               \
+    } while (0)
+
+    check_size(py_runtime, &py_runtime_v::o_dbg_off_runtime_state_struct_size);
+    check_field_bounds(py_runtime, o_finalizing);
+    check_field_bounds(py_runtime, o_interp_head);
+
+    check_size(py_is, &py_runtime_v::o_dbg_off_interpreter_state_struct_size);
+    check_field_bounds(py_is, o_next);
+    check_field_bounds(py_is, o_tstate_head);
+    check_field_bounds(py_is, o_gc);
+    check_field_bounds(py_is, o_modules);
+    check_field_bounds(py_is, o_sysdict);
+    check_field_bounds(py_is, o_builtins);
+    check_field_bounds(py_is, o_gil_runtime_state);
+
+    check_size(py_thread, &py_runtime_v::o_dbg_off_thread_state_struct_size);
+    check_field_bounds(py_thread, o_prev);
+    check_field_bounds(py_thread, o_next);
+    check_field_bounds(py_thread, o_interp);
+    check_field_bounds(py_thread, o_frame);
+    check_field_bounds(py_thread, o_thread_id);
+    check_field_bounds(py_thread, o_native_thread_id);
+
+    check_size(py_frame, &py_runtime_v::o_dbg_off_interpreter_frame_struct_size);
+    check_field_bounds(py_frame, o_back);
+    check_field_bounds(py_frame, o_code);
+    check_field_bounds(py_frame, o_prev_instr);
+    check_field_bounds(py_frame, o_localsplus);
+    check_field_bounds(py_frame, o_owner);
+
+    check_size(py_code, &py_runtime_v::o_dbg_off_code_object_struct_size);
+    check_field_bounds(py_code, o_filename);
+    check_field_bounds(py_code, o_name);
+    check_field_bounds(py_code, o_lnotab);
+    check_field_bounds(py_code, o_firstlineno);
+    check_field_bounds(py_code, o_argcount);
+    check_field_bounds(py_code, o_varnames);
+    check_field_bounds(py_code, o_code_adaptive);
+
+    check_size(py_object, &py_runtime_v::o_dbg_off_pyobject_struct_size);
+    check_field_bounds(py_object, o_ob_type);
+
+    check_size(py_type, &py_runtime_v::o_dbg_off_type_object_struct_size);
+    check_field_bounds(py_type, o_tp_name);
+    check_field_bounds(py_type, o_tp_repr);
+    check_field_bounds(py_type, o_tp_flags);
+
+    check_size(py_tuple, &py_runtime_v::o_dbg_off_tuple_object_struct_size);
+    check_field_bounds(py_tuple, o_ob_size);
+    check_field_bounds(py_tuple, o_ob_item);
+
+    check_size(py_unicode, &py_runtime_v::o_dbg_off_unicode_object_struct_size);
+    check_field_bounds(py_unicode, o_state);
+    check_field_bounds(py_unicode, o_length);
+    check_field_bounds(py_unicode, o_ascii);
+
+    check_size(py_gc, &py_runtime_v::o_dbg_off_gc_struct_size);
+    check_field_bounds(py_gc, o_collecting);
+
+    check_field_bounds(py_list, o_ob_size);
+    check_field_bounds(py_list, o_ob_item);
+
+    check_field_bounds(py_dictkeys, o_dk_size);
+    check_field_bounds(py_dictkeys, o_dk_kind);
+    check_field_bounds(py_dictkeys, o_dk_nentries);
+    check_field_bounds(py_dictkeys, o_dk_indices);
+
+    check_field_bounds(py_dictvalues, o_values);
+
+    check_field_bounds(py_dict, o_ma_keys);
+    check_field_bounds(py_dict, o_ma_values);
+
+    check_field_bounds(py_float, o_ob_fval);
+
+    check_field_bounds(py_long, o_ob_size);
+    check_field_bounds(py_long, o_ob_digit);
+
+    check_field_bounds(py_bytes, o_ob_size);
+    check_field_bounds(py_bytes, o_ob_sval);
+
+    check_field_bounds(py_cframe, current_frame);
+
+#undef check_size
+#undef check_field_bounds
+
+    return true;
+}
+
+void
+AbstractProcessManager::clampSizes(python_v& debug_offsets) const
+{
+    // Clamp the size of each struct down to only what we need to copy.
+    // The runtime state and interpreter state both contain many fields beyond
+    // the ones that we're interested in or have offsets for.
+#define update_size(structure, field)                                                                   \
+    debug_offsets.structure.size = std::max(                                                            \
+            (size_t)debug_offsets.structure.size,                                                       \
+            debug_offsets.structure.field.offset                                                        \
+                    + sizeof(decltype(debug_offsets.structure.field)::Type))
+
+    debug_offsets.py_runtime.size = 0;
+    update_size(py_runtime, o_finalizing);
+    update_size(py_runtime, o_interp_head);
+
+    debug_offsets.py_is.size = 0;
+    update_size(py_is, o_next);
+    update_size(py_is, o_tstate_head);
+    update_size(py_is, o_gc);
+    update_size(py_is, o_modules);
+    update_size(py_is, o_sysdict);
+    update_size(py_is, o_builtins);
+    update_size(py_is, o_gil_runtime_state);
+
+    debug_offsets.py_thread.size = 0;
+    update_size(py_thread, o_prev);
+    update_size(py_thread, o_next);
+    update_size(py_thread, o_interp);
+    update_size(py_thread, o_frame);
+    update_size(py_thread, o_thread_id);
+    update_size(py_thread, o_native_thread_id);
+
+    debug_offsets.py_frame.size = 0;
+    update_size(py_frame, o_back);
+    update_size(py_frame, o_code);
+    update_size(py_frame, o_prev_instr);
+    update_size(py_frame, o_localsplus);
+    update_size(py_frame, o_owner);
+
+    debug_offsets.py_code.size = 0;
+    update_size(py_code, o_filename);
+    update_size(py_code, o_name);
+    update_size(py_code, o_lnotab);
+    update_size(py_code, o_firstlineno);
+    update_size(py_code, o_argcount);
+    update_size(py_code, o_varnames);
+    update_size(py_code, o_code_adaptive);
+
+    debug_offsets.py_object.size = 0;
+    update_size(py_object, o_ob_type);
+
+    debug_offsets.py_type.size = 0;
+    update_size(py_type, o_tp_name);
+    update_size(py_type, o_tp_repr);
+    update_size(py_type, o_tp_flags);
+
+    debug_offsets.py_tuple.size = 0;
+    update_size(py_tuple, o_ob_size);
+    update_size(py_tuple, o_ob_item);
+
+    debug_offsets.py_unicode.size = 0;
+    update_size(py_unicode, o_state);
+    update_size(py_unicode, o_length);
+    update_size(py_unicode, o_ascii);
+
+    debug_offsets.py_gc.size = 0;
+    update_size(py_gc, o_collecting);
+
+    debug_offsets.py_list.size = 0;
+    update_size(py_list, o_ob_size);
+    update_size(py_list, o_ob_item);
+
+    debug_offsets.py_dictkeys.size = 0;
+    update_size(py_dictkeys, o_dk_size);
+    update_size(py_dictkeys, o_dk_kind);
+    update_size(py_dictkeys, o_dk_nentries);
+    update_size(py_dictkeys, o_dk_indices);
+
+    debug_offsets.py_dictvalues.size = 0;
+    update_size(py_dictvalues, o_values);
+
+    debug_offsets.py_dict.size = 0;
+    update_size(py_dict, o_ma_keys);
+    update_size(py_dict, o_ma_values);
+
+    debug_offsets.py_float.size = 0;
+    update_size(py_float, o_ob_fval);
+
+    debug_offsets.py_long.size = 0;
+    update_size(py_long, o_ob_size);
+    update_size(py_long, o_ob_digit);
+
+    debug_offsets.py_bytes.size = 0;
+    update_size(py_bytes, o_ob_size);
+    update_size(py_bytes, o_ob_sval);
+
+    debug_offsets.py_cframe.size = 0;
+    update_size(py_cframe, current_frame);
+}
+
 bool
 AbstractProcessManager::versionIsAtLeast(int required_major, int required_minor) const
 {
@@ -705,11 +1260,14 @@ AbstractProcessManager::versionIsAtLeast(int required_major, int required_minor)
 const python_v&
 AbstractProcessManager::offsets() const
 {
+    if (d_debug_offsets) {
+        return *d_debug_offsets;
+    }
     return *d_py_v;
 }
 
 remote_addr_t
-AbstractProcessManager::findInterpreterStateFromElfData() const
+AbstractProcessManager::findPyRuntimeFromElfData() const
 {
     LOG(INFO) << "Trying to resolve PyInterpreterState from Elf data";
     SectionInfo section_info;
@@ -724,7 +1282,17 @@ AbstractProcessManager::findInterpreterStateFromElfData() const
                      "could not be found";
         return 0;
     }
-    return findInterpreterStateFromPyRuntime(load_addr + section_info.corrected_addr);
+    return load_addr + section_info.corrected_addr;
+}
+
+remote_addr_t
+AbstractProcessManager::findInterpreterStateFromElfData() const
+{
+    remote_addr_t pyruntime = findPyRuntimeFromElfData();
+    if (!pyruntime) {
+        return 0;
+    }
+    return findInterpreterStateFromPyRuntime(pyruntime);
 }
 
 ProcessManager::ProcessManager(
