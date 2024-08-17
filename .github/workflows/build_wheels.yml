@@ -152,6 +152,49 @@ jobs:
           PYTHON_TEST_VERSION: "auto"
         run: python${{matrix.python_version}} -m pytest tests -k 'not 2.7' -n auto -vvv
 
+  test_free_threading:
+    needs: [build_wheels]
+    runs-on: ubuntu-20.04
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ["3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "${{matrix.python_version}}-dev"
+      - uses: actions/download-artifact@v4
+        with:
+          name: "manylinux_x86_64-wheels"
+          path: dist
+      - name: Set up dependencies
+        run: |
+          sudo add-apt-repository ppa:deadsnakes/ppa
+          sudo apt-get update
+          sudo apt-get install -qy \
+            gdb \
+            python${{matrix.python_version}}-dev \
+            python${{matrix.python_version}}-nogil \
+            python${{matrix.python_version}}-venv
+      - name: Install Python dependencies
+        run: |
+          python${{matrix.python_version}} -m pip install --upgrade pip
+          python${{matrix.python_version}} -m pip install -r requirements-test.txt
+          python${{matrix.python_version}} -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
+      - name: Install setuptools for the free-threading version
+        run: |
+          python${{matrix.python_version}}t -m venv --system-site-packages /tmp/pip${{matrix.python_version}}
+          /tmp/pip${{matrix.python_version}}/bin/pip install --user setuptools
+      - name: Disable ptrace security restrictions
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      - name: Run pytest
+        env:
+          PYTHON_TEST_VERSION: "${{matrix.python_version}}t"
+        run: python${{matrix.python_version}} -m pytest tests -k 'not 2.7' -n auto -vvv
+
   test_in_alpine:
     needs: [build_wheels]
     runs-on: ubuntu-latest
