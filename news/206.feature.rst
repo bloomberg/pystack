@@ -1,0 +1,1 @@
+Support debugging free-threading (a.k.a. "nogil") Python 3.13 builds. Note that PyStack can't itself be run with ``python3.13t``, it can only attach to a ``python3.13t`` process or core file from another interpreter.
