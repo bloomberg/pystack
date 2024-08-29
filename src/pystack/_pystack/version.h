@@ -191,7 +191,7 @@ struct py_runtime_v
     FieldOffset<uint64_t> o_dbg_off_unicode_object_struct_size;
     FieldOffset<uint64_t> o_dbg_off_unicode_object_state;
     FieldOffset<uint64_t> o_dbg_off_unicode_object_length;
-    FieldOffset<size_t> o_dbg_off_unicode_object_asciiobject_size;
+    FieldOffset<uint64_t> o_dbg_off_unicode_object_asciiobject_size;
 
     FieldOffset<uint64_t> o_dbg_off_gc_struct_size;
     FieldOffset<uint64_t> o_dbg_off_gc_collecting;
