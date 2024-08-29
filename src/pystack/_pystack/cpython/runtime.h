@@ -254,6 +254,7 @@ typedef struct _Py_DebugOffsets
 {
     char cookie[8];
     uint64_t version;
+    uint64_t free_threaded;
     // Runtime state offset;
     struct _runtime_state
     {
@@ -274,6 +275,8 @@ typedef struct _Py_DebugOffsets
         uint64_t sysdict;
         uint64_t builtins;
         uint64_t ceval_gil;
+        uint64_t gil_runtime_state;
+        uint64_t gil_runtime_state_enabled;
         uint64_t gil_runtime_state_locked;
         uint64_t gil_runtime_state_holder;
     } interpreter_state;
@@ -330,6 +333,8 @@ typedef struct _Py_DebugOffsets
     {
         uint64_t size;
         uint64_t tp_name;
+        uint64_t tp_repr;
+        uint64_t tp_flags;
     } type_object;
 
     // PyTuple object offset;
@@ -337,7 +342,47 @@ typedef struct _Py_DebugOffsets
     {
         uint64_t size;
         uint64_t ob_item;
+        uint64_t ob_size;
     } tuple_object;
+
+    // PyList object offset;
+    struct _list_object
+    {
+        uint64_t size;
+        uint64_t ob_item;
+        uint64_t ob_size;
+    } list_object;
+
+    // PyDict object offset;
+    struct _dict_object
+    {
+        uint64_t size;
+        uint64_t ma_keys;
+        uint64_t ma_values;
+    } dict_object;
+
+    // PyFloat object offset;
+    struct _float_object
+    {
+        uint64_t size;
+        uint64_t ob_fval;
+    } float_object;
+
+    // PyLong object offset;
+    struct _long_object
+    {
+        uint64_t size;
+        uint64_t lv_tag;
+        uint64_t ob_digit;
+    } long_object;
+
+    // PyBytes object offset;
+    struct _bytes_object
+    {
+        uint64_t size;
+        uint64_t ob_size;
+        uint64_t ob_sval;
+    } bytes_object;
 
     // Unicode object offset;
     struct _unicode_object
@@ -345,7 +390,7 @@ typedef struct _Py_DebugOffsets
         uint64_t size;
         uint64_t state;
         uint64_t length;
-        size_t asciiobject_size;
+        uint64_t asciiobject_size;
     } unicode_object;
 
     // GC runtime state offset;
