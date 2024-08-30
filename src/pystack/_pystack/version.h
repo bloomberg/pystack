@@ -134,6 +134,7 @@ struct py_runtime_v
 
     FieldOffset<char[8]> o_dbg_off_cookie;
     FieldOffset<uint64_t> o_dbg_off_py_version_hex;
+    FieldOffset<uint64_t> o_dbg_off_free_threaded;
 
     FieldOffset<uint64_t> o_dbg_off_runtime_state_struct_size;
     FieldOffset<uint64_t> o_dbg_off_runtime_state_finalizing;
@@ -148,6 +149,8 @@ struct py_runtime_v
     FieldOffset<uint64_t> o_dbg_off_interpreter_state_sysdict;
     FieldOffset<uint64_t> o_dbg_off_interpreter_state_builtins;
     FieldOffset<uint64_t> o_dbg_off_interpreter_state_ceval_gil;
+    FieldOffset<uint64_t> o_dbg_off_interpreter_state_gil_runtime_state;
+    FieldOffset<uint64_t> o_dbg_off_interpreter_state_gil_runtime_state_enabled;
     FieldOffset<uint64_t> o_dbg_off_interpreter_state_gil_runtime_state_locked;
     FieldOffset<uint64_t> o_dbg_off_interpreter_state_gil_runtime_state_holder;
 
@@ -184,9 +187,31 @@ struct py_runtime_v
 
     FieldOffset<uint64_t> o_dbg_off_type_object_struct_size;
     FieldOffset<uint64_t> o_dbg_off_type_object_tp_name;
+    FieldOffset<uint64_t> o_dbg_off_type_object_tp_repr;
+    FieldOffset<uint64_t> o_dbg_off_type_object_tp_flags;
 
     FieldOffset<uint64_t> o_dbg_off_tuple_object_struct_size;
     FieldOffset<uint64_t> o_dbg_off_tuple_object_ob_item;
+    FieldOffset<uint64_t> o_dbg_off_tuple_object_ob_size;
+
+    FieldOffset<uint64_t> o_dbg_off_list_object_struct_size;
+    FieldOffset<uint64_t> o_dbg_off_list_object_ob_item;
+    FieldOffset<uint64_t> o_dbg_off_list_object_ob_size;
+
+    FieldOffset<uint64_t> o_dbg_off_dict_object_struct_size;
+    FieldOffset<uint64_t> o_dbg_off_dict_object_ma_keys;
+    FieldOffset<uint64_t> o_dbg_off_dict_object_ma_values;
+
+    FieldOffset<uint64_t> o_dbg_off_float_object_struct_size;
+    FieldOffset<uint64_t> o_dbg_off_float_object_ob_fval;
+
+    FieldOffset<uint64_t> o_dbg_off_long_object_struct_size;
+    FieldOffset<uint64_t> o_dbg_off_long_object_lv_tag;
+    FieldOffset<uint64_t> o_dbg_off_long_object_ob_digit;
+
+    FieldOffset<uint64_t> o_dbg_off_bytes_object_struct_size;
+    FieldOffset<uint64_t> o_dbg_off_bytes_object_ob_size;
+    FieldOffset<uint64_t> o_dbg_off_bytes_object_ob_sval;
 
     FieldOffset<uint64_t> o_dbg_off_unicode_object_struct_size;
     FieldOffset<uint64_t> o_dbg_off_unicode_object_state;
