@@ -839,9 +839,31 @@ AbstractProcessManager::warnIfOffsetsAreMismatched(remote_addr_t runtime_addr) c
 
     compare_size(&py_runtime_v::o_dbg_off_type_object_struct_size, py_type);
     compare_offset(&py_runtime_v::o_dbg_off_type_object_tp_name, py_type.o_tp_name);
+    compare_offset(&py_runtime_v::o_dbg_off_type_object_tp_repr, py_type.o_tp_repr);
+    compare_offset(&py_runtime_v::o_dbg_off_type_object_tp_flags, py_type.o_tp_flags);
 
     compare_size(&py_runtime_v::o_dbg_off_tuple_object_struct_size, py_tuple);
     compare_offset(&py_runtime_v::o_dbg_off_tuple_object_ob_item, py_tuple.o_ob_item);
+    compare_offset(&py_runtime_v::o_dbg_off_tuple_object_ob_size, py_tuple.o_ob_size);
+
+    compare_size(&py_runtime_v::o_dbg_off_list_object_struct_size, py_list);
+    compare_offset(&py_runtime_v::o_dbg_off_list_object_ob_item, py_list.o_ob_item);
+    compare_offset(&py_runtime_v::o_dbg_off_list_object_ob_size, py_list.o_ob_size);
+
+    compare_size(&py_runtime_v::o_dbg_off_dict_object_struct_size, py_dict);
+    compare_offset(&py_runtime_v::o_dbg_off_dict_object_ma_keys, py_dict.o_ma_keys);
+    compare_offset(&py_runtime_v::o_dbg_off_dict_object_ma_values, py_dict.o_ma_values);
+
+    compare_size(&py_runtime_v::o_dbg_off_float_object_struct_size, py_float);
+    compare_offset(&py_runtime_v::o_dbg_off_float_object_ob_fval, py_float.o_ob_fval);
+
+    compare_size(&py_runtime_v::o_dbg_off_long_object_struct_size, py_long);
+    compare_offset(&py_runtime_v::o_dbg_off_long_object_lv_tag, py_long.o_ob_size);
+    compare_offset(&py_runtime_v::o_dbg_off_long_object_ob_digit, py_long.o_ob_digit);
+
+    compare_size(&py_runtime_v::o_dbg_off_bytes_object_struct_size, py_bytes);
+    compare_offset(&py_runtime_v::o_dbg_off_bytes_object_ob_size, py_bytes.o_ob_size);
+    compare_offset(&py_runtime_v::o_dbg_off_bytes_object_ob_sval, py_bytes.o_ob_sval);
 
     compare_size(&py_runtime_v::o_dbg_off_unicode_object_struct_size, py_unicode);
     compare_offset(&py_runtime_v::o_dbg_off_unicode_object_state, py_unicode.o_state);
@@ -896,12 +918,8 @@ bool
 AbstractProcessManager::copyDebugOffsets(Structure<py_runtime_v>& py_runtime, python_v& debug_offsets)
         const
 {
-    // Fill in a temporary python_v with the offsets from the remote.
-    // For fields that aren't in _Py_DebugOffsets, make some assumptions, based
-    // in part on the size delta between the sizeof(PyObject) baked into our
-    // static offsets and the sizeof(PyObject) in the remote process/core.
-    Py_ssize_t new_pyobject_size = py_runtime.getField(&py_runtime_v::o_dbg_off_pyobject_struct_size);
-    Py_ssize_t pyobject_size_delta = -d_py_v->py_object.size + new_pyobject_size;
+    // Fill in a temporary python_v with the offsets from the remote. For fields
+    // that aren't in _Py_DebugOffsets, assume our static offsets are correct.
 
 #define set_size(pystack_struct, size_offset)                                                           \
     debug_offsets.pystack_struct.size = py_runtime.getField(size_offset)
@@ -951,19 +969,35 @@ AbstractProcessManager::copyDebugOffsets(Structure<py_runtime_v>& py_runtime, py
 
     set_size(py_type, &py_runtime_v::o_dbg_off_type_object_struct_size);
     set_offset(py_type.o_tp_name, &py_runtime_v::o_dbg_off_type_object_tp_name);
-    // Assume our static offsets are correct about the distance from tp_name to the other fields
-    debug_offsets.py_type.o_tp_repr = {
-            d_py_v->py_type.o_tp_repr.offset - d_py_v->py_type.o_tp_name.offset
-            + debug_offsets.py_type.o_tp_name.offset};
-    debug_offsets.py_type.o_tp_flags = {
-            d_py_v->py_type.o_tp_flags.offset - d_py_v->py_type.o_tp_name.offset
-            + debug_offsets.py_type.o_tp_name.offset};
+    set_offset(py_type.o_tp_repr, &py_runtime_v::o_dbg_off_type_object_tp_repr);
+    set_offset(py_type.o_tp_flags, &py_runtime_v::o_dbg_off_type_object_tp_flags);
 
     set_size(py_tuple, &py_runtime_v::o_dbg_off_tuple_object_struct_size);
-    // Assume ob_base is the first field of PyVarObject and ob_size is the second
-    static_assert(sizeof(PyTupleObject::ob_base.ob_base) == offsetof(PyTupleObject, ob_base.ob_size));
-    debug_offsets.py_tuple.o_ob_size = {(offset_t)new_pyobject_size};
     set_offset(py_tuple.o_ob_item, &py_runtime_v::o_dbg_off_tuple_object_ob_item);
+    set_offset(py_tuple.o_ob_size, &py_runtime_v::o_dbg_off_tuple_object_ob_size);
+
+    set_size(py_list, &py_runtime_v::o_dbg_off_list_object_struct_size);
+    set_offset(py_list.o_ob_item, &py_runtime_v::o_dbg_off_list_object_ob_item);
+    set_offset(py_list.o_ob_size, &py_runtime_v::o_dbg_off_list_object_ob_size);
+
+    set_size(py_dict, &py_runtime_v::o_dbg_off_dict_object_struct_size);
+    set_offset(py_dict.o_ma_keys, &py_runtime_v::o_dbg_off_dict_object_ma_keys);
+    set_offset(py_dict.o_ma_values, &py_runtime_v::o_dbg_off_dict_object_ma_values);
+
+    // Assume our static offsets for dict keys and values are correct
+    debug_offsets.py_dictkeys = d_py_v->py_dictkeys;
+    debug_offsets.py_dictvalues = d_py_v->py_dictvalues;
+
+    set_size(py_float, &py_runtime_v::o_dbg_off_float_object_struct_size);
+    set_offset(py_float.o_ob_fval, &py_runtime_v::o_dbg_off_float_object_ob_fval);
+
+    set_size(py_long, &py_runtime_v::o_dbg_off_long_object_struct_size);
+    set_offset(py_long.o_ob_size, &py_runtime_v::o_dbg_off_long_object_lv_tag);
+    set_offset(py_long.o_ob_digit, &py_runtime_v::o_dbg_off_long_object_ob_digit);
+
+    set_size(py_bytes, &py_runtime_v::o_dbg_off_bytes_object_struct_size);
+    set_offset(py_bytes.o_ob_size, &py_runtime_v::o_dbg_off_bytes_object_ob_size);
+    set_offset(py_bytes.o_ob_sval, &py_runtime_v::o_dbg_off_bytes_object_ob_sval);
 
     set_size(py_unicode, &py_runtime_v::o_dbg_off_unicode_object_struct_size);
     set_offset(py_unicode.o_state, &py_runtime_v::o_dbg_off_unicode_object_state);
@@ -973,54 +1007,25 @@ AbstractProcessManager::copyDebugOffsets(Structure<py_runtime_v>& py_runtime, py
     set_size(py_gc, &py_runtime_v::o_dbg_off_gc_struct_size);
     set_offset(py_gc.o_collecting, &py_runtime_v::o_dbg_off_gc_collecting);
 
-    // Assume ob_size and ob_item are at the same location for list as for tuple
-    static_assert(
-            offsetof(PyListObject, ob_item) + sizeof(PyListObject::ob_item) <= sizeof(PyTupleObject));
-    debug_offsets.py_list.size = debug_offsets.py_tuple.size;
-
-    static_assert(offsetof(PyListObject, ob_base.ob_size) == offsetof(PyTupleObject, ob_base.ob_size));
-    debug_offsets.py_list.o_ob_size = debug_offsets.py_tuple.o_ob_size;
-
-    static_assert(offsetof(PyListObject, ob_item) == offsetof(PyTupleObject, ob_item));
-    debug_offsets.py_list.o_ob_item = {debug_offsets.py_tuple.o_ob_item.offset};
-
-    // Assume our static offsets for dict are correct save possibly for sizeof(PyObject) changing
-    debug_offsets.py_dictkeys = d_py_v->py_dictkeys;
-    debug_offsets.py_dictvalues = d_py_v->py_dictvalues;
-    debug_offsets.py_dict = d_py_v->py_dict;
-    debug_offsets.py_dict.size += pyobject_size_delta;
-    debug_offsets.py_dict.o_ma_keys.offset += pyobject_size_delta;
-    debug_offsets.py_dict.o_ma_values.offset += pyobject_size_delta;
-
-    // Assume our static offsets for float are correct save possibly for sizeof(PyObject) changing
-    debug_offsets.py_float = d_py_v->py_float;
-    debug_offsets.py_float.size += pyobject_size_delta;
-    debug_offsets.py_float.o_ob_fval.offset += pyobject_size_delta;
-
-    // Assume our static offsets for long are correct save possibly for sizeof(PyObject) changing
-    debug_offsets.py_long = d_py_v->py_long;
-    debug_offsets.py_long.size += pyobject_size_delta;
-    debug_offsets.py_long.o_ob_size.offset += pyobject_size_delta;
-    debug_offsets.py_long.o_ob_digit.offset += pyobject_size_delta;
-
-    // Assume our static offsets for bytes are correct save possibly for sizeof(PyObject) changing
-    debug_offsets.py_bytes = d_py_v->py_bytes;
-    debug_offsets.py_bytes.size += pyobject_size_delta;
-    debug_offsets.py_bytes.o_ob_size.offset += pyobject_size_delta;
-    debug_offsets.py_bytes.o_ob_sval.offset += pyobject_size_delta;
-
     // Assume our static offsets for cframe are all correct
     debug_offsets.py_cframe = d_py_v->py_cframe;
 
-    // Assume our static offsets for gilruntimestate are off by 8 bytes in a free-threading build.
-    // This is quite a hack...
-    debug_offsets.py_gilruntimestate = d_py_v->py_gilruntimestate;
-    bool is_free_threading = static_cast<size_t>(debug_offsets.py_object.size) > 2 * sizeof(void*);
-    if (is_free_threading) {
-        debug_offsets.py_gilruntimestate.size += 8;
-        debug_offsets.py_gilruntimestate.o_last_holder.offset += 8;
-        debug_offsets.py_gilruntimestate.o_locked.offset += 8;
-    }
+    size_t gilruntimestate_start =
+            py_runtime.getField(&py_runtime_v::o_dbg_off_interpreter_state_gil_runtime_state);
+
+    size_t gilruntimestate_locked_offset =
+            py_runtime.getField(&py_runtime_v::o_dbg_off_interpreter_state_gil_runtime_state_locked)
+            - gilruntimestate_start;
+    size_t gilruntimestate_holder_offset =
+            py_runtime.getField(&py_runtime_v::o_dbg_off_interpreter_state_gil_runtime_state_holder)
+            - gilruntimestate_start;
+
+    debug_offsets.py_gilruntimestate.size = std::max(
+            {gilruntimestate_locked_offset + sizeof(decltype(py_gilruntimestate_v::o_locked)::Type),
+             gilruntimestate_holder_offset
+                     + sizeof(decltype(py_gilruntimestate_v::o_last_holder)::Type)});
+    debug_offsets.py_gilruntimestate.o_locked.offset = gilruntimestate_locked_offset;
+    debug_offsets.py_gilruntimestate.o_last_holder.offset = gilruntimestate_holder_offset;
 
 #undef set_size
 #undef set_offset
