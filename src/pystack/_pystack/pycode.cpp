@@ -162,41 +162,11 @@ getLocationInfo(
     return location_info;
 }
 
-static bool
-isValid(const std::shared_ptr<const AbstractProcessManager>& manager, remote_addr_t addr)
-{
-    if (manager->versionIsAtLeast(3, 13)) {
-        // In Python 3.13, the frame f_executable field can be a code object or a bunch
-        // of other possible types (including None). We consider valid only the cases
-        // where it is a code object.
-        remote_addr_t pycodeobject_addr = manager->getAddressFromCache("PyCode_Type");
-        if (pycodeobject_addr == 0) {
-            Object code_obj(manager, addr);
-            if (code_obj.objectType() == Object::ObjectType::CODE) {
-                manager->registerAddressInCache("PyCode_Type", code_obj.typeAddr());
-                return true;
-            }
-            return false;
-        } else {
-            Structure<py_object_v> obj(manager, addr);
-            return obj.getField(&py_object_v::o_ob_type) == pycodeobject_addr;
-        }
-    }
-    return true;
-}
-
 CodeObject::CodeObject(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         remote_addr_t addr,
         uintptr_t lasti)
 {
-    if (!isValid(manager, addr)) {
-        d_filename = "???";
-        d_scope = "???";
-        d_location_info = LocationInfo{0, 0, 0, 0};
-        d_narguments = 0;
-        return;
-    }
     LOG(DEBUG) << std::hex << std::showbase << "Copying code struct from address " << addr;
     Structure<py_code_v> code(manager, addr);
 
@@ -233,6 +203,15 @@ CodeObject::CodeObject(
                 LOG(DEBUG) << "Variable name found: '" << varname << "'";
                 return varname;
             });
+}
+
+CodeObject::CodeObject(std::string filename, std::string scope, LocationInfo location_info)
+: d_filename(filename)
+, d_scope(scope)
+, d_location_info(location_info)
+, d_narguments()
+, d_varnames()
+{
 }
 
 std::string
