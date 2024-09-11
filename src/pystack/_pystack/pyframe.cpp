@@ -71,7 +71,14 @@ FrameObject::getCode(
     } else {
         last_instruction = frame.getField(&py_frame_v::o_lasti);
     }
-    return std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
+    try {
+        return std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
+    } catch (const RemoteMemCopyError& ex) {
+        // This may not have been a code object at all, or it may have been
+        // trashed by memory corruption. Either way, indicate that we failed
+        // to understand what code this frame is running.
+        return std::make_unique<CodeObject>("???", "???", LocationInfo{0, 0, 0, 0});
+    }
 }
 
 bool

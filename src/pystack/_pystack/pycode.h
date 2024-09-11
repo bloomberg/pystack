@@ -27,6 +27,7 @@ class CodeObject
             const std::shared_ptr<const AbstractProcessManager>& manager,
             remote_addr_t addr,
             uintptr_t lastli);
+    CodeObject(std::string filename, std::string scope, LocationInfo location_info);
 
     // Getters
     std::string Filename() const;
@@ -41,8 +42,6 @@ class CodeObject
     std::string d_scope;
     LocationInfo d_location_info;
     int d_narguments;
-
-  private:
     std::vector<std::string> d_varnames;
 };
 }  // namespace pystack
