@@ -8,6 +8,25 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.4.0 (2024-09-11)
+--------------------------
+
+Features
+~~~~~~~~
+
+- Add support for Python 3.13 (#186)
+- Add a new ``--version`` command line flag to show the version of pystack (#203)
+- Support debugging free-threading (a.k.a. "nogil") Python 3.13 builds. Note that PyStack can't itself be run with ``python3.13t``, it can only attach to a ``python3.13t`` process or core file from another interpreter. (#206)
+
+
+Bug Fixes
+~~~~~~~~~
+
+- Fix a bug that was causing Python scripts executed directly via shebang to report the shell script as the executable. (#184)
+- Heap corruption could cause PyStack to fail to generate a stack when ``--locals`` mode was used. This has been fixed by falling back to a reasonable default when attempting to format the repr of a local variable causes a dereference of an invalid pointer. (#194)
+- Fix a crash when analysing processes where the eval loop has a shim frame at the bottom of the stack (#204)
+
+
 pystack 1.3.0 (2023-11-28)
 --------------------------
 
