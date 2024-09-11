@@ -1,1 +1,0 @@
-Fix a crash when analysing processes where the eval loop has a shim frame at the bottom of the stack
