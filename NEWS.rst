@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.4.1 (2024-10-04)
+--------------------------
+
+Features
+~~~~~~~~
+
+- Improve our ability to debug Python 3.13 processes when the ``_Py_DebugOffsets`` cannot be located by accounting for a structure layout change in CPython 3.13.0rc3 (the reversion of the incremental cyclic garbage collector). (#213)
+
+
 pystack 1.4.0 (2024-09-11)
 --------------------------
 
