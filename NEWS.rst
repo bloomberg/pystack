@@ -15,6 +15,7 @@ Features
 ~~~~~~~~
 
 - Add support for Python 3.13 (#186)
+- Add support for gzip compressed corefiles (#171)
 - Add a new ``--version`` command line flag to show the version of pystack (#203)
 - Support debugging free-threading (a.k.a. "nogil") Python 3.13 builds. Note that PyStack can't itself be run with ``python3.13t``, it can only attach to a ``python3.13t`` process or core file from another interpreter. (#206)
 
