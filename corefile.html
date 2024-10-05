@@ -1,0 +1,714 @@
+<!doctype html>
+<html class="no-js" lang="en" data-content_root="./">
+  <head><meta charset="utf-8"/>
+    <meta name="viewport" content="width=device-width,initial-scale=1"/>
+    <meta name="color-scheme" content="light dark"><meta name="viewport" content="width=device-width, initial-scale=1" />
+<link rel="index" title="Index" href="genindex.html" /><link rel="search" title="Search" href="search.html" /><link rel="next" title="Customizing the reports" href="customizing_the_reports.html" /><link rel="prev" title="Analyzing processes" href="process.html" />
+
+    <link rel="shortcut icon" href="_static/favicon.ico"/><!-- Generated with Sphinx 8.0.2 and Furo 2024.08.06 -->
+        <title>Analyzing core dumps - pystack</title>
+      <link rel="stylesheet" type="text/css" href="_static/pygments.css?v=a746c00c" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo.css?v=354aac6f" />
+    <link rel="stylesheet" type="text/css" href="_static/styles/furo-extensions.css?v=302659d7" />
+    
+    
+
+
+<style>
+  body {
+    --color-code-background: #f8f8f8;
+  --color-code-foreground: black;
+  
+  }
+  @media not print {
+    body[data-theme="dark"] {
+      --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+    }
+    @media (prefers-color-scheme: dark) {
+      body:not([data-theme="light"]) {
+        --color-code-background: #202020;
+  --color-code-foreground: #d0d0d0;
+  
+      }
+    }
+  }
+</style></head>
+  <body>
+    
+    <script>
+      document.body.dataset.theme = localStorage.getItem("theme") || "auto";
+    </script>
+    
+
+<svg xmlns="http://www.w3.org/2000/svg" style="display: none;">
+  <symbol id="svg-toc" viewBox="0 0 24 24">
+    <title>Contents</title>
+    <svg stroke="currentColor" fill="currentColor" stroke-width="0" viewBox="0 0 1024 1024">
+      <path d="M408 442h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8zm-8 204c0 4.4 3.6 8 8 8h480c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8H408c-4.4 0-8 3.6-8 8v56zm504-486H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zm0 632H120c-4.4 0-8 3.6-8 8v56c0 4.4 3.6 8 8 8h784c4.4 0 8-3.6 8-8v-56c0-4.4-3.6-8-8-8zM115.4 518.9L271.7 642c5.8 4.6 14.4.5 14.4-6.9V388.9c0-7.4-8.5-11.5-14.4-6.9L115.4 505.1a8.74 8.74 0 0 0 0 13.8z"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-menu" viewBox="0 0 24 24">
+    <title>Menu</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-menu">
+      <line x1="3" y1="12" x2="21" y2="12"></line>
+      <line x1="3" y1="6" x2="21" y2="6"></line>
+      <line x1="3" y1="18" x2="21" y2="18"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-arrow-right" viewBox="0 0 24 24">
+    <title>Expand</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="feather-chevron-right">
+      <polyline points="9 18 15 12 9 6"></polyline>
+    </svg>
+  </symbol>
+  <symbol id="svg-sun" viewBox="0 0 24 24">
+    <title>Light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="feather-sun">
+      <circle cx="12" cy="12" r="5"></circle>
+      <line x1="12" y1="1" x2="12" y2="3"></line>
+      <line x1="12" y1="21" x2="12" y2="23"></line>
+      <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+      <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+      <line x1="1" y1="12" x2="3" y2="12"></line>
+      <line x1="21" y1="12" x2="23" y2="12"></line>
+      <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+      <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon" viewBox="0 0 24 24">
+    <title>Dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-moon">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M12 3c.132 0 .263 0 .393 0a7.5 7.5 0 0 0 7.92 12.446a9 9 0 1 1 -8.313 -12.454z" />
+    </svg>
+  </symbol>
+  <symbol id="svg-sun-with-moon" viewBox="0 0 24 24">
+    <title>Auto light/dark, in light mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path style="opacity: 50%" d="M 5.411 14.504 C 5.471 14.504 5.532 14.504 5.591 14.504 C 3.639 16.319 4.383 19.569 6.931 20.352 C 7.693 20.586 8.512 20.551 9.25 20.252 C 8.023 23.207 4.056 23.725 2.11 21.184 C 0.166 18.642 1.702 14.949 4.874 14.536 C 5.051 14.512 5.231 14.5 5.411 14.5 L 5.411 14.504 Z"/>
+      <line x1="14.5" y1="3.25" x2="14.5" y2="1.25"/>
+      <line x1="14.5" y1="15.85" x2="14.5" y2="17.85"/>
+      <line x1="10.044" y1="5.094" x2="8.63" y2="3.68"/>
+      <line x1="19" y1="14.05" x2="20.414" y2="15.464"/>
+      <line x1="8.2" y1="9.55" x2="6.2" y2="9.55"/>
+      <line x1="20.8" y1="9.55" x2="22.8" y2="9.55"/>
+      <line x1="10.044" y1="14.006" x2="8.63" y2="15.42"/>
+      <line x1="19" y1="5.05" x2="20.414" y2="3.636"/>
+      <circle cx="14.5" cy="9.55" r="3.6"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-moon-with-sun" viewBox="0 0 24 24">
+    <title>Auto light/dark, in dark mode</title>
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round"
+      class="icon-custom-derived-from-feather-sun-and-tabler-moon">
+      <path d="M 8.282 7.007 C 8.385 7.007 8.494 7.007 8.595 7.007 C 5.18 10.184 6.481 15.869 10.942 17.24 C 12.275 17.648 13.706 17.589 15 17.066 C 12.851 22.236 5.91 23.143 2.505 18.696 C -0.897 14.249 1.791 7.786 7.342 7.063 C 7.652 7.021 7.965 7 8.282 7 L 8.282 7.007 Z"/>
+      <line style="opacity: 50%" x1="18" y1="3.705" x2="18" y2="2.5"/>
+      <line style="opacity: 50%" x1="18" y1="11.295" x2="18" y2="12.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="4.816" x2="14.464" y2="3.964"/>
+      <line style="opacity: 50%" x1="20.711" y1="10.212" x2="21.563" y2="11.063"/>
+      <line style="opacity: 50%" x1="14.205" y1="7.5" x2="13.001" y2="7.5"/>
+      <line style="opacity: 50%" x1="21.795" y1="7.5" x2="23" y2="7.5"/>
+      <line style="opacity: 50%" x1="15.316" y1="10.184" x2="14.464" y2="11.036"/>
+      <line style="opacity: 50%" x1="20.711" y1="4.789" x2="21.563" y2="3.937"/>
+      <circle style="opacity: 50%" cx="18" cy="7.5" r="2.169"/>
+    </svg>
+  </symbol>
+  <symbol id="svg-pencil" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-pencil-code">
+      <path d="M4 20h4l10.5 -10.5a2.828 2.828 0 1 0 -4 -4l-10.5 10.5v4" />
+      <path d="M13.5 6.5l4 4" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+  <symbol id="svg-eye" viewBox="0 0 24 24">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+      stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="icon-tabler-eye-code">
+      <path stroke="none" d="M0 0h24v24H0z" fill="none" />
+      <path d="M10 12a2 2 0 1 0 4 0a2 2 0 0 0 -4 0" />
+      <path
+        d="M11.11 17.958c-3.209 -.307 -5.91 -2.293 -8.11 -5.958c2.4 -4 5.4 -6 9 -6c3.6 0 6.6 2 9 6c-.21 .352 -.427 .688 -.647 1.008" />
+      <path d="M20 21l2 -2l-2 -2" />
+      <path d="M17 17l-2 2l2 2" />
+    </svg>
+  </symbol>
+</svg>
+
+<input type="checkbox" class="sidebar-toggle" name="__navigation" id="__navigation">
+<input type="checkbox" class="sidebar-toggle" name="__toc" id="__toc">
+<label class="overlay sidebar-overlay" for="__navigation">
+  <div class="visually-hidden">Hide navigation sidebar</div>
+</label>
+<label class="overlay toc-overlay" for="__toc">
+  <div class="visually-hidden">Hide table of contents sidebar</div>
+</label>
+
+<a class="skip-to-content muted-link" href="#furo-main-content">Skip to content</a>
+
+
+
+<div class="page">
+  <header class="mobile-header">
+    <div class="header-left">
+      <label class="nav-overlay-icon" for="__navigation">
+        <div class="visually-hidden">Toggle site navigation sidebar</div>
+        <i class="icon"><svg><use href="#svg-menu"></use></svg></i>
+      </label>
+    </div>
+    <div class="header-center">
+      <a href="overview.html"><div class="brand">pystack</div></a>
+    </div>
+    <div class="header-right">
+      <div class="theme-toggle-container theme-toggle-header">
+        <button class="theme-toggle">
+          <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+          <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+          <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+          <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+          <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+        </button>
+      </div>
+      <label class="toc-overlay-icon toc-header-icon" for="__toc">
+        <div class="visually-hidden">Toggle table of contents sidebar</div>
+        <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+      </label>
+    </div>
+  </header>
+  <aside class="sidebar-drawer">
+    <div class="sidebar-container">
+      
+      <div class="sidebar-sticky"><a class="sidebar-brand" href="overview.html">
+  
+  <div class="sidebar-logo-container">
+    <img class="sidebar-logo" src="_static/logo.png" alt="Logo"/>
+  </div>
+  
+  
+</a><form class="sidebar-search-container" method="get" action="search.html" role="search">
+  <input class="sidebar-search" placeholder="Search" name="q" aria-label="Search">
+  <input type="hidden" name="check_keywords" value="yes">
+  <input type="hidden" name="area" value="default">
+</form>
+<div id="searchbox"></div><div class="sidebar-scroll"><div class="sidebar-tree">
+  <ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="process.html">Analyzing processes</a></li>
+<li class="toctree-l1 current current-page"><a class="current reference internal" href="#">Analyzing core dumps</a></li>
+<li class="toctree-l1"><a class="reference internal" href="customizing_the_reports.html">Customizing the reports</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Hands-on Tutorial</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/deadlock.html">Deadlock</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/random_prime_number.html">Prime Number Generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tutorials/core_tutorial.html">Debugging Core Files</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Project Information</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="changelog.html">Changelog</a></li>
+</ul>
+
+</div>
+</div>
+
+      </div>
+      
+    </div>
+  </aside>
+  <div class="main">
+    <div class="content">
+      <div class="article-container">
+        <a href="#" class="back-to-top muted-link">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24">
+            <path d="M13 20h-2V8l-5.5 5.5-1.42-1.42L12 4.16l7.92 7.92-1.42 1.42L13 8v12z"></path>
+          </svg>
+          <span>Back to top</span>
+        </a>
+        <div class="content-icon-container">
+          <div class="view-this-page">
+  <a class="muted-link" href="_sources/corefile.rst.txt" title="View this page">
+    <svg><use href="#svg-eye"></use></svg>
+    <span class="visually-hidden">View this page</span>
+  </a>
+</div>
+<div class="theme-toggle-container theme-toggle-content">
+            <button class="theme-toggle">
+              <div class="visually-hidden">Toggle Light / Dark / Auto color theme</div>
+              <svg class="theme-icon-when-auto-light"><use href="#svg-sun-with-moon"></use></svg>
+              <svg class="theme-icon-when-auto-dark"><use href="#svg-moon-with-sun"></use></svg>
+              <svg class="theme-icon-when-dark"><use href="#svg-moon"></use></svg>
+              <svg class="theme-icon-when-light"><use href="#svg-sun"></use></svg>
+            </button>
+          </div>
+          <label class="toc-overlay-icon toc-content-icon" for="__toc">
+            <div class="visually-hidden">Toggle table of contents sidebar</div>
+            <i class="icon"><svg><use href="#svg-toc"></use></svg></i>
+          </label>
+        </div>
+        <article role="main" id="furo-main-content">
+          <section id="analyzing-core-dumps">
+<span id="id1"></span><h1>Analyzing core dumps<a class="headerlink" href="#analyzing-core-dumps" title="Link to this heading">¶</a></h1>
+<p>The <code class="docutils literal notranslate"><span class="pre">core</span></code> subcommand is used to analyze the status of a core dump file. Analyzing core files is
+very similar to analyzing processes but there are some differences, as the core file does not
+contain the totality of the memory that was valid when the program was live. In most cases, this
+makes no difference, as PyStack will try to adapt automatically. However, in some cases, you will need to
+specify extra command line options to help PyStack locate the information it needs. When analyzing
+cores, there are several options available:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">usage</span><span class="p">:</span> <span class="n">pystack</span> <span class="n">core</span> <span class="p">[</span><span class="o">-</span><span class="n">h</span><span class="p">]</span> <span class="p">[</span><span class="o">-</span><span class="n">v</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">no</span><span class="o">-</span><span class="n">color</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">native</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">native</span><span class="o">-</span><span class="nb">all</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="nb">locals</span><span class="p">]</span> <span class="p">[</span><span class="o">--</span><span class="n">exhaustive</span><span class="p">]</span>
+                    <span class="p">[</span><span class="o">--</span><span class="n">lib</span><span class="o">-</span><span class="n">search</span><span class="o">-</span><span class="n">path</span> <span class="n">LIB_SEARCH_PATH</span> <span class="o">|</span> <span class="o">--</span><span class="n">lib</span><span class="o">-</span><span class="n">search</span><span class="o">-</span><span class="n">root</span> <span class="n">LIB_SEARCH_ROOT</span><span class="p">]</span>
+                    <span class="n">core</span> <span class="p">[</span><span class="n">executable</span><span class="p">]</span>
+</pre></div>
+</div>
+<section id="pystack.__main__-generate_cli_parser-positional-arguments">
+<h2>Positional Arguments<a class="headerlink" href="#pystack.__main__-generate_cli_parser-positional-arguments" title="Link to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>core</kbd></dt>
+<dd><p>The path to the core file</p>
+</dd>
+<dt><kbd>executable</kbd></dt>
+<dd><p>(Optional) The path to the executable of the core file</p>
+</dd>
+</dl>
+</section>
+<section id="pystack.__main__-generate_cli_parser-named-arguments">
+<h2>Named Arguments<a class="headerlink" href="#pystack.__main__-generate_cli_parser-named-arguments" title="Link to this heading">¶</a></h2>
+<dl class="option-list">
+<dt><kbd>-v, --verbose</kbd></dt>
+<dd><p>Default: <code class="docutils literal notranslate"><span class="pre">0</span></code></p>
+</dd>
+<dt><kbd>--no-color</kbd></dt>
+<dd><p>Deactivate colored output</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--native</kbd></dt>
+<dd><p>Include the native (C) frames in the resulting stack trace</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">NativeReportingMode.OFF</span></code></p>
+</dd>
+<dt><kbd>--native-all</kbd></dt>
+<dd><p>Include native (C) frames from threads not registered with the interpreter (implies --native)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">NativeReportingMode.OFF</span></code></p>
+</dd>
+<dt><kbd>--locals</kbd></dt>
+<dd><p>Show local variables for each frame in the stack trace</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--exhaustive</kbd></dt>
+<dd><p>Use all possible methods to obtain the Python stack info (may be slow)</p>
+<p>Default: <code class="docutils literal notranslate"><span class="pre">False</span></code></p>
+</dd>
+<dt><kbd>--lib-search-path</kbd></dt>
+<dd><p>List of paths to search for shared libraries loaded in the core. Paths must be separated by the ‘:’ character</p>
+</dd>
+<dt><kbd>--lib-search-root</kbd></dt>
+<dd><p>Root directory to search recursively for shared libraries loaded into the core.</p>
+</dd>
+</dl>
+</section>
+<p>In most cases, you just need to provide the location of the core to use PyStack with core dump files:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pystack core ./the_core_file
+Using executable found in the core file: /usr/bin/python3.8
+
+Core file information:
+state: t zombie: True niceness: 0
+pid: 570 ppid: 1 sid: 1
+uid: 0 gid: 0 pgrp: 570
+executable: python3.8 arguments: python3.8
+
+The process died due receiving signal SIGSTOP
+Traceback for thread 570 [] (most recent call last):
+    (Python) File &quot;/test.py&quot;, line 19, in &lt;module&gt;
+        first_func({1: None}, [1,2,3])
+    (Python) File &quot;/test.py&quot;, line 7, in first_func
+        second_func(x, y)
+    (Python) File &quot;/test.py&quot;, line 12, in second_func
+        third_func(x, y)
+    (Python) File &quot;/test.py&quot;, line 16, in third_func
+        time.sleep(1000)
+</pre></div>
+</div>
+<p>Pystack can automatically extract core dumps from <cite>.gz</cite> files: <cite>pystack core ./archived_core_file.gz</cite></p>
+<p>To learn more about the different options you can use to customize what is reported, check the <a class="reference internal" href="customizing_the_reports.html#customizing-the-reports"><span class="std std-ref">Customizing the reports</span></a> section.</p>
+<section id="providing-the-executable">
+<h2>Providing the executable<a class="headerlink" href="#providing-the-executable" title="Link to this heading">¶</a></h2>
+<p>As the core file doesn’t contain all the memory that was available in the
+original process, there is some information that needs to be obtained from the
+original Python executable that was running. If you just provide the location
+of the core file on the command line, PyStack will try to automatically
+locate the executable for you:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pystack core ./the_core_file
+Using executable found in the core file: /usr/bin/python3.8
+</pre></div>
+</div>
+<p>If the location of the executable is known, it can also by provided manually by
+passing it as the second argument:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pystack core ./the_core_file /usr/bin/python3.8
+</pre></div>
+</div>
+<p>In most cases, providing just the location of the core file will work and
+PyStack will be able to do a successful analysis, but is possible that the
+executable being identified automatically is not the correct one. This can
+happen if the process was launched through a script with a shebang or using
+some form of indirection. For instance:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pystack core ./pytest_core
+Using executable found in the core file: /usr/bin/pytest
+
+Core file information:
+state: t zombie: True niceness: 0
+pid: 770 ppid: 1 sid: 1
+uid: 0 gid: 0 pgrp: 770
+executable: python3.8 arguments: /usr/bin/python3.8
+
+The core file seems to have been generated on demand (the process did not crash)
+💀 Unable to find maps for the executable /usr/bin/pytest. These are the available executable memory maps: [dso], /usr/bin/python3.8 💀
+</pre></div>
+</div>
+<p>This happens because <code class="docutils literal notranslate"><span class="pre">/usr/bin/pytest</span></code> is actually a shell script that
+will be executed using a shebang and not the actual Python executable (located
+in <code class="docutils literal notranslate"><span class="pre">/usr/bin/python3.8</span></code>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ file /usr/bin/pytest
+/usr/bin/pytest: Python script, ASCII text executable
+</pre></div>
+</div>
+<p>In this case, PyStack complains that it cannot match the memory maps in the
+core file to the the provided executable and is providing the list of memory
+maps that are available in the core:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>💀 Unable to find maps for the executable /usr/bin/pytest. These are the available executable memory maps: [dso], /usr/bin/python3.8 💀
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>PyStack matches the memory maps of the executable (whether provided manually
+or detected automatically) by the base name of the file. This means
+that if the there is a memory map for <code class="docutils literal notranslate"><span class="pre">/usr/bin/python3.8</span></code> and the
+provided (or automatically detected) executable is
+<code class="docutils literal notranslate"><span class="pre">/usr/other_location/python3.8</span></code> then <code class="docutils literal notranslate"><span class="pre">pystack</span></code> will match them
+because the base name is the same (<code class="docutils literal notranslate"><span class="pre">python3.8</span></code>) but if the provided
+executable is <code class="docutils literal notranslate"><span class="pre">/usr/bin/python3.7</span></code> then <code class="docutils literal notranslate"><span class="pre">pystack</span></code> will not match
+them because <code class="docutils literal notranslate"><span class="pre">python3.7</span> <span class="pre">!=</span> <span class="pre">python3.8</span></code>.</p>
+</div>
+<p>To solve this, you must provide the path to the Python binary that was
+used to execute the original process. We can use the list of available maps to
+identify possible candidates for the executable, as it must match one of the
+available memory maps that <code class="docutils literal notranslate"><span class="pre">pystack</span></code> includes in the error message. In
+addition to the list of the memory maps, notice that <code class="docutils literal notranslate"><span class="pre">pystack</span></code> also includes
+some useful information that greatly helps identifying the correct executable:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Core</span> <span class="n">file</span> <span class="n">information</span><span class="p">:</span>
+<span class="n">state</span><span class="p">:</span> <span class="n">t</span> <span class="n">zombie</span><span class="p">:</span> <span class="kc">True</span> <span class="n">niceness</span><span class="p">:</span> <span class="mi">0</span>
+<span class="n">pid</span><span class="p">:</span> <span class="mi">770</span> <span class="n">ppid</span><span class="p">:</span> <span class="mi">1</span> <span class="n">sid</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">uid</span><span class="p">:</span> <span class="mi">0</span> <span class="n">gid</span><span class="p">:</span> <span class="mi">0</span> <span class="n">pgrp</span><span class="p">:</span> <span class="mi">770</span>
+<span class="n">executable</span><span class="p">:</span> <span class="n">python3</span><span class="mf">.8</span> <span class="n">arguments</span><span class="p">:</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python3</span><span class="mf">.8</span>
+</pre></div>
+</div>
+<p>Here we can easily see what executable was used (<code class="docutils literal notranslate"><span class="pre">python3.8</span></code>) and how it was
+invoked. In this particular example is easy to also use the provided memory
+maps because the Python executable is the only map that is a file among the
+ones provided by <code class="docutils literal notranslate"><span class="pre">pystack</span></code>: <code class="docutils literal notranslate"><span class="pre">/usr/bin/python3.8</span></code>. To indicate to
+<code class="docutils literal notranslate"><span class="pre">pystack</span></code> that this is the executable we just need to pass it as the second
+argument of the command line invocation:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pystack core ./pytest_core /usr/bin/python3.8
+
+Core file information:
+state: t zombie: True niceness: 0
+pid: 770 ppid: 1 sid: 1
+uid: 0 gid: 0 pgrp: 770
+executable: python3.8 arguments: /usr/bin/python3.8
+
+The core file seems to have been generated on demand (the process did not crash)
+Traceback for thread 770 [Has the GIL] (most recent call last):
+    (Python) File &quot;/usr/bin/pytest&quot;, line 8, in &lt;module&gt;
+        sys.exit(console_main())
+    (Python) File &quot;/usr/lib/python3.8/site-packages/_pytest/config/__init__.py&quot;, line 185, in console_main
+        code = main()
+    (Python) File &quot;/usr/lib/python3.8/site-packages/_pytest/config/__init__.py&quot;, line 162, in main
+        ret: Union[ExitCode, int] = config.hook.pytest_cmdline_main(
+    ...
+</pre></div>
+</div>
+</section>
+<section id="core-file-information">
+<h2>Core file information<a class="headerlink" href="#core-file-information" title="Link to this heading">¶</a></h2>
+<p>To help users learn details of the program that generated the core file,
+PyStack will try to display additional information based on various kernel
+data structures at the time of the crash:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Core</span> <span class="n">file</span> <span class="n">information</span><span class="p">:</span>
+<span class="n">state</span><span class="p">:</span> <span class="n">t</span> <span class="n">zombie</span><span class="p">:</span> <span class="kc">True</span> <span class="n">niceness</span><span class="p">:</span> <span class="mi">0</span>
+<span class="n">pid</span><span class="p">:</span> <span class="mi">770</span> <span class="n">ppid</span><span class="p">:</span> <span class="mi">1</span> <span class="n">sid</span><span class="p">:</span> <span class="mi">1</span>
+<span class="n">uid</span><span class="p">:</span> <span class="mi">0</span> <span class="n">gid</span><span class="p">:</span> <span class="mi">0</span> <span class="n">pgrp</span><span class="p">:</span> <span class="mi">770</span>
+<span class="n">executable</span><span class="p">:</span> <span class="n">python3</span><span class="mf">.8</span> <span class="n">arguments</span><span class="p">:</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">python3</span><span class="mf">.8</span> <span class="o">-</span><span class="n">c</span> <span class="s2">&quot;print(&#39;Hello&#39;)&quot;</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The information provided in the “Core file information” section has a
+maximum size of 80 characters so it can be incomplete in some cases where
+large paths or command line arguments are involved.</p>
+</div>
+<p>This information displayed can include the following attributes:</p>
+<ul class="simple">
+<li><p>state: A letter describing the state of a given process. It can be one of:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">d</span></code> — uninterruptible sleep (usually IO):</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">i</span></code> — idle kernel thread</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">r</span></code> — running or runnable (on run queue)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">s</span></code> — interruptible sleep (waiting for an event to complete)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">t</span></code> — stopped by job control signal</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">t</span></code> — stopped by debugger during the tracing</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">w</span></code> — paging (not valid since the 2.6.xx kernel)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">x</span></code> — dead (should never be seen)</p></li>
+<li><p><code class="docutils literal notranslate"><span class="pre">z</span></code> — defunct (“zombie”) process, terminated but not reaped by its parent</p></li>
+</ul>
+</li>
+<li><p>zombie: A boolean described if the process was in a zombie state (terminated but not reaped by its parent)
+at the time of the crash.</p></li>
+<li><p>niceness: The value of the “niceness” parameter that represents the CPU priority in the scheduler.</p></li>
+<li><p>pid: The PID of the process.</p></li>
+<li><p>ppid: The PID of the parent of the process.</p></li>
+<li><p>sid: The Session ID of the process.</p></li>
+<li><p>uid: The User ID of the process.</p></li>
+<li><p>gid: The Group ID of the process.</p></li>
+<li><p>pgrp: The process group.</p></li>
+<li><p>executable: The base name of the executable that was used to start the process.</p></li>
+<li><p>arguments: The command line invocation of the process, truncated at 80 characters.</p></li>
+</ul>
+</section>
+<section id="origin-of-the-core-file">
+<h2>Origin of the core file<a class="headerlink" href="#origin-of-the-core-file" title="Link to this heading">¶</a></h2>
+<p>Some times core file are not generated because the program crashed, and this
+can be a source of confusion as analyzing the stack trace report looking for
+crashes will be a futile task because the process could have been in any
+arbitrary healthy state. Even if the process has indeed crashed, knowing if it
+was planned or not can be very important to perform a successful analysis. For
+this reason, <code class="docutils literal notranslate"><span class="pre">pystack</span></code> will try to display why the core was generated.
+Depending on the kernel version and the available information in the core file,
+it can show several cases:</p>
+<ul>
+<li><p>The core file was generated on demand:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">core</span> <span class="n">file</span> <span class="n">seems</span> <span class="n">to</span> <span class="n">have</span> <span class="n">been</span> <span class="n">generated</span> <span class="n">on</span> <span class="n">demand</span> <span class="p">(</span><span class="n">the</span> <span class="n">process</span> <span class="n">did</span> <span class="ow">not</span> <span class="n">crash</span><span class="p">)</span>
+</pre></div>
+</div>
+</li>
+<li><p>The core file was generated because some user sent a killing signal:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">process</span> <span class="n">died</span> <span class="n">due</span> <span class="n">receiving</span> <span class="n">signal</span> <span class="n">SIGBUS</span> <span class="n">sent</span> <span class="n">by</span> <span class="n">pid</span> <span class="mi">23</span>
+</pre></div>
+</div>
+</li>
+<li><p>The core file was generated because it received a segmentation fault signal:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">The</span> <span class="n">process</span> <span class="n">died</span> <span class="n">due</span> <span class="n">a</span> <span class="n">segmentation</span> <span class="n">fault</span> <span class="n">accessing</span> <span class="n">address</span><span class="p">:</span> <span class="mh">0x75bcd15</span>
+</pre></div>
+</div>
+</li>
+</ul>
+<p>Using this information, is possible to make sense of the displayed stack traces
+when hunting for a specific problem.</p>
+</section>
+<section id="analyzing-core-files-in-a-different-machine">
+<h2>Analyzing core files in a different machine<a class="headerlink" href="#analyzing-core-files-in-a-different-machine" title="Link to this heading">¶</a></h2>
+<p>In general, analyzing core files in the same machine where they were generated
+will almost always yield a successful analysis using the default command line
+options but analyzing core files in a different machine can lead to
+complications. The main complication is that the shared libraries that were
+mapped into the process and that are referred by the core are either not
+available on the machine where the analysis is being performed or are different
+(have a different build ID) than the ones that were mapped into the process
+that generated the core. In this case, when analyzing the core file you will
+see the following warnings:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pystack core ./the_core /path/to/the_executable
+...
+WARNING(process_core): Failed to locate /tmp/bundle/python/lib/python3.8/lib-dynload/_heapq.cpython-38-x86_64-linux-gnu.so
+WARNING(process_core): Failed to locate /tmp/bundle/binary-dependencies/libfreebl3.so
+WARNING(process_core): Failed to locate /tmp/bundle/binary-dependencies/libcrypt.so.1
+WARNING(process_core): Failed to locate /tmp/bundle/binary-dependencies/libpython3.8.so.1.0
+...
+</pre></div>
+</div>
+<div class="admonition caution">
+<p class="admonition-title">Caution</p>
+<p>Note that is possible that <code class="docutils literal notranslate"><span class="pre">pystack</span></code> can still generate a valid report
+even if it fails to find some of the shared libraries that were linked into
+the process, so the presence of these warnings is not an error condition.
+Failing to provide shared libraries involved in the stack trace can make
+the <code class="docutils literal notranslate"><span class="pre">--native</span></code> and <code class="docutils literal notranslate"><span class="pre">--native-all</span></code> options not work properly.</p>
+</div>
+<p>This indicates that PyStack has failed to locate some shared libraries that
+were loaded into the process. Loaded shared libraries’ paths are recorded in
+the core file, but if the core file is moved to a different machine, or if
+libraries on the machine are updated or removed, then PyStack won’t be able to
+find the versions of the libraries that it needs to understand the core file.</p>
+<p>Fortunately, if you have access to the shared libraries that were originally
+used, it is possible to point PyStack to a new location for these shared
+libraries. There are two options for pointing PyStack at libraries in different
+locations than what was recorded in the core file:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">--lib-search-path</span></code> accepts a colon-separated list of directories to search
+for libraries in (like the format of the <code class="docutils literal notranslate"><span class="pre">PATH</span></code> environment variable).
+For example, if you’ve copied a PyInstaller application to a new directory,
+you might use:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ pystack core ./the_core ./the_app/appname/appname --lib-search-path=&quot;./the_app/appname:./the_app/appname/lib-dynload&quot;
+Traceback for thread 1340 [] (most recent call last):
+(Python) File &quot;/src/tests/integration/single_thread_program.py&quot;, line 20, in &lt;module&gt;
+    first_func()
+(Python) File &quot;/src/tests/integration/single_thread_program.py&quot;, line 6, in first_func
+    second_func()
+(Python) File &quot;/src/tests/integration/single_thread_program.py&quot;, line 10, in second_func
+    third_func()
+(Python) File &quot;/src/tests/integration/single_thread_program.py&quot;, line 17, in third_func
+    time.sleep(1000)
+</pre></div>
+</div>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Directories are searched in the order they occur in the list, and libraries
+are matched by file name. If two directories in the search path both contain
+a file with the same name as a required shared library, the library from the
+directory that is listed earlier in the search path will be used.</p>
+</div>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">--lib-search-root</span></code> allows providing a directory to be searched recursively
+for shared libraries. PyStack will automatically construct a search path
+containing every directory with shared libraries under that search root, then
+use that constructed path as though it was given as <code class="docutils literal notranslate"><span class="pre">--lib-search-path</span></code>.
+For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span> $ pystack core ./the_core ./the_app/appname/appname --lib-search-root=./the_app
+ Traceback for thread 1340 [] (most recent call last):
+ (Python) File &quot;/src/tests/integration/single_thread_program.py&quot;, line 20, in &lt;module&gt;
+     first_func()
+ (Python) File &quot;/src/tests/integration/single_thread_program.py&quot;, line 6, in first_func
+     second_func()
+ (Python) File &quot;/src/tests/integration/single_thread_program.py&quot;, line 10, in second_func
+     third_func()
+ (Python) File &quot;/src/tests/integration/single_thread_program.py&quot;, line 17, in third_func
+     time.sleep(1000)
+
+The ``--lib-search-root`` option is especially useful for analyzing core
+files generated by self contained applications, such as those produced by
+PyInstaller&#39;s ``--onedir`` mode). When an application is bundled together
+with its binary dependencies, you only need to provide PyStack with the root
+folder and it will automatically find all of the bundled shared libraries.
+</pre></div>
+</div>
+</li>
+</ul>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>The <code class="docutils literal notranslate"><span class="pre">--lib-search-root</span></code> option adds directories to the library search path
+in lexicographic order. If a file with the same name as a shared library
+PyStack needs to load is found in two different directories under the search
+root, the wrong one may be used. When the order in which directories under
+the root are searched matters, use <code class="docutils literal notranslate"><span class="pre">--lib-search-path</span></code> instead.</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>You can see the library search path that <code class="docutils literal notranslate"><span class="pre">--lib-search-root</span></code> has
+constructed when running in <code class="docutils literal notranslate"><span class="pre">-v</span></code> verbose mode.</p>
+</div>
+</section>
+<section id="analyzing-core-files-with-insufficient-information">
+<h2>Analyzing core files with insufficient information<a class="headerlink" href="#analyzing-core-files-with-insufficient-information" title="Link to this heading">¶</a></h2>
+<p>In some rare scenarios is possible that PyStack
+won’t have enough information to show the Python stack trace nor the native
+stack trace (missing symbols, missing information in the executable, corrupt
+core file information, etc). In these cases, is still possible to obtain the
+Python stack trace of the core file by using the <code class="docutils literal notranslate"><span class="pre">--exhaustive</span></code> option. This
+will trigger a more complete search for the interpreter information by
+analyzing raw memory but will normally be slower and it will take a time
+proportional to the core file size, as all the memory needs to be analysed to
+do that.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>When using <code class="docutils literal notranslate"><span class="pre">--exhaustive</span></code> make sure you have the core file in a fast
+file-system (not NFS or docker mount points) to speed up the analysis.</p>
+</div>
+</section>
+</section>
+
+        </article>
+      </div>
+      <footer>
+        
+        <div class="related-pages">
+          <a class="next-page" href="customizing_the_reports.html">
+              <div class="page-info">
+                <div class="context">
+                  <span>Next</span>
+                </div>
+                <div class="title">Customizing the reports</div>
+              </div>
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+            </a>
+          <a class="prev-page" href="process.html">
+              <svg class="furo-related-icon"><use href="#svg-arrow-right"></use></svg>
+              <div class="page-info">
+                <div class="context">
+                  <span>Previous</span>
+                </div>
+                
+                <div class="title">Analyzing processes</div>
+                
+              </div>
+            </a>
+        </div>
+        <div class="bottom-of-page">
+          <div class="left-details">
+            <div class="copyright">
+                Copyright &#169; 
+            </div>
+            Made with <a href="https://www.sphinx-doc.org/">Sphinx</a> and <a class="muted-link" href="https://pradyunsg.me">@pradyunsg</a>'s
+            
+            <a href="https://github.com/pradyunsg/furo">Furo</a>
+            
+          </div>
+          <div class="right-details">
+            
+          </div>
+        </div>
+        
+      </footer>
+    </div>
+    <aside class="toc-drawer">
+      
+      
+      <div class="toc-sticky toc-scroll">
+        <div class="toc-title-container">
+          <span class="toc-title">
+            On this page
+          </span>
+        </div>
+        <div class="toc-tree-container">
+          <div class="toc-tree">
+            <ul>
+<li><a class="reference internal" href="#">Analyzing core dumps</a><ul>
+<li><a class="reference internal" href="#pystack.__main__-generate_cli_parser-positional-arguments">Positional Arguments</a></li>
+<li><a class="reference internal" href="#pystack.__main__-generate_cli_parser-named-arguments">Named Arguments</a></li>
+<li><a class="reference internal" href="#providing-the-executable">Providing the executable</a></li>
+<li><a class="reference internal" href="#core-file-information">Core file information</a></li>
+<li><a class="reference internal" href="#origin-of-the-core-file">Origin of the core file</a></li>
+<li><a class="reference internal" href="#analyzing-core-files-in-a-different-machine">Analyzing core files in a different machine</a></li>
+<li><a class="reference internal" href="#analyzing-core-files-with-insufficient-information">Analyzing core files with insufficient information</a></li>
+</ul>
+</li>
+</ul>
+
+          </div>
+        </div>
+      </div>
+      
+      
+    </aside>
+  </div>
+</div><script src="_static/documentation_options.js?v=5929fcd5"></script>
+    <script src="_static/doctools.js?v=9a2dae69"></script>
+    <script src="_static/sphinx_highlight.js?v=dc90522c"></script>
+    <script src="_static/scripts/furo.js?v=5fa4622c"></script>
+    </body>
+</html>
