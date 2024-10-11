@@ -10,8 +10,6 @@
 #include "pytypes.h"
 #include "version.h"
 
-static constexpr int FRAME_LIMIT = 4096;
-
 namespace pystack {
 FrameObject::FrameObject(
         const std::shared_ptr<const AbstractProcessManager>& manager,

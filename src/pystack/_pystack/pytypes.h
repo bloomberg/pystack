@@ -118,9 +118,6 @@ class NoneObject
 
     // Methods
     std::string toString(ssize_t max_size) const;
-
-  private:
-    remote_addr_t d_addr;
 };
 
 class Object
