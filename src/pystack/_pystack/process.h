@@ -150,6 +150,9 @@ class ProcessManager : public AbstractProcessManager
             std::vector<VirtualMap> memory_maps,
             MemoryMapInformation map_info);
 
+    // Destructors
+    virtual ~ProcessManager() = default;
+
     // Getters
     const std::vector<int>& Tids() const override;
 
@@ -168,6 +171,9 @@ class CoreFileProcessManager : public AbstractProcessManager
             const std::shared_ptr<CoreFileAnalyzer>& analyzer,
             std::vector<VirtualMap> memory_maps,
             MemoryMapInformation map_info);
+
+    // Destructors
+    virtual ~CoreFileProcessManager() = default;
 
     // Getters
     const std::vector<int>& Tids() const override;

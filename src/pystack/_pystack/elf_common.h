@@ -59,7 +59,7 @@ class CoreFileAnalyzer : public Analyzer
     std::string locateLibrary(const std::string& lib) const;
 
     // Destructors
-    ~CoreFileAnalyzer();
+    virtual ~CoreFileAnalyzer();
 
     // Data members
     dwfl_unique_ptr d_dwfl;
@@ -83,6 +83,9 @@ class ProcessAnalyzer : public Analyzer
   public:
     // Constructors
     explicit ProcessAnalyzer(pid_t pid);
+
+    // Destructors
+    virtual ~ProcessAnalyzer() = default;
 
     // Methods
     const dwfl_unique_ptr& getDwfl() const override;

@@ -494,7 +494,6 @@ GenericObject::toString(ssize_t max_size) const
 }
 
 NoneObject::NoneObject(remote_addr_t addr)
-: d_addr(addr)
 {
 }
 

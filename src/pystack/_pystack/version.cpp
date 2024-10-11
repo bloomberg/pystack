@@ -19,13 +19,15 @@ template<class T>
 constexpr py_code_v
 py_code()
 {
-    return {sizeof(T),
-            offsetof(T, co_filename),
-            offsetof(T, co_name),
-            offsetof(T, co_lnotab),
-            offsetof(T, co_firstlineno),
-            offsetof(T, co_argcount),
-            offsetof(T, co_varnames)};
+    return {
+            sizeof(T),
+            {offsetof(T, co_filename)},
+            {offsetof(T, co_name)},
+            {offsetof(T, co_lnotab)},
+            {offsetof(T, co_firstlineno)},
+            {offsetof(T, co_argcount)},
+            {offsetof(T, co_varnames)},
+    };
 }
 
 template<class T>
@@ -33,52 +35,58 @@ constexpr py_code_v
 py_codev311()
 {
     return {sizeof(T),
-            offsetof(T, co_filename),
-            offsetof(T, co_name),
-            offsetof(T, co_linetable),
-            offsetof(T, co_firstlineno),
-            offsetof(T, co_argcount),
-            offsetof(T, co_localsplusnames),
-            offsetof(T, co_code_adaptive)};
+            {offsetof(T, co_filename)},
+            {offsetof(T, co_name)},
+            {offsetof(T, co_linetable)},
+            {offsetof(T, co_firstlineno)},
+            {offsetof(T, co_argcount)},
+            {offsetof(T, co_localsplusnames)},
+            {offsetof(T, co_code_adaptive)}};
 }
 
 template<class T>
 constexpr py_frame_v
 py_frame()
 {
-    return {sizeof(T),
-            offsetof(T, f_back),
-            offsetof(T, f_code),
-            offsetof(T, f_lasti),
-            0,
-            offsetof(T, f_localsplus)};
+    return {
+            sizeof(T),
+            {offsetof(T, f_back)},
+            {offsetof(T, f_code)},
+            {offsetof(T, f_lasti)},
+            {0},
+            {offsetof(T, f_localsplus)},
+    };
 }
 
 template<class T>
 constexpr py_frame_v
 py_framev311()
 {
-    return {sizeof(T),
-            offsetof(T, previous),
-            offsetof(T, f_code),
-            0,
-            offsetof(T, prev_instr),
-            offsetof(T, localsplus),
-            offsetof(T, is_entry)};
+    return {
+            sizeof(T),
+            {offsetof(T, previous)},
+            {offsetof(T, f_code)},
+            {0},
+            {offsetof(T, prev_instr)},
+            {offsetof(T, localsplus)},
+            {offsetof(T, is_entry)},
+    };
 }
 
 template<class T>
 constexpr py_frame_v
 py_framev312()
 {
-    return {sizeof(T),
-            offsetof(T, previous),
-            offsetof(T, f_code),
-            0,
-            offsetof(T, prev_instr),
-            offsetof(T, localsplus),
-            0,
-            offsetof(T, owner)};
+    return {
+            sizeof(T),
+            {offsetof(T, previous)},
+            {offsetof(T, f_code)},
+            {0},
+            {offsetof(T, prev_instr)},
+            {offsetof(T, localsplus)},
+            {0},
+            {offsetof(T, owner)},
+    };
 }
 
 template<class T>
@@ -86,90 +94,104 @@ constexpr py_thread_v
 py_thead_h()
 {
     /* Hack. Python 3.3 and below don't have the prev field */
-    return {sizeof(T),
-            offsetof(T, next),
-            offsetof(T, next),
-            offsetof(T, interp),
-            offsetof(T, frame),
-            offsetof(T, thread_id)};
+    return {
+            sizeof(T),
+            {offsetof(T, next)},
+            {offsetof(T, next)},
+            {offsetof(T, interp)},
+            {offsetof(T, frame)},
+            {offsetof(T, thread_id)},
+    };
 }
 
 template<class T>
 constexpr py_thread_v
 py_thread()
 {
-    return {sizeof(T),
-            offsetof(T, prev),
-            offsetof(T, next),
-            offsetof(T, interp),
-            offsetof(T, frame),
-            offsetof(T, thread_id)};
+    return {
+            sizeof(T),
+            {offsetof(T, prev)},
+            {offsetof(T, next)},
+            {offsetof(T, interp)},
+            {offsetof(T, frame)},
+            {offsetof(T, thread_id)},
+    };
 }
 
 template<class T>
 constexpr py_thread_v
 py_threadv311()
 {
-    return {sizeof(T),
-            offsetof(T, prev),
-            offsetof(T, next),
-            offsetof(T, interp),
-            offsetof(T, cframe),
-            offsetof(T, thread_id),
-            offsetof(T, native_thread_id)};
+    return {
+            sizeof(T),
+            {offsetof(T, prev)},
+            {offsetof(T, next)},
+            {offsetof(T, interp)},
+            {offsetof(T, cframe)},
+            {offsetof(T, thread_id)},
+            {offsetof(T, native_thread_id)},
+    };
 }
 
 template<class T>
 constexpr py_thread_v
 py_threadv313()
 {
-    return {sizeof(T),
-            offsetof(T, prev),
-            offsetof(T, next),
-            offsetof(T, interp),
-            offsetof(T, frame),
-            offsetof(T, thread_id),
-            offsetof(T, native_thread_id)};
+    return {
+            sizeof(T),
+            {offsetof(T, prev)},
+            {offsetof(T, next)},
+            {offsetof(T, interp)},
+            {offsetof(T, frame)},
+            {offsetof(T, thread_id)},
+            {offsetof(T, native_thread_id)},
+    };
 }
 
 template<class T>
 constexpr py_is_v
 py_is()
 {
-    return {sizeof(T),
-            offsetof(T, next),
-            offsetof(T, tstate_head),
-            offsetof(T, gc),
-            offsetof(T, modules),
-            offsetof(T, sysdict),
-            offsetof(T, builtins)};
+    return {
+            sizeof(T),
+            {offsetof(T, next)},
+            {offsetof(T, tstate_head)},
+            {offsetof(T, gc)},
+            {offsetof(T, modules)},
+            {offsetof(T, sysdict)},
+            {offsetof(T, builtins)},
+    };
 }
 
 template<class T>
 constexpr py_is_v
 py_isv311()
 {
-    return {sizeof(T),
-            offsetof(T, next),
-            offsetof(T, threads.head),
-            offsetof(T, gc),
-            offsetof(T, modules),
-            offsetof(T, sysdict),
-            offsetof(T, builtins)};
+    return {
+            sizeof(T),
+            {offsetof(T, next)},
+            {offsetof(T, threads.head)},
+            {offsetof(T, gc)},
+            {offsetof(T, modules)},
+            {offsetof(T, sysdict)},
+            {offsetof(T, builtins)},
+    };
 }
 
 template<class T>
 constexpr py_is_v
 py_isv312()
 {
-    return {sizeof(T),
-            offsetof(T, next),
-            offsetof(T, threads.head),
-            offsetof(T, gc),
-            offsetof(T, imports.modules),
-            offsetof(T, sysdict),
-            offsetof(T, builtins),
-            offsetof(T, ceval.gil)};
+    return {
+            sizeof(T),
+            {offsetof(T, next)},
+            {offsetof(T, threads.head)},
+            {offsetof(T, gc)},
+            {offsetof(T, imports.modules)},
+            {offsetof(T, sysdict)},
+            {offsetof(T, builtins)},
+            {offsetof(T, ceval.gil)},
+    };
 }
 
 template<class T>
@@ -178,7 +200,7 @@ py_gc()
 {
     return {
             sizeof(T),
-            offsetof(T, collecting),
+            {offsetof(T, collecting)},
     };
 }
 
@@ -188,7 +210,7 @@ py_cframe()
 {
     return {
             sizeof(T),
-            offsetof(T, current_frame),
+            {offsetof(T, current_frame)},
     };
 }
 
@@ -198,8 +220,8 @@ py_gilruntimestate()
 {
     return {
             sizeof(T),
-            offsetof(T, locked),
-            offsetof(T, last_holder),
+            {offsetof(T, locked)},
+            {offsetof(T, last_holder)},
     };
 }
 
@@ -209,10 +231,10 @@ py_runtime()
 {
     return {
             sizeof(T),
-            offsetof(T, finalizing),
-            offsetof(T, interpreters.head),
-            offsetof(T, gc),
-            offsetof(T, gilstate.tstate_current._value),
+            {offsetof(T, finalizing)},
+            {offsetof(T, interpreters.head)},
+            {offsetof(T, gc)},
+            {offsetof(T, gilstate.tstate_current._value)},
     };
 }
 
@@ -222,8 +244,8 @@ py_runtimev312()
 {
     return {
             sizeof(T),
-            offsetof(T, finalizing),
-            offsetof(T, interpreters.head),
+            {offsetof(T, finalizing)},
+            {offsetof(T, interpreters.head)},
     };
 }
 
@@ -233,83 +255,83 @@ py_runtimev313()
 {
     return {
             sizeof(T),
-            offsetof(T, finalizing),
-            offsetof(T, interpreters.head),
+            {offsetof(T, finalizing)},
+            {offsetof(T, interpreters.head)},
             {},
             {},
-            offsetof(T, debug_offsets.cookie),
-            offsetof(T, debug_offsets.version),
-            offsetof(T, debug_offsets.free_threaded),
-            offsetof(T, debug_offsets.runtime_state.size),
-            offsetof(T, debug_offsets.runtime_state.finalizing),
-            offsetof(T, debug_offsets.runtime_state.interpreters_head),
-            offsetof(T, debug_offsets.interpreter_state.size),
-            offsetof(T, debug_offsets.interpreter_state.id),
-            offsetof(T, debug_offsets.interpreter_state.next),
-            offsetof(T, debug_offsets.interpreter_state.threads_head),
-            offsetof(T, debug_offsets.interpreter_state.gc),
-            offsetof(T, debug_offsets.interpreter_state.imports_modules),
-            offsetof(T, debug_offsets.interpreter_state.sysdict),
-            offsetof(T, debug_offsets.interpreter_state.builtins),
-            offsetof(T, debug_offsets.interpreter_state.ceval_gil),
-            offsetof(T, debug_offsets.interpreter_state.gil_runtime_state),
-            offsetof(T, debug_offsets.interpreter_state.gil_runtime_state_enabled),
-            offsetof(T, debug_offsets.interpreter_state.gil_runtime_state_locked),
-            offsetof(T, debug_offsets.interpreter_state.gil_runtime_state_holder),
-            offsetof(T, debug_offsets.thread_state.size),
-            offsetof(T, debug_offsets.thread_state.prev),
-            offsetof(T, debug_offsets.thread_state.next),
-            offsetof(T, debug_offsets.thread_state.interp),
-            offsetof(T, debug_offsets.thread_state.current_frame),
-            offsetof(T, debug_offsets.thread_state.thread_id),
-            offsetof(T, debug_offsets.thread_state.native_thread_id),
-            offsetof(T, debug_offsets.thread_state.datastack_chunk),
-            offsetof(T, debug_offsets.thread_state.status),
-            offsetof(T, debug_offsets.interpreter_frame.size),
-            offsetof(T, debug_offsets.interpreter_frame.previous),
-            offsetof(T, debug_offsets.interpreter_frame.executable),
-            offsetof(T, debug_offsets.interpreter_frame.instr_ptr),
-            offsetof(T, debug_offsets.interpreter_frame.localsplus),
-            offsetof(T, debug_offsets.interpreter_frame.owner),
-            offsetof(T, debug_offsets.code_object.size),
-            offsetof(T, debug_offsets.code_object.filename),
-            offsetof(T, debug_offsets.code_object.name),
-            offsetof(T, debug_offsets.code_object.qualname),
-            offsetof(T, debug_offsets.code_object.linetable),
-            offsetof(T, debug_offsets.code_object.firstlineno),
-            offsetof(T, debug_offsets.code_object.argcount),
-            offsetof(T, debug_offsets.code_object.localsplusnames),
-            offsetof(T, debug_offsets.code_object.localspluskinds),
-            offsetof(T, debug_offsets.code_object.co_code_adaptive),
-            offsetof(T, debug_offsets.pyobject.size),
-            offsetof(T, debug_offsets.pyobject.ob_type),
-            offsetof(T, debug_offsets.type_object.size),
-            offsetof(T, debug_offsets.type_object.tp_name),
-            offsetof(T, debug_offsets.type_object.tp_repr),
-            offsetof(T, debug_offsets.type_object.tp_flags),
-            offsetof(T, debug_offsets.tuple_object.size),
-            offsetof(T, debug_offsets.tuple_object.ob_item),
-            offsetof(T, debug_offsets.tuple_object.ob_size),
-            offsetof(T, debug_offsets.list_object.size),
-            offsetof(T, debug_offsets.list_object.ob_item),
-            offsetof(T, debug_offsets.list_object.ob_size),
-            offsetof(T, debug_offsets.dict_object.size),
-            offsetof(T, debug_offsets.dict_object.ma_keys),
-            offsetof(T, debug_offsets.dict_object.ma_values),
-            offsetof(T, debug_offsets.float_object.size),
-            offsetof(T, debug_offsets.float_object.ob_fval),
-            offsetof(T, debug_offsets.long_object.size),
-            offsetof(T, debug_offsets.long_object.lv_tag),
-            offsetof(T, debug_offsets.long_object.ob_digit),
-            offsetof(T, debug_offsets.bytes_object.size),
-            offsetof(T, debug_offsets.bytes_object.ob_size),
-            offsetof(T, debug_offsets.bytes_object.ob_sval),
-            offsetof(T, debug_offsets.unicode_object.size),
-            offsetof(T, debug_offsets.unicode_object.state),
-            offsetof(T, debug_offsets.unicode_object.length),
-            offsetof(T, debug_offsets.unicode_object.asciiobject_size),
-            offsetof(T, debug_offsets.gc.size),
-            offsetof(T, debug_offsets.gc.collecting),
+            {offsetof(T, debug_offsets.cookie)},
+            {offsetof(T, debug_offsets.version)},
+            {offsetof(T, debug_offsets.free_threaded)},
+            {offsetof(T, debug_offsets.runtime_state.size)},
+            {offsetof(T, debug_offsets.runtime_state.finalizing)},
+            {offsetof(T, debug_offsets.runtime_state.interpreters_head)},
+            {offsetof(T, debug_offsets.interpreter_state.size)},
+            {offsetof(T, debug_offsets.interpreter_state.id)},
+            {offsetof(T, debug_offsets.interpreter_state.next)},
+            {offsetof(T, debug_offsets.interpreter_state.threads_head)},
+            {offsetof(T, debug_offsets.interpreter_state.gc)},
+            {offsetof(T, debug_offsets.interpreter_state.imports_modules)},
+            {offsetof(T, debug_offsets.interpreter_state.sysdict)},
+            {offsetof(T, debug_offsets.interpreter_state.builtins)},
+            {offsetof(T, debug_offsets.interpreter_state.ceval_gil)},
+            {offsetof(T, debug_offsets.interpreter_state.gil_runtime_state)},
+            {offsetof(T, debug_offsets.interpreter_state.gil_runtime_state_enabled)},
+            {offsetof(T, debug_offsets.interpreter_state.gil_runtime_state_locked)},
+            {offsetof(T, debug_offsets.interpreter_state.gil_runtime_state_holder)},
+            {offsetof(T, debug_offsets.thread_state.size)},
+            {offsetof(T, debug_offsets.thread_state.prev)},
+            {offsetof(T, debug_offsets.thread_state.next)},
+            {offsetof(T, debug_offsets.thread_state.interp)},
+            {offsetof(T, debug_offsets.thread_state.current_frame)},
+            {offsetof(T, debug_offsets.thread_state.thread_id)},
+            {offsetof(T, debug_offsets.thread_state.native_thread_id)},
+            {offsetof(T, debug_offsets.thread_state.datastack_chunk)},
+            {offsetof(T, debug_offsets.thread_state.status)},
+            {offsetof(T, debug_offsets.interpreter_frame.size)},
+            {offsetof(T, debug_offsets.interpreter_frame.previous)},
+            {offsetof(T, debug_offsets.interpreter_frame.executable)},
+            {offsetof(T, debug_offsets.interpreter_frame.instr_ptr)},
+            {offsetof(T, debug_offsets.interpreter_frame.localsplus)},
+            {offsetof(T, debug_offsets.interpreter_frame.owner)},
+            {offsetof(T, debug_offsets.code_object.size)},
+            {offsetof(T, debug_offsets.code_object.filename)},
+            {offsetof(T, debug_offsets.code_object.name)},
+            {offsetof(T, debug_offsets.code_object.qualname)},
+            {offsetof(T, debug_offsets.code_object.linetable)},
+            {offsetof(T, debug_offsets.code_object.firstlineno)},
+            {offsetof(T, debug_offsets.code_object.argcount)},
+            {offsetof(T, debug_offsets.code_object.localsplusnames)},
+            {offsetof(T, debug_offsets.code_object.localspluskinds)},
+            {offsetof(T, debug_offsets.code_object.co_code_adaptive)},
+            {offsetof(T, debug_offsets.pyobject.size)},
+            {offsetof(T, debug_offsets.pyobject.ob_type)},
+            {offsetof(T, debug_offsets.type_object.size)},
+            {offsetof(T, debug_offsets.type_object.tp_name)},
+            {offsetof(T, debug_offsets.type_object.tp_repr)},
+            {offsetof(T, debug_offsets.type_object.tp_flags)},
+            {offsetof(T, debug_offsets.tuple_object.size)},
+            {offsetof(T, debug_offsets.tuple_object.ob_item)},
+            {offsetof(T, debug_offsets.tuple_object.ob_size)},
+            {offsetof(T, debug_offsets.list_object.size)},
+            {offsetof(T, debug_offsets.list_object.ob_item)},
+            {offsetof(T, debug_offsets.list_object.ob_size)},
+            {offsetof(T, debug_offsets.dict_object.size)},
+            {offsetof(T, debug_offsets.dict_object.ma_keys)},
+            {offsetof(T, debug_offsets.dict_object.ma_values)},
+            {offsetof(T, debug_offsets.float_object.size)},
+            {offsetof(T, debug_offsets.float_object.ob_fval)},
+            {offsetof(T, debug_offsets.long_object.size)},
+            {offsetof(T, debug_offsets.long_object.lv_tag)},
+            {offsetof(T, debug_offsets.long_object.ob_digit)},
+            {offsetof(T, debug_offsets.bytes_object.size)},
+            {offsetof(T, debug_offsets.bytes_object.ob_size)},
+            {offsetof(T, debug_offsets.bytes_object.ob_sval)},
+            {offsetof(T, debug_offsets.unicode_object.size)},
+            {offsetof(T, debug_offsets.unicode_object.state)},
+            {offsetof(T, debug_offsets.unicode_object.length)},
+            {offsetof(T, debug_offsets.unicode_object.asciiobject_size)},
+            {offsetof(T, debug_offsets.gc.size)},
+            {offsetof(T, debug_offsets.gc.collecting)},
     };
 }
 
@@ -317,7 +339,7 @@ template<class T>
 constexpr py_type_v
 py_type()
 {
-    return {sizeof(T), offsetof(T, tp_name), offsetof(T, tp_repr), offsetof(T, tp_flags)};
+    return {sizeof(T), {offsetof(T, tp_name)}, {offsetof(T, tp_repr)}, {offsetof(T, tp_flags)}};
 }
 
 template<class T>
@@ -326,7 +348,7 @@ py_object()
 {
     return {
             sizeof(T),
-            offsetof(T, ob_type),
+            {offsetof(T, ob_type)},
     };
 }
 
@@ -336,8 +358,8 @@ py_bytes()
 {
     return {
             sizeof(T),
-            offsetof(T, ob_base.ob_size),
-            offsetof(T, ob_sval),
+            {offsetof(T, ob_base.ob_size)},
+            {offsetof(T, ob_sval)},
     };
 }
 
@@ -347,9 +369,9 @@ py_unicode()
 {
     return {
             sizeof(T),
-            offsetof(T, _base._base.state),
-            offsetof(T, _base._base.length),
-            offsetof(T, _base) + sizeof(T::_base._base),
+            {offsetof(T, _base._base.state)},
+            {offsetof(T, _base._base.length)},
+            {offsetof(T, _base) + sizeof(T::_base._base)},
     };
 }
 
@@ -359,8 +381,8 @@ py_tuple()
 {
     return {
             sizeof(T),
-            offsetof(T, ob_base.ob_size),
-            offsetof(T, ob_item),
+            {offsetof(T, ob_base.ob_size)},
+            {offsetof(T, ob_item)},
     };
 }
 
@@ -370,8 +392,8 @@ py_list()
 {
     return {
             sizeof(T),
-            offsetof(T, ob_base.ob_size),
-            offsetof(T, ob_item),
+            {offsetof(T, ob_base.ob_size)},
+            {offsetof(T, ob_item)},
     };
 }
 
@@ -381,8 +403,8 @@ py_dict()
 {
     return {
             sizeof(T),
-            offsetof(T, ma_keys),
-            offsetof(T, ma_values),
+            {offsetof(T, ma_keys)},
+            {offsetof(T, ma_values)},
     };
 }
 
@@ -392,10 +414,10 @@ py_dictkeys()
 {
     return {
             sizeof(T),
-            offsetof(T, dk_size),
+            {offsetof(T, dk_size)},
             {},
-            offsetof(T, dk_nentries),
-            offsetof(T, dk_indices),
+            {offsetof(T, dk_nentries)},
+            {offsetof(T, dk_indices)},
     };
 }
 
@@ -405,10 +427,10 @@ py_dictkeys<Python3_11::PyDictKeysObject>()
 {
     return {
             sizeof(Python3_11::PyDictKeysObject),
-            offsetof(Python3_11::PyDictKeysObject, dk_log2_size),
-            offsetof(Python3_11::PyDictKeysObject, dk_kind),
-            offsetof(Python3_11::PyDictKeysObject, dk_nentries),
-            offsetof(Python3_11::PyDictKeysObject, dk_indices),
+            {offsetof(Python3_11::PyDictKeysObject, dk_log2_size)},
+            {offsetof(Python3_11::PyDictKeysObject, dk_kind)},
+            {offsetof(Python3_11::PyDictKeysObject, dk_nentries)},
+            {offsetof(Python3_11::PyDictKeysObject, dk_indices)},
     };
 }
 
@@ -418,7 +440,7 @@ py_dictvalues()
 {
     return {
             sizeof(T),
-            offsetof(T, values),
+            {offsetof(T, values)},
     };
 }
 
@@ -428,7 +450,7 @@ py_float()
 {
     return {
             sizeof(T),
-            offsetof(T, ob_fval),
+            {offsetof(T, ob_fval)},
     };
 }
 
@@ -438,8 +460,8 @@ py_long()
 {
     return {
             sizeof(T),
-            offsetof(T, ob_base.ob_size),
-            offsetof(T, ob_digit),
+            {offsetof(T, ob_base.ob_size)},
+            {offsetof(T, ob_digit)},
     };
 }
 
