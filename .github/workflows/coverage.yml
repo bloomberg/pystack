@@ -56,13 +56,13 @@ jobs:
         run: |
           make ccoverage
       - name: Upload {P,C}ython report to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: pycoverage.lcov
           flags: python_and_cython
       - name: Upload C++ report to Codecov
-        uses: codecov/codecov-action@v3
+        uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: cppcoverage.lcov
