@@ -750,6 +750,23 @@ AbstractProcessManager::findPythonVersion() const
     }
     int major = (version >> 24) & 0xFF;
     int minor = (version >> 16) & 0xFF;
+    int level = (version >> 4) & 0x0F;
+
+    if (major == 0 && minor == 0) {
+        LOG(DEBUG) << "Failed to determine Python version from symbols: empty data copied";
+        return {-1, -1};
+    }
+
+    if (major != 2 && major != 3) {
+        LOG(DEBUG) << "Failed to determine Python version from symbols: invalid major version";
+        return {-1, -1};
+    }
+
+    if (level != 0xA && level != 0xB && level != 0xC && level != 0xF) {
+        LOG(DEBUG) << "Failed to determine Python version from symbols: invalid release level";
+        return {-1, -1};
+    }
+
     LOG(DEBUG) << "Python version determined from symbols: " << major << "." << minor;
     return {major, minor};
 }
