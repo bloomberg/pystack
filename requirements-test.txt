@@ -1,5 +1,5 @@
 coverage[toml]
-pyinstaller<6.0
+pyinstaller
 pytest
 pytest-cov
 pytest-xdist
