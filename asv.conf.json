@@ -1,0 +1,21 @@
+{
+    "version":1,
+    "benchmark_dir": "./benchmarks",
+    "repo":"git@github.com:bloomberg/pystack.git",
+    "project": "pystack",
+    "project_url": "https://github.com/bloomberg/pystack",
+    "env_dir":".asv/env",
+    "results_dir":".asv/results",
+    "html_dir":".asv/html",
+    "environment_type":"conda",
+    "dvcs":"git",
+    "branches":["main"],
+    "install_command":[
+        "python -mpip install -r requirements-test.txt -r requirements-extra.txt",
+        "python -mpip install -e ."
+    ],
+    "build_command":[
+        "python -mpip install pkgconfig",
+        "python -mpip install dbg"
+    ]
+}
