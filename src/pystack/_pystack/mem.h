@@ -207,6 +207,15 @@ class CorefileRemoteMemoryManager : public AbstractRemoteMemoryManager
         ERROR,
     };
 
+    struct ElfLoadSegment
+    {
+        GElf_Addr vaddr;
+        GElf_Off offset;
+        GElf_Xword size;
+    };
+    // Cache for PT_LOAD segments
+    mutable std::unordered_map<std::string, std::vector<ElfLoadSegment>> d_elf_load_segments_cache;
+
     // Data members
     std::shared_ptr<CoreFileAnalyzer> d_analyzer;
     std::vector<VirtualMap> d_vmaps;
@@ -220,5 +229,6 @@ class CorefileRemoteMemoryManager : public AbstractRemoteMemoryManager
             remote_addr_t addr,
             const std::string** filename,
             off_t* offset_in_file) const;
+    StatusCode initLoadSegments(const std::string& filename) const;
 };
 }  // namespace pystack
