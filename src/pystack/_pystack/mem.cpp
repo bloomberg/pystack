@@ -483,13 +483,13 @@ CorefileRemoteMemoryManager::getMemoryLocationFromElf(
         cache_it = d_elf_load_segments_cache.find(**filename);
     }
 
-    // Get the load address of the elf file
+    // Get the load address of the elf file from its first segment
     remote_addr_t elf_load_addr = cache_it->second[0].vaddr;
 
     // Now relocate the address to the elf file
     remote_addr_t symbol_vaddr = addr - (shared_libs_it->start - elf_load_addr);
 
-    // Find the correct segment
+    // Find the segment containing this address
     for (const auto& segment : cache_it->second) {
         if (symbol_vaddr >= segment.vaddr && symbol_vaddr < segment.vaddr + segment.size) {
             *offset_in_file = (symbol_vaddr - segment.vaddr) + segment.offset;
