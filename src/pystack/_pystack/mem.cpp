@@ -423,7 +423,7 @@ CorefileRemoteMemoryManager::initLoadSegments(const std::string& filename) const
         return StatusCode::ERROR;
     }
 
-    Elf* elf = elf_begin(fd, ELF_C_READ, nullptr);
+    Elf* elf = elf_begin(fd, ELF_C_READ_MMAP, nullptr);
     if (!elf) {
         close(fd);
         return StatusCode::ERROR;
