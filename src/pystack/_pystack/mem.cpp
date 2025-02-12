@@ -437,7 +437,11 @@ CorefileRemoteMemoryManager::initLoadSegments(const std::string& filename) const
         for (size_t i = 0; i < phnum; i++) {
             GElf_Phdr phdr_mem;
             GElf_Phdr* phdr = gelf_getphdr(elf.get(), i, &phdr_mem);
-            if (phdr == nullptr) continue;
+            if (phdr == nullptr) {
+                LOG(WARNING) << "Failed to read program header " << i << " from " << filename.c_str()
+                             << " (" << elf_errmsg(elf_errno()) << ")";
+                continue;
+            }
 
             if (phdr->p_type == PT_LOAD) {
                 segments.push_back(
