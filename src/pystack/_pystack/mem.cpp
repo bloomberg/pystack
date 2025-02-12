@@ -498,7 +498,7 @@ CorefileRemoteMemoryManager::getMemoryLocationFromElf(
     }
 
     LOG(ERROR) << "Failed to find the correct segment for address " << std::hex << std::showbase << addr
-               << "(with vaddr offset " << symbol_vaddr << " ) "
+               << " (with vaddr offset " << symbol_vaddr << ")"
                << " in file " << **filename;
 
     return StatusCode::ERROR;
