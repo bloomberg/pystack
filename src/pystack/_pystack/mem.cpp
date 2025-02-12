@@ -483,10 +483,6 @@ CorefileRemoteMemoryManager::getMemoryLocationFromElf(
         cache_it = d_elf_load_segments_cache.find(**filename);
     }
 
-    if (cache_it->second.empty()) {
-        return StatusCode::ERROR;
-    }
-
     // Get the load address of the elf file
     remote_addr_t elf_load_addr = cache_it->second[0].vaddr;
 
