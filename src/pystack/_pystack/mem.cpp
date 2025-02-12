@@ -464,7 +464,7 @@ CorefileRemoteMemoryManager::getMemoryLocationFromElf(
         off_t* offset_in_file) const
 {
     auto shared_libs_it = std::find_if(d_shared_libs.cbegin(), d_shared_libs.cend(), [&](auto& map) {
-        return map.start <= addr && addr <= map.end;
+        return map.start <= addr && addr < map.end;
     });
 
     if (shared_libs_it == d_shared_libs.cend()) {
