@@ -124,9 +124,12 @@ def get_python_version_for_core(
 
 def is_elf(filename: pathlib.Path) -> bool:
     "Return True if the given file is an ELF file"
-    elf_header = b"\x7fELF"
-    with open(filename, "br") as thefile:
-        return thefile.read(4) == elf_header
+    try:
+        elf_header = b"\x7fELF"
+        with open(filename, "br") as thefile:
+            return thefile.read(4) == elf_header
+    except OSError:
+        return False
 
 
 def get_thread_name(pid: int, tid: int) -> Optional[str]:
