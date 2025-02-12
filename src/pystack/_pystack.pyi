@@ -24,19 +24,19 @@ class CoreFileAnalyzer:
     def missing_modules(self) -> List[str]: ...
 
 class NativeReportingMode(enum.Enum):
-    ALL: int
-    OFF: int
-    PYTHON: int
+    ALL = 1
+    OFF = 2
+    PYTHON = 3
 
 class StackMethod(enum.Enum):
-    ALL: int
-    ANONYMOUS_MAPS: int
-    AUTO: int
-    BSS: int
-    ELF_DATA: int
-    HEAP: int
-    SYMBOLS: int
-    DEBUG_OFFSETS: int
+    ALL = 1
+    ANONYMOUS_MAPS = 2
+    AUTO = 3
+    BSS = 4
+    ELF_DATA = 5
+    HEAP = 6
+    SYMBOLS = 7
+    DEBUG_OFFSETS = 8
 
 class ProcessManager: ...
 
