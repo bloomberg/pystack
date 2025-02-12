@@ -132,6 +132,7 @@ def test_reattaching_to_already_traced_process(python, tmpdir):
     [
         (sys.executable, True),
         (__file__, False),
+        ("/etc", False),
     ],
 )
 def test_elf_checker(file, expected):
