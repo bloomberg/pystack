@@ -487,7 +487,7 @@ CorefileRemoteMemoryManager::getMemoryLocationFromElf(
     remote_addr_t elf_load_addr = cache_it->second[0].vaddr;
 
     // Now relocate the address to the elf file
-    remote_addr_t symbol_vaddr = addr - (shared_libs_it->start - elf_load_addr);
+    remote_addr_t symbol_vaddr = addr - shared_libs_it->start + elf_load_addr;
 
     // Find the segment containing this address
     for (const auto& segment : cache_it->second) {
