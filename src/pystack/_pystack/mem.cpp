@@ -16,6 +16,9 @@
 
 namespace pystack {
 
+using elf_unique_ptr = std::unique_ptr<Elf, std::function<void(Elf*)>>;
+using file_unique_ptr = std::unique_ptr<FILE, std::function<int(FILE*)>>;
+
 static ssize_t
 _process_vm_readv(
         pid_t pid,
@@ -418,23 +421,22 @@ CorefileRemoteMemoryManager::getMemoryLocationFromCore(remote_addr_t addr, off_t
 CorefileRemoteMemoryManager::StatusCode
 CorefileRemoteMemoryManager::initLoadSegments(const std::string& filename) const
 {
-    int fd = open(filename.c_str(), O_RDONLY);
-    if (fd < 0) {
+    file_unique_ptr file(fopen(filename.c_str(), "r"), fclose);
+    if (!file || fileno(file.get()) == -1) {
         return StatusCode::ERROR;
     }
 
-    Elf* elf = elf_begin(fd, ELF_C_READ_MMAP, nullptr);
+    auto elf = elf_unique_ptr(elf_begin(fileno(file.get()), ELF_C_READ_MMAP, nullptr), elf_end);
     if (!elf) {
-        close(fd);
         return StatusCode::ERROR;
     }
 
     std::vector<ElfLoadSegment> segments;
     size_t phnum;
-    if (elf_getphdrnum(elf, &phnum) == 0) {
+    if (elf_getphdrnum(elf.get(), &phnum) == 0) {
         for (size_t i = 0; i < phnum; i++) {
             GElf_Phdr phdr_mem;
-            GElf_Phdr* phdr = gelf_getphdr(elf, i, &phdr_mem);
+            GElf_Phdr* phdr = gelf_getphdr(elf.get(), i, &phdr_mem);
             if (phdr == nullptr) continue;
 
             if (phdr->p_type == PT_LOAD) {
@@ -443,9 +445,6 @@ CorefileRemoteMemoryManager::initLoadSegments(const std::string& filename) const
             }
         }
     }
-
-    elf_end(elf);
-    close(fd);
 
     if (!segments.empty()) {
         d_elf_load_segments_cache[filename] = std::move(segments);
