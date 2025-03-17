@@ -66,7 +66,7 @@ jobs:
         run: |
           tar zxvf *.tar.gz --strip-components=1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v2.22.0
+        uses: pypa/cibuildwheel@v2.23.1
         env:
           CIBW_BUILD: "cp3{7..13}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto aarch64
