@@ -1,8 +1,10 @@
 #include <cassert>
+#include <cerrno>
 #include <cstring>
 #include <inttypes.h>
 #include <iomanip>
 #include <iostream>
+#include <string>
 #include <utility>
 
 #include "compat.h"
@@ -72,7 +74,8 @@ CoreFileAnalyzer::CoreFileAnalyzer(
 
     d_fd = open(d_filename.c_str(), O_RDONLY);
     if (d_fd == -1) {
-        throw ElfAnalyzerError("Failed to open ELF file " + d_filename);
+        throw ElfAnalyzerError(
+                "Failed to open ELF file '" + d_filename + "' (" + std::strerror(errno) + ")");
     }
 
     d_elf = elf_unique_ptr(elf_begin(d_fd, ELF_C_READ_MMAP, nullptr), elf_end);
