@@ -338,4 +338,82 @@ typedef struct _is
     struct _import_state imports;
 } PyInterpreterState;
 }  // namespace Python3_13
+
+namespace Python3_14 {
+
+struct _pythreadstate;
+
+typedef struct
+{
+    Python3_13::PyMutex mutex;
+    unsigned long long thread;
+    size_t level;
+} _PyRecursiveMutex;
+
+struct _import_state
+{
+    PyObject* modules;
+    PyObject* modules_by_index;
+    PyObject* importlib;
+    int override_frozen_modules;
+    int override_multi_interp_extensions_check;
+    PyObject* import_func;
+    _PyRecursiveMutex lock;
+    /* diagnostic info in PyImport_ImportModuleLevelObject() */
+    struct
+    {
+        int import_level;
+        int64_t accumulated;
+        int header;
+    } find_and_load;
+};
+
+struct _gil_runtime_state
+{
+    unsigned long interval;
+    struct _pythreadstate* last_holder;
+    int locked;
+    unsigned long switch_number;
+    pthread_cond_t cond;
+    pthread_cond_t mutex;
+#ifdef FORCE_SWITCHING
+    pthread_cond_t switch_cond;
+    pthread_cond_t switch_mutex;
+#endif
+};
+
+typedef struct _is
+{
+    struct _ceval_state ceval;
+    void* _malloced;
+    struct _is* next;
+    int64_t id;
+    Py_ssize_t id_refcount;
+    int requires_idref;
+    long _whence;
+    int _initialized;
+    int _ready;
+    int finalizing;
+    uintptr_t last_restart_version;
+    struct pythreads
+    {
+        uint64_t next_unique_id;
+        struct _pythreadstate* head;
+        struct _pythreadstate* preallocated;
+        struct _pythreadstate* main;
+        Py_ssize_t count;
+        size_t stacksize;
+    } threads;
+    void* runtime;
+    struct _pythreadstate* _finalizing;
+    unsigned long _finalizing_id;
+    struct _gc_runtime_state gc;
+    PyObject* sysdict;
+    PyObject* builtins;
+    struct _import_state imports;
+    struct _gil_runtime_state _gil;
+} PyInterpreterState;
+
+}  // namespace Python3_14
+
 }  // namespace pystack

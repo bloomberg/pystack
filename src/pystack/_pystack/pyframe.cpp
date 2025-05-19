@@ -59,6 +59,9 @@ FrameObject::getCode(
         Structure<py_frame_v>& frame)
 {
     remote_addr_t py_code_addr = frame.getField(&py_frame_v::o_code);
+    if (manager->versionIsAtLeast(3, 14)) {
+        py_code_addr = py_code_addr & (~3);
+    }
 
     LOG(DEBUG) << std::hex << std::showbase << "Attempting to construct code object from address "
                << py_code_addr;
@@ -69,8 +72,14 @@ FrameObject::getCode(
     } else {
         last_instruction = frame.getField(&py_frame_v::o_lasti);
     }
+    int32_t tlbc_index = -1;
+    if (manager->versionIsAtLeast(3, 14) && manager->isFreeThreaded()) {
+        uintptr_t tlbc_index_addr = frame.getFieldRemoteAddress(&py_frame_v::o_prev_instr)
+                                    + sizeof(last_instruction) + sizeof(Python3_14::_PyStackRef);
+        manager->copyMemoryFromProcess(tlbc_index_addr, sizeof(tlbc_index), &tlbc_index);
+    }
     try {
-        return std::make_unique<CodeObject>(manager, py_code_addr, last_instruction);
+        return std::make_unique<CodeObject>(manager, py_code_addr, last_instruction, tlbc_index);
     } catch (const RemoteMemCopyError& ex) {
         // This may not have been a code object at all, or it may have been
         // trashed by memory corruption. Either way, indicate that we failed
