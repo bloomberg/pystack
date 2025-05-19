@@ -78,7 +78,7 @@ jobs:
 
   test_attaching_to_old_interpreters:
     needs: [build_wheels]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -116,7 +116,7 @@ jobs:
 
   test_wheels:
     needs: [build_wheels]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
@@ -154,7 +154,7 @@ jobs:
 
   test_free_threading:
     needs: [build_wheels]
-    runs-on: ubuntu-20.04
+    runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
