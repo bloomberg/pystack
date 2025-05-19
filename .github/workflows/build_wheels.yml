@@ -76,13 +76,13 @@ jobs:
           name: ${{ matrix.wheel_type }}-wheels
           path: ./wheelhouse/*.whl
 
-  test_attaching_to_old_interpreters:
+  test_attaching_to_eol_interpreters:
     needs: [build_wheels]
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["2.7", "3.6"]
+        python_version: ["2.7"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -92,15 +92,14 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
-          python-version: "3.11"
+          python-version: '>=3.13'
       - name: Set up dependencies
         run: |
           sudo add-apt-repository ppa:deadsnakes/ppa
           sudo apt-get update
           sudo apt-get install -qy \
             gdb \
-            python2.7-dev python2.7-dbg \
-            python3.6-dev python3.6-dbg python3.6-distutils
+            python2.7-dev python2.7-dbg
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
