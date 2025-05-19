@@ -126,4 +126,30 @@ typedef struct _interpreter_frame
 
 }  // namespace Python3_12
 
+namespace Python3_14 {
+
+typedef union _PyStackRef {
+    uintptr_t bits;
+} _PyStackRef;
+
+typedef struct _interpreter_frame
+{
+    _PyStackRef f_executable;
+    void* previous;
+    void* f_funcobj;
+    PyObject* f_globals;
+    PyObject* f_builtins;
+    PyObject* f_locals;
+    PyObject* frame_obj;
+    _Py_CODEUNIT* instr_ptr;
+    _PyStackRef stackpointer;
+    /* int32_t tlbc_index; */
+    uint16_t return_offset;
+    char owner;
+    uint8_t visited;
+    void* localsplus[1];
+} PyFrameObject;
+
+}  // namespace Python3_14
+
 }  // namespace pystack
