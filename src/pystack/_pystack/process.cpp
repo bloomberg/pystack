@@ -706,12 +706,14 @@ AbstractProcessManager::setPythonVersionFromDebugOffsets()
                       << " identify the version as " << parsed;
             setPythonVersion(std::make_pair(parsed.major, parsed.minor));
             Structure<py_runtime_v> py_runtime(shared_from_this(), pyruntime_addr);
+            bool is_free_threaded = py_runtime.getField(&py_runtime_v::o_dbg_off_free_threaded);
             std::unique_ptr<python_v> offsets = loadDebugOffsets(py_runtime);
             if (offsets) {
                 LOG(INFO) << "_Py_DebugOffsets appear to be valid and will be used";
                 warnIfOffsetsAreMismatched(pyruntime_addr);
                 d_debug_offsets_addr = pyruntime_addr;
                 d_debug_offsets = std::move(offsets);
+                d_is_free_threaded = is_free_threaded;
                 return;
             }
         }
@@ -1277,6 +1279,12 @@ bool
 AbstractProcessManager::versionIsAtLeast(int required_major, int required_minor) const
 {
     return d_major > required_major || (d_major == required_major && d_minor >= required_minor);
+}
+
+bool
+AbstractProcessManager::isFreeThreaded() const
+{
+    return d_is_free_threaded;
 }
 
 const python_v&
