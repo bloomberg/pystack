@@ -1342,7 +1342,7 @@ def test_traceback_formatter_position_infomation():
     colored_mock.assert_any_call("(1+1)", color="blue")
 
 
-def test_shim_frames_are_ingored():
+def test_shim_frames_are_ignored():
     # GIVEN
 
     codes = [
