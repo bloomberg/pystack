@@ -46,7 +46,7 @@ underlines = "-~"
 build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*"]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-i686-image = "manylinux2014"
-musllinux-x86_64-image = "musllinux_1_1"
+musllinux-x86_64-image = "musllinux_1_2"
 skip = "*-musllinux_aarch64"
 
 [tool.cibuildwheel.linux]
@@ -70,34 +70,23 @@ before-all = [
   # dependency of elfutils.
   "apk del gettext-dev glib-dev",
 
-  # Build musl-fts from source. This is a build dependency of elfutils, but
-  # isn't in the Alpine repos of the musllinux_1_1 image. The build steps come
-  # from https://git.alpinelinux.org/aports/tree/main/musl-fts/APKBUILD
-  # Setting PATH before calling boostrap.sh fixes an automake failure. I think
-  # the failure may be caused by a different pkg-config in /usr/local/bin.
-  "cd /",
-  "apk add --update automake autoconf libtool",
-  "VERS=1.2.7",
-  "curl -L https://github.com/void-linux/musl-fts/archive/refs/tags/v$VERS.tar.gz > ./musl-fts.tar.gz",
-  "tar -xf musl-fts.tar.gz",
-  "cd musl-fts-$VERS",
-  "PATH=/usr/bin:/bin ./bootstrap.sh",
-  "CFLAGS=-fPIC ./configure --prefix=/usr",
-  "make install",
-
   # Build the latest elfutils from source. The build steps come from
   # https://git.alpinelinux.org/aports/tree/main/elfutils, and the need to
   # set the FNM_EXTMATCH macro to get the build to succeed is seen here:
   # https://git.alpinelinux.org/aports/tree/main/elfutils/musl-macros.patch
   "cd /",
-  "apk add --update argp-standalone bison bsd-compat-headers bzip2-dev flex-dev libtool linux-headers musl-libintl musl-obstack-dev xz-dev zlib-dev zstd-dev",
+  "apk add --update argp-standalone bison bsd-compat-headers bzip2-dev flex-dev libtool linux-headers musl-fts-dev musl-libintl musl-obstack-dev xz-dev zlib-dev zstd-dev",
   "VERS=0.189",
   "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
   "tar -xf elfutils.tar.bz2",
   "cd elfutils-$VERS",
   "patch libdwfl/dwfl_segment_report_module.c < {package}/build_scripts/elfutils_contiguous_segments.diff",
   "CFLAGS='-w -DFNM_EXTMATCH=0' ./configure --prefix=/usr --disable-nls --disable-libdebuginfod --disable-debuginfod --with-zstd",
-  "make install"
+  "make install",
+
+  # Reinstall libintl, as the Python interpreter requires it
+  "apk del musl-libintl",
+  "apk add libintl",
 ]
 
 [tool.coverage.run]
