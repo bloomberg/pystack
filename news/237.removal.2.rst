@@ -1,0 +1,1 @@
+We no longer provide Python 3.7 wheels. Python 3.7 has been end-of-life since June 2023.
