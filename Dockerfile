@@ -1,7 +1,7 @@
 # Stage 1: Elfutils build stage
 FROM ubuntu:22.04 AS elfutils_builder
 ARG DEBIAN_FRONTEND=noninteractive
-ENV VERS=0.189
+ENV VERS=0.193
 
 # Install elfutils build dependencies
 RUN apt-get update \
@@ -31,7 +31,7 @@ RUN apt-get update \
     && cd /elfutils \
     && curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2 \
     && tar -xf elfutils.tar.bz2 --strip-components 1 \
-    && CFLAGS='-w' ./configure --prefix=/usr/local --disable-nls --disable-debuginfod --enable-libdebuginfod=dummy --with-zstd \
+    && CFLAGS='-Wno-error -g -O3' CXXFLAGS='-Wno-error -g -O3' ./configure --disable-nls --enable-libdebuginfod=dummy --disable-debuginfod --with-zstd \
     && make install
 
 # Stage 2: Final stage
