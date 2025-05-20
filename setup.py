@@ -64,6 +64,11 @@ except pkgconfig.PackageNotFoundError as e:
     print("Package Not Found", e)
     print("Falling back to static flags.")
 
+if "define_macros" not in library_flags:
+    library_flags["define_macros"] = []
+
+library_flags["define_macros"].extend(DEFINE_MACROS)
+
 PYSTACK_EXTENSION = setuptools.Extension(
     name="pystack._pystack",
     sources=[
@@ -83,7 +88,6 @@ PYSTACK_EXTENSION = setuptools.Extension(
     language="c++",
     extra_compile_args=["-std=c++17"],
     extra_link_args=["-std=c++17"],
-    define_macros=DEFINE_MACROS,
     **library_flags,
 )
 
