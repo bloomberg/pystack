@@ -68,7 +68,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.0.0b1
         env:
-          CIBW_BUILD: "cp3{7..13}-${{ matrix.wheel_type }}"
+          CIBW_BUILD: "cp3{8..13}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto aarch64
           CIBW_ENABLE: cpython-prerelease
       - uses: actions/upload-artifact@v4
@@ -82,7 +82,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["2.7"]
+        python_version: ["2.7", "3.7"]
     steps:
       - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
@@ -99,7 +99,10 @@ jobs:
           sudo apt-get update
           sudo apt-get install -qy \
             gdb \
-            python2.7-dev python2.7-dbg
+            python${{ matrix.python_version }}-dev \
+            python${{ matrix.python_version }}-dbg
+          sudo apt-get install -qy \
+            python${{ matrix.python_version }}-distutils || true
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
@@ -119,7 +122,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.7", "3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
+        python_version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13"]
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
