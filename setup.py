@@ -127,7 +127,13 @@ setuptools.setup(
         compiler_directives=COMPILER_DIRECTIVES,
     ),
     install_requires=install_requires,
-    include_package_data=True,
+    include_package_data=False,
+    package_data={
+        "pystack": [
+            "pystack/*.pyi",
+            "pystack/*.typed",
+        ]
+    },
     entry_points={
         "console_scripts": ["pystack=pystack.__main__:main"],
     },
