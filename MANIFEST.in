@@ -14,7 +14,6 @@ include README.md
 include src/pystack/py.typed
 include .bumpversion.cfg
 include .pre-commit-config.yaml
-include build_scripts/elfutils_contiguous_segments.diff
 
 recursive-include src/pystack/_pystack *
 recursive-include src/pystack *.py
