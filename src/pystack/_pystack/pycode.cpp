@@ -106,7 +106,8 @@ getLocationInfo(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         remote_addr_t code_addr,
         Structure<py_code_v>& code,
-        uintptr_t last_instruction_index)
+        uintptr_t last_instruction_index,
+        int tlbc_index)
 {
     int code_lineno = code.getField(&py_code_v::o_firstlineno);
     remote_addr_t lnotab_addr = code.getField(&py_code_v::o_lnotab);
@@ -120,7 +121,31 @@ getLocationInfo(
 
     // Check out https://github.com/python/cpython/blob/main/Objects/lnotab_notes.txt for the format of
     // the lnotab table in different versions of the interpreter.
-    if (manager->versionIsAtLeast(3, 11)) {
+    if (manager->versionIsAtLeast(3, 14) && manager->isFreeThreaded()) {
+        uintptr_t code_adaptive = code.getFieldRemoteAddress(&py_code_v::o_code_adaptive);
+        uintptr_t tlbc_entries_addr = code_adaptive - sizeof(void*);
+        uintptr_t tlbc_entries;
+        manager->copyMemoryFromProcess(tlbc_entries_addr, sizeof(tlbc_entries), &tlbc_entries);
+        Py_ssize_t tlbc_size;
+        manager->copyMemoryFromProcess(tlbc_entries, sizeof(tlbc_size), &tlbc_size);
+        std::vector<uintptr_t> vec(tlbc_size);
+        manager->copyMemoryFromProcess(
+                tlbc_entries + sizeof(tlbc_size),
+                tlbc_size * sizeof(uintptr_t),
+                vec.data());
+        uintptr_t code_adaptive_actual = vec[tlbc_index];
+        ptrdiff_t addrq =
+                (reinterpret_cast<uint16_t*>(last_instruction_index)
+                 - reinterpret_cast<uint16_t*>(code_adaptive_actual));
+        LocationInfo posinfo;
+        bool ret = parse_linetable(addrq, lnotab, code_lineno, &posinfo);
+        if (ret) {
+            location_info.lineno = posinfo.lineno;
+            location_info.end_lineno = posinfo.end_lineno;
+            location_info.column = posinfo.column;
+            location_info.end_column = posinfo.end_column;
+        }
+    } else if (manager->versionIsAtLeast(3, 11)) {
         uintptr_t code_adaptive = code.getFieldRemoteAddress(&py_code_v::o_code_adaptive);
         ptrdiff_t addrq =
                 (reinterpret_cast<uint16_t*>(last_instruction_index)
@@ -165,7 +190,8 @@ getLocationInfo(
 CodeObject::CodeObject(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         remote_addr_t addr,
-        uintptr_t lasti)
+        uintptr_t lasti,
+        int tlbc_index)
 {
     LOG(DEBUG) << std::hex << std::showbase << "Copying code struct from address " << addr;
     Structure<py_code_v> code(manager, addr);
@@ -183,7 +209,7 @@ CodeObject::CodeObject(
     LOG(DEBUG) << "Code object scope: " << d_filename;
 
     LOG(DEBUG) << "Obtaining location info location";
-    d_location_info = getLocationInfo(manager, addr, code, lasti);
+    d_location_info = getLocationInfo(manager, addr, code, lasti, tlbc_index);
     LOG(DEBUG) << "Code object location info: line_range=(" << d_location_info.lineno << ", "
                << d_location_info.end_lineno << ") column_range=(" << d_location_info.column << ", "
                << d_location_info.end_column << ")";
