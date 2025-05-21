@@ -207,7 +207,9 @@ def test_process_remote_default():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
 def test_process_remote_no_block():
@@ -238,13 +240,23 @@ def test_process_remote_no_block():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
-def test_process_remote_native():
+@pytest.mark.parametrize(
+    "argument, mode",
+    [
+        ["--native", NativeReportingMode.PYTHON],
+        ["--native-all", NativeReportingMode.ALL],
+        ["--native-last", NativeReportingMode.LAST],
+    ],
+)
+def test_process_remote_native(argument, mode):
     # GIVEN
 
-    argv = ["pystack", "remote", "31", "--native"]
+    argv = ["pystack", "remote", "31", argument]
 
     threads = [Mock(), Mock(), Mock()]
 
@@ -265,11 +277,44 @@ def test_process_remote_native():
     get_process_threads_mock.assert_called_with(
         31,
         stop_process=True,
-        native_mode=NativeReportingMode.PYTHON,
+        native_mode=mode,
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, True) for thread in threads]
+    assert print_thread_mock.mock_calls == [call(thread, mode) for thread in threads]
+
+
+def test_process_remote_native_last():
+    # GIVEN
+
+    argv = ["pystack", "remote", "31", "--native-last"]
+
+    threads = [Mock(), Mock(), Mock()]
+
+    # WHEN
+
+    with patch(
+        "pystack.__main__.get_process_threads"
+    ) as get_process_threads_mock, patch(
+        "pystack.__main__.print_thread"
+    ) as print_thread_mock, patch(
+        "sys.argv", argv
+    ):
+        get_process_threads_mock.return_value = threads
+        main()
+
+    # THEN
+
+    get_process_threads_mock.assert_called_with(
+        31,
+        stop_process=True,
+        native_mode=NativeReportingMode.LAST,
+        locals=False,
+        method=StackMethod.AUTO,
+    )
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.LAST) for thread in threads
+    ]
 
 
 def test_process_remote_locals():
@@ -300,7 +345,9 @@ def test_process_remote_locals():
         locals=True,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
 def test_process_remote_native_no_block(capsys):
@@ -357,7 +404,9 @@ def test_process_remote_exhaustive():
         locals=False,
         method=StackMethod.ALL,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
 @pytest.mark.parametrize(
@@ -432,7 +481,9 @@ def test_process_core_default_without_executable():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
 def test_process_core_default_gzip_without_executable():
@@ -486,7 +537,9 @@ def test_process_core_default_gzip_without_executable():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
     gzip_open_mock.assert_called_with(Path("corefile.gz"), "rb")
 
 
@@ -580,7 +633,9 @@ def test_process_core_default_with_executable():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
 @pytest.mark.parametrize(
@@ -588,6 +643,7 @@ def test_process_core_default_with_executable():
     [
         ["--native", NativeReportingMode.PYTHON],
         ["--native-all", NativeReportingMode.ALL],
+        ["--native-last", NativeReportingMode.LAST],
     ],
 )
 def test_process_core_native(argument, mode):
@@ -627,7 +683,49 @@ def test_process_core_native(argument, mode):
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, True) for thread in threads]
+    assert print_thread_mock.mock_calls == [call(thread, mode) for thread in threads]
+
+
+def test_process_core_native_last():
+    # GIVEN
+
+    argv = ["pystack", "core", "corefile", "executable", "--native-last"]
+
+    threads = [Mock(), Mock(), Mock()]
+
+    # WHEN
+
+    with patch(
+        "pystack.__main__.get_process_threads_for_core"
+    ) as get_process_threads_mock, patch(
+        "pystack.__main__.print_thread"
+    ) as print_thread_mock, patch(
+        "sys.argv", argv
+    ), patch(
+        "pathlib.Path.exists", return_value=True
+    ), patch(
+        "pystack.__main__.CoreFileAnalyzer"
+    ), patch(
+        "pystack.__main__.is_elf", return_value=True
+    ), patch(
+        "pystack.__main__.is_gzip", return_value=False
+    ):
+        get_process_threads_mock.return_value = threads
+        main()
+
+    # THEN
+
+    get_process_threads_mock.assert_called_with(
+        Path("corefile"),
+        Path("executable"),
+        library_search_path="",
+        native_mode=NativeReportingMode.LAST,
+        locals=False,
+        method=StackMethod.AUTO,
+    )
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.LAST) for thread in threads
+    ]
 
 
 def test_process_core_locals():
@@ -667,7 +765,9 @@ def test_process_core_locals():
         locals=True,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
 def test_process_core_with_search_path():
@@ -714,7 +814,9 @@ def test_process_core_with_search_path():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
 def test_process_core_with_search_root():
@@ -762,7 +864,9 @@ def test_process_core_with_search_root():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
 def test_process_core_with_not_readable_search_root():
@@ -947,7 +1051,9 @@ def test_process_core_exhaustive():
         locals=False,
         method=StackMethod.ALL,
     )
-    assert print_thread_mock.mock_calls == [call(thread, False) for thread in threads]
+    assert print_thread_mock.mock_calls == [
+        call(thread, NativeReportingMode.OFF) for thread in threads
+    ]
 
 
 def test_default_colored_output():
