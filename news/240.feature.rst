@@ -1,0 +1,1 @@
+Support kernels that don't have CONFIG_CROSS_MEMORY_ATTACH set.
