@@ -229,6 +229,16 @@ ProcessMemoryManager::ProcessMemoryManager(pid_t pid)
 ssize_t
 ProcessMemoryManager::readChunk(remote_addr_t addr, size_t len, char* dst) const
 {
+    if (d_memfile.is_open()) {
+        return readChunkThroughMemFile(addr, len, dst);
+    } else {
+        return readChunkDirect(addr, len, dst);
+    }
+}
+
+ssize_t
+ProcessMemoryManager::readChunkDirect(remote_addr_t addr, size_t len, char* dst) const
+{
     struct iovec local[1];
     struct iovec remote[1];
     ssize_t result = 0;
@@ -246,6 +256,9 @@ ProcessMemoryManager::readChunk(remote_addr_t addr, size_t len, char* dst) const
                 throw InvalidRemoteAddress();
             } else if (errno == EPERM) {
                 throw std::runtime_error(PERM_MESSAGE);
+            } else if (errno == ENOSYS) {
+                LOG(DEBUG) << "process_vm_readv not compiled in kernel, falling back to /proc/PID/mem";
+                return readChunkThroughMemFile(addr, len, dst);
             }
             throw std::system_error(errno, std::generic_category());
         }
@@ -254,6 +267,30 @@ ProcessMemoryManager::readChunk(remote_addr_t addr, size_t len, char* dst) const
     } while ((size_t)read != local[0].iov_len);
 
     return result;
+}
+
+ssize_t
+ProcessMemoryManager::readChunkThroughMemFile(remote_addr_t addr, size_t len, char* dst) const
+{
+    if (!d_memfile.is_open()) {
+        std::string filepath = "/proc/" + std::to_string(d_pid) + "/mem";
+        d_memfile.open(filepath, std::ifstream::binary);
+        if (!d_memfile) {
+            LOG(ERROR) << "Failed to open file " << filepath;
+            if (-1 == open(filepath.c_str(), O_RDONLY)) {
+                if (errno == EPERM || errno == EACCES) {
+                    throw std::runtime_error(PERM_MESSAGE);
+                }
+                throw std::system_error(errno, std::generic_category());
+            }
+            throw std::runtime_error("Failed to open " + filepath);
+        }
+    }
+    d_memfile.seekg(addr);
+    if (!d_memfile.read((char*)dst, len)) {
+        throw InvalidRemoteAddress();
+    }
+    return d_memfile.gcount();
 }
 
 ssize_t
