@@ -455,6 +455,8 @@ typedef struct _Py_DebugOffsets
         uint64_t gil_runtime_state_enabled;
         uint64_t gil_runtime_state_locked;
         uint64_t gil_runtime_state_holder;
+        uint64_t code_object_generation;
+        uint64_t tlbc_generation;
     } interpreter_state;
 
     // Thread state offset;
@@ -596,6 +598,12 @@ typedef struct _Py_DebugOffsets
         uint64_t gi_iframe;
         uint64_t gi_frame_state;
     } gen_object;
+
+    struct _llist_node
+    {
+        uint64_t next;
+        uint64_t prev;
+    } llist_node;
 
     struct _debugger_support
     {
