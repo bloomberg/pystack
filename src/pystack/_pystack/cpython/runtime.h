@@ -304,6 +304,7 @@ typedef struct _Py_DebugOffsets
         uint64_t instr_ptr;
         uint64_t localsplus;
         uint64_t owner;
+        uint64_t tlbc_index;
     } interpreter_frame;
 
     // Code object offset;
@@ -319,6 +320,7 @@ typedef struct _Py_DebugOffsets
         uint64_t localsplusnames;
         uint64_t localspluskinds;
         uint64_t co_code_adaptive;
+        uint64_t co_tlbc;
     } code_object;
 
     // PyObject offset;

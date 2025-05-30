@@ -60,7 +60,7 @@ FrameObject::getCode(
 {
     remote_addr_t py_code_addr = frame.getField(&py_frame_v::o_code);
     if (manager->versionIsAtLeast(3, 14)) {
-        py_code_addr = py_code_addr & (~1);
+        py_code_addr = py_code_addr & (~3);
     }
 
     LOG(DEBUG) << std::hex << std::showbase << "Attempting to construct code object from address "
