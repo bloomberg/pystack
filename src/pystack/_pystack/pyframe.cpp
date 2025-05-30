@@ -134,6 +134,12 @@ FrameObject::resolveLocalVariables()
             return;
         }
 
+        if (d_manager->versionIsAtLeast(3, 14)) {
+            // In Python 3.14, the local variable is a PyStackRef: a pointer
+            // with extra flags set in its low bits. Ignore the flags.
+            addr = addr & (~3);
+        }
+
         std::string key = d_code->Varnames()[index];
 
         LOG(DEBUG) << "Copying local variable at address " << std::hex << std::showbase << addr;
