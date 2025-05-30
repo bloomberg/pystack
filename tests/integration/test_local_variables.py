@@ -578,25 +578,27 @@ class ListObject(ctypes.Structure):
         ("ob_item", ctypes.c_void_p),
     ]
 
-class TupleObject(ctypes.Structure):
-    _fields_ = [
-        ("ob_type", ctypes.c_void_p),
-        ("ob_size", ctypes.c_ssize_t),
-    ]
-
-class TupleItems(ctypes.Structure):
-    _fields_ = [
-        ("ob_item0", ctypes.c_void_p),
-        ("ob_item1", ctypes.c_void_p),
-    ]
+if sys.version_info >= (3, 14):
+    class TupleObject(ctypes.Structure):
+        _fields_ = [
+            ("ob_type", ctypes.c_void_p),
+            ("ob_size", ctypes.c_ssize_t),
+            ("ob_hash", ctypes.c_ssize_t),
+            ("ob_item0", ctypes.c_void_p),
+            ("ob_item1", ctypes.c_void_p),
+        ]
+else:
+    class TupleObject(ctypes.Structure):
+        _fields_ = [
+            ("ob_type", ctypes.c_void_p),
+            ("ob_size", ctypes.c_ssize_t),
+            ("ob_item0", ctypes.c_void_p),
+            ("ob_item1", ctypes.c_void_p),
+        ]
 
 def ob_type_field(obj):
     # Assume ob_type is the last field of PyObject
     return id(obj) + sys.getsizeof(None) - ctypes.sizeof(ctypes.c_void_p)
-
-def tuple_ob_items_field(tup):
-    assert isinstance(tup, tuple)
-    return id(tup) + sys.getsizeof(()) - sys.getsizeof(None)
 
 def main():
     bad_type = (1, 2, 3)
@@ -605,8 +607,8 @@ def main():
     bad_list = [0, 1, 2]
 
     TupleObject.from_address(ob_type_field(bad_type)).ob_type = 0xded
-    TupleItems.from_address(tuple_ob_items_field(bad_elem)).ob_item1 = 0xbad
-    TupleItems.from_address(tuple_ob_items_field(nullelem)).ob_item1 = 0x0
+    TupleObject.from_address(ob_type_field(bad_elem)).ob_item1 = 0xbad
+    TupleObject.from_address(ob_type_field(nullelem)).ob_item1 = 0x0
     ListObject.from_address(ob_type_field(bad_list)).ob_item = 0x0
 
     fifo = sys.argv[1]
