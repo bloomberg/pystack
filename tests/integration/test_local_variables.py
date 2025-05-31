@@ -578,13 +578,23 @@ class ListObject(ctypes.Structure):
         ("ob_item", ctypes.c_void_p),
     ]
 
-class TupleObject(ctypes.Structure):
-    _fields_ = [
-        ("ob_type", ctypes.c_void_p),
-        ("ob_size", ctypes.c_ssize_t),
-        ("ob_item0", ctypes.c_void_p),
-        ("ob_item1", ctypes.c_void_p),
-    ]
+if sys.version_info >= (3, 14):
+    class TupleObject(ctypes.Structure):
+        _fields_ = [
+            ("ob_type", ctypes.c_void_p),
+            ("ob_size", ctypes.c_ssize_t),
+            ("ob_hash", ctypes.c_ssize_t),
+            ("ob_item0", ctypes.c_void_p),
+            ("ob_item1", ctypes.c_void_p),
+        ]
+else:
+    class TupleObject(ctypes.Structure):
+        _fields_ = [
+            ("ob_type", ctypes.c_void_p),
+            ("ob_size", ctypes.c_ssize_t),
+            ("ob_item0", ctypes.c_void_p),
+            ("ob_item1", ctypes.c_void_p),
+        ]
 
 def ob_type_field(obj):
     # Assume ob_type is the last field of PyObject
