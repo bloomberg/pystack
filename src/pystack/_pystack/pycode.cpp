@@ -133,6 +133,7 @@ getLocationInfo(
                 tlbc_entries + sizeof(tlbc_size),
                 tlbc_size * sizeof(uintptr_t),
                 vec.data());
+        LOG(DEBUG) << "tlbc_index=" << tlbc_index << " tlbc_size=" << tlbc_size;
         uintptr_t code_adaptive_actual = vec[tlbc_index];
         ptrdiff_t addrq =
                 (reinterpret_cast<uint16_t*>(last_instruction_index)
