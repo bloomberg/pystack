@@ -29,9 +29,9 @@ FrameObject::FrameObject(
     if (d_is_shim) {
         LOG(DEBUG) << "Skipping over a shim frame inserted by the interpreter";
         next_frame_no = frame_no;
+    } else {
+        d_code = getCode(manager, frame);
     }
-
-    d_code = getCode(manager, frame);
 
     auto prev_addr = frame.getField(&py_frame_v::o_back);
     LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << prev_addr;
