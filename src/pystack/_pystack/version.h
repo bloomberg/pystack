@@ -77,7 +77,7 @@ struct py_bytes_v
 struct py_unicode_v
 {
     ssize_t size;
-    FieldOffset<Python3::_PyUnicode_State> o_state;
+    FieldOffset<AnyPyUnicodeState> o_state;
     FieldOffset<Py_ssize_t> o_length;
     FieldOffset<remote_addr_t> o_ascii;
 };

@@ -540,9 +540,15 @@ AbstractProcessManager::getStringFromAddress(remote_addr_t addr) const
                    << addr;
         Structure<py_unicode_v> unicode(shared_from_this(), addr);
 
-        Python3::_PyUnicode_State state = unicode.getField(&py_unicode_v::o_state);
-        if (state.kind != 1 || state.compact != 1) {
-            throw InvalidRemoteObject();
+        AnyPyUnicodeState state = unicode.getField(&py_unicode_v::o_state);
+        if (versionIsAtLeast(3, 14) and isFreeThreaded()) {
+            if (state.python3_14t.kind != 1 || state.python3_14t.compact != 1) {
+                throw InvalidRemoteObject();
+            }
+        } else {
+            if (state.python3.kind != 1 || state.python3.compact != 1) {
+                throw InvalidRemoteObject();
+            }
         }
 
         len = unicode.getField(&py_unicode_v::o_length);
