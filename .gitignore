@@ -165,3 +165,8 @@ dmypy.json
 
 # Cython debug symbols
 cython_debug/
+
+# Benchmarks created my asv
+pystack/**
+.asv/**
+.vscode/**
