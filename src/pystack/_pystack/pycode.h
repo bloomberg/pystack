@@ -26,7 +26,8 @@ class CodeObject
     CodeObject(
             const std::shared_ptr<const AbstractProcessManager>& manager,
             remote_addr_t addr,
-            uintptr_t lastli);
+            uintptr_t lastli,
+            int tlbc_index);
     CodeObject(std::string filename, std::string scope, LocationInfo location_info);
 
     // Getters
