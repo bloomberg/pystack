@@ -228,7 +228,7 @@ ProcessMemoryManager::ProcessMemoryManager(pid_t pid)
 ssize_t
 ProcessMemoryManager::readChunk(remote_addr_t addr, size_t len, char* dst) const
 {
-    if (d_memfile) {
+    if (d_memfile || getenv("_PYSTACK_NO_PROCESS_VM_READV") != nullptr) {
         return readChunkThroughMemFile(addr, len, dst);
     } else {
         return readChunkDirect(addr, len, dst);
