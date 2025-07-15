@@ -284,39 +284,6 @@ def test_process_remote_native(argument, mode):
     assert print_thread_mock.mock_calls == [call(thread, mode) for thread in threads]
 
 
-def test_process_remote_native_last():
-    # GIVEN
-
-    argv = ["pystack", "remote", "31", "--native-last"]
-
-    threads = [Mock(), Mock(), Mock()]
-
-    # WHEN
-
-    with patch(
-        "pystack.__main__.get_process_threads"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ):
-        get_process_threads_mock.return_value = threads
-        main()
-
-    # THEN
-
-    get_process_threads_mock.assert_called_with(
-        31,
-        stop_process=True,
-        native_mode=NativeReportingMode.LAST,
-        locals=False,
-        method=StackMethod.AUTO,
-    )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.LAST) for thread in threads
-    ]
-
-
 def test_process_remote_locals():
     # GIVEN
 
@@ -684,48 +651,6 @@ def test_process_core_native(argument, mode):
         method=StackMethod.AUTO,
     )
     assert print_thread_mock.mock_calls == [call(thread, mode) for thread in threads]
-
-
-def test_process_core_native_last():
-    # GIVEN
-
-    argv = ["pystack", "core", "corefile", "executable", "--native-last"]
-
-    threads = [Mock(), Mock(), Mock()]
-
-    # WHEN
-
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
-    ):
-        get_process_threads_mock.return_value = threads
-        main()
-
-    # THEN
-
-    get_process_threads_mock.assert_called_with(
-        Path("corefile"),
-        Path("executable"),
-        library_search_path="",
-        native_mode=NativeReportingMode.LAST,
-        locals=False,
-        method=StackMethod.AUTO,
-    )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.LAST) for thread in threads
-    ]
 
 
 def test_process_core_locals():
