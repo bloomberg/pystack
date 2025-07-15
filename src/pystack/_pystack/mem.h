@@ -12,9 +12,11 @@
 #include <sys/stat.h>
 #include <vector>
 
-#include <elf_common.h>
+#include "elf_common.h"
 
 namespace pystack {
+
+using file_unique_ptr = std::unique_ptr<FILE, std::function<int(FILE*)>>;
 typedef uintptr_t remote_addr_t;
 
 struct RemoteMemCopyError : public std::exception
@@ -174,9 +176,12 @@ class ProcessMemoryManager : public AbstractRemoteMemoryManager
     pid_t d_pid;
     std::vector<VirtualMap> d_vmaps;
     mutable LRUCache d_lru_cache;
+    mutable file_unique_ptr d_memfile;
 
     // Methods
     ssize_t readChunk(remote_addr_t addr, size_t len, char* dst) const;
+    ssize_t readChunkDirect(remote_addr_t addr, size_t len, char* dst) const;
+    ssize_t readChunkThroughMemFile(remote_addr_t addr, size_t len, char* dst) const;
 };
 
 struct SimpleVirtualMap
