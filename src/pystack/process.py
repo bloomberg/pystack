@@ -24,7 +24,7 @@ LIBPYTHON_REGEXP = re.compile(
 # or "3.13.0+ experimental free-threading build (Python)"
 BSS_VERSION_REGEXP = re.compile(
     rb"((2|3)\.(\d+)\.(\d{1,2}))((a|b|c|rc)\d{1,2})?\+?"
-    rb"(?: experimental free-threading build)? (\(.{1,64}\))"
+    rb"(?: (?:experimental )?free-threading build)? (\(.{1,64}\))"
 )
 
 LOGGER = logging.getLogger(__file__)
