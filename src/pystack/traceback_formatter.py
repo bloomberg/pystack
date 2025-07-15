@@ -4,6 +4,7 @@ from typing import Iterable
 from typing import Optional
 
 from .colors import colored
+from .engine import NativeReportingMode
 from .types import NativeFrame
 from .types import PyCodeObject
 from .types import PyFrame
@@ -11,8 +12,8 @@ from .types import PyThread
 from .types import frame_type
 
 
-def print_thread(thread: PyThread, native: bool) -> None:
-    for line in format_thread(thread, native):
+def print_thread(thread: PyThread, native_mode: NativeReportingMode) -> None:
+    for line in format_thread(thread, native_mode):
         print(line, file=sys.stdout, flush=True)
 
 
@@ -62,7 +63,8 @@ def _are_the_stacks_mergeable(thread: PyThread) -> bool:
     return n_eval_frames == n_entry_frames
 
 
-def format_thread(thread: PyThread, native: bool) -> Iterable[str]:
+def format_thread(thread: PyThread, native_mode: NativeReportingMode) -> Iterable[str]:
+    native = native_mode != NativeReportingMode.OFF
     current_frame: Optional[PyFrame] = thread.first_frame
     if current_frame is None and not native:
         yield f"The frame stack for thread {thread.tid} is empty"
@@ -82,16 +84,22 @@ def format_thread(thread: PyThread, native: bool) -> Iterable[str]:
                 yield from format_frame(current_frame)
             current_frame = current_frame.next
     else:
-        yield from _format_merged_stacks(thread, current_frame)
+        yield from _format_merged_stacks(
+            thread, current_frame, native_mode == NativeReportingMode.LAST
+        )
     yield ""
 
 
 def _format_merged_stacks(
-    thread: PyThread, current_frame: Optional[PyFrame]
+    thread: PyThread,
+    current_frame: Optional[PyFrame],
+    native_last: bool = False,
 ) -> Iterable[str]:
+    c_frames_list: list[str] = []
     for frame in thread.native_frames:
         if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL:
             assert current_frame is not None
+            c_frames_list = []
             yield from format_frame(current_frame)
             current_frame = current_frame.next
             while current_frame and not current_frame.is_entry:
@@ -102,12 +110,18 @@ def _format_merged_stacks(
             continue
         elif frame_type(frame, thread.python_version) == NativeFrame.FrameType.OTHER:
             function = colored(frame.symbol, "yellow")
-            yield (
+            formatted_c_frame = (
                 f'    {colored("(C)", "blue")} File "{frame.path}",'
                 f" line {frame.linenumber},"
                 f" in {function} ({colored(frame.library, attrs=['faint'])})"
             )
+            if native_last:
+                c_frames_list.append(formatted_c_frame)
+            else:
+                yield formatted_c_frame
         else:  # pragma: no cover
             raise ValueError(
                 f"Invalid frame type: {frame_type(frame, thread.python_version)}"
             )
+    for c_frame in c_frames_list:
+        yield c_frame
