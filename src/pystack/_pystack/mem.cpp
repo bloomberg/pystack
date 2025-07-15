@@ -17,7 +17,6 @@
 namespace pystack {
 
 using elf_unique_ptr = std::unique_ptr<Elf, std::function<void(Elf*)>>;
-using file_unique_ptr = std::unique_ptr<FILE, std::function<int(FILE*)>>;
 
 static ssize_t
 _process_vm_readv(
@@ -229,7 +228,7 @@ ProcessMemoryManager::ProcessMemoryManager(pid_t pid)
 ssize_t
 ProcessMemoryManager::readChunk(remote_addr_t addr, size_t len, char* dst) const
 {
-    if (d_memfile.is_open()) {
+    if (d_memfile) {
         return readChunkThroughMemFile(addr, len, dst);
     } else {
         return readChunkDirect(addr, len, dst);
@@ -272,25 +271,25 @@ ProcessMemoryManager::readChunkDirect(remote_addr_t addr, size_t len, char* dst)
 ssize_t
 ProcessMemoryManager::readChunkThroughMemFile(remote_addr_t addr, size_t len, char* dst) const
 {
-    if (!d_memfile.is_open()) {
+    if (!d_memfile) {
         std::string filepath = "/proc/" + std::to_string(d_pid) + "/mem";
-        d_memfile.open(filepath, std::ifstream::binary);
+        d_memfile = file_unique_ptr(fopen(filepath.c_str(), "r"), fclose);
         if (!d_memfile) {
-            LOG(ERROR) << "Failed to open file " << filepath;
-            if (-1 == open(filepath.c_str(), O_RDONLY)) {
-                if (errno == EPERM || errno == EACCES) {
-                    throw std::runtime_error(PERM_MESSAGE);
-                }
-                throw std::system_error(errno, std::generic_category());
+            if (errno == EPERM || errno == EACCES) {
+                LOG(ERROR) << "Permission denied opening file " << filepath;
+                throw std::runtime_error(PERM_MESSAGE);
             }
+            LOG(ERROR) << "Failed to open file " << filepath << ": " << std::strerror(errno);
             throw std::runtime_error("Failed to open " + filepath);
         }
     }
-    d_memfile.seekg(addr);
-    if (!d_memfile.read((char*)dst, len)) {
+    fseeko(d_memfile.get(), addr, SEEK_SET);
+    if (static_cast<off_t>(addr) != ftello(d_memfile.get())
+        || len != fread(dst, 1, len, d_memfile.get()))
+    {
         throw InvalidRemoteAddress();
     }
-    return d_memfile.gcount();
+    return static_cast<ssize_t>(len);
 }
 
 ssize_t

@@ -2,7 +2,6 @@
 
 #include <cstdint>
 #include <fcntl.h>
-#include <fstream>
 #include <functional>
 #include <list>
 #include <memory>
@@ -16,6 +15,8 @@
 #include "elf_common.h"
 
 namespace pystack {
+
+using file_unique_ptr = std::unique_ptr<FILE, std::function<int(FILE*)>>;
 typedef uintptr_t remote_addr_t;
 
 struct RemoteMemCopyError : public std::exception
@@ -175,7 +176,7 @@ class ProcessMemoryManager : public AbstractRemoteMemoryManager
     pid_t d_pid;
     std::vector<VirtualMap> d_vmaps;
     mutable LRUCache d_lru_cache;
-    mutable std::ifstream d_memfile{};
+    mutable file_unique_ptr d_memfile;
 
     // Methods
     ssize_t readChunk(remote_addr_t addr, size_t len, char* dst) const;
