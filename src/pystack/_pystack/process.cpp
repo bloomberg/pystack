@@ -540,9 +540,15 @@ AbstractProcessManager::getStringFromAddress(remote_addr_t addr) const
                    << addr;
         Structure<py_unicode_v> unicode(shared_from_this(), addr);
 
-        Python3::_PyUnicode_State state = unicode.getField(&py_unicode_v::o_state);
-        if (state.kind != 1 || state.compact != 1) {
-            throw InvalidRemoteObject();
+        AnyPyUnicodeState state = unicode.getField(&py_unicode_v::o_state);
+        if (versionIsAtLeast(3, 14) and isFreeThreaded()) {
+            if (state.python3_14t.kind != 1 || state.python3_14t.compact != 1) {
+                throw InvalidRemoteObject();
+            }
+        } else {
+            if (state.python3.kind != 1 || state.python3.compact != 1) {
+                throw InvalidRemoteObject();
+            }
         }
 
         len = unicode.getField(&py_unicode_v::o_length);
@@ -706,12 +712,14 @@ AbstractProcessManager::setPythonVersionFromDebugOffsets()
                       << " identify the version as " << parsed;
             setPythonVersion(std::make_pair(parsed.major, parsed.minor));
             Structure<py_runtime_v> py_runtime(shared_from_this(), pyruntime_addr);
+            bool is_free_threaded = py_runtime.getField(&py_runtime_v::o_dbg_off_free_threaded);
             std::unique_ptr<python_v> offsets = loadDebugOffsets(py_runtime);
             if (offsets) {
                 LOG(INFO) << "_Py_DebugOffsets appear to be valid and will be used";
                 warnIfOffsetsAreMismatched(pyruntime_addr);
                 d_debug_offsets_addr = pyruntime_addr;
                 d_debug_offsets = std::move(offsets);
+                d_is_free_threaded = is_free_threaded;
                 return;
             }
         }
@@ -1277,6 +1285,12 @@ bool
 AbstractProcessManager::versionIsAtLeast(int required_major, int required_minor) const
 {
     return d_major > required_major || (d_major == required_major && d_minor >= required_minor);
+}
+
+bool
+AbstractProcessManager::isFreeThreaded() const
+{
+    return d_is_free_threaded;
 }
 
 const python_v&
