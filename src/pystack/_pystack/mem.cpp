@@ -17,7 +17,6 @@
 namespace pystack {
 
 using elf_unique_ptr = std::unique_ptr<Elf, std::function<void(Elf*)>>;
-using file_unique_ptr = std::unique_ptr<FILE, std::function<int(FILE*)>>;
 
 static ssize_t
 _process_vm_readv(
@@ -229,6 +228,16 @@ ProcessMemoryManager::ProcessMemoryManager(pid_t pid)
 ssize_t
 ProcessMemoryManager::readChunk(remote_addr_t addr, size_t len, char* dst) const
 {
+    if (d_memfile || getenv("_PYSTACK_NO_PROCESS_VM_READV") != nullptr) {
+        return readChunkThroughMemFile(addr, len, dst);
+    } else {
+        return readChunkDirect(addr, len, dst);
+    }
+}
+
+ssize_t
+ProcessMemoryManager::readChunkDirect(remote_addr_t addr, size_t len, char* dst) const
+{
     struct iovec local[1];
     struct iovec remote[1];
     ssize_t result = 0;
@@ -246,6 +255,9 @@ ProcessMemoryManager::readChunk(remote_addr_t addr, size_t len, char* dst) const
                 throw InvalidRemoteAddress();
             } else if (errno == EPERM) {
                 throw std::runtime_error(PERM_MESSAGE);
+            } else if (errno == ENOSYS) {
+                LOG(DEBUG) << "process_vm_readv not compiled in kernel, falling back to /proc/PID/mem";
+                return readChunkThroughMemFile(addr, len, dst);
             }
             throw std::system_error(errno, std::generic_category());
         }
@@ -254,6 +266,30 @@ ProcessMemoryManager::readChunk(remote_addr_t addr, size_t len, char* dst) const
     } while ((size_t)read != local[0].iov_len);
 
     return result;
+}
+
+ssize_t
+ProcessMemoryManager::readChunkThroughMemFile(remote_addr_t addr, size_t len, char* dst) const
+{
+    if (!d_memfile) {
+        std::string filepath = "/proc/" + std::to_string(d_pid) + "/mem";
+        d_memfile = file_unique_ptr(fopen(filepath.c_str(), "r"), fclose);
+        if (!d_memfile) {
+            if (errno == EPERM || errno == EACCES) {
+                LOG(ERROR) << "Permission denied opening file " << filepath;
+                throw std::runtime_error(PERM_MESSAGE);
+            }
+            LOG(ERROR) << "Failed to open file " << filepath << ": " << std::strerror(errno);
+            throw std::runtime_error("Failed to open " + filepath);
+        }
+    }
+    fseeko(d_memfile.get(), addr, SEEK_SET);
+    if (static_cast<off_t>(addr) != ftello(d_memfile.get())
+        || len != fread(dst, 1, len, d_memfile.get()))
+    {
+        throw InvalidRemoteAddress();
+    }
+    return static_cast<ssize_t>(len);
 }
 
 ssize_t

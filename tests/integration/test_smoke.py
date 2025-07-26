@@ -38,12 +38,22 @@ else:  # pragma: no cover
 
 @pytest.mark.parametrize("method", STACK_METHODS)
 @pytest.mark.parametrize("blocking", [True, False], ids=["blocking", "non-blocking"])
-def test_simple_execution(method, blocking, tmpdir):
+@pytest.mark.parametrize(
+    "use_process_vm_readv", [True, False], ids=["process_vm_readv", "/proc/PID/mem"]
+)
+def test_simple_execution(method, blocking, use_process_vm_readv, tmpdir, monkeypatch):
     """Test that we can retrieve the thread state of a single process.
 
     This test is specially useful to run under valgrind or similar tools and to
     quickly check that the very basic functionality works as expected.
     """
+
+    # GIVEN
+    env_var = "_PYSTACK_NO_PROCESS_VM_READV"
+    if use_process_vm_readv:
+        monkeypatch.delenv(env_var, raising=False)
+    else:
+        monkeypatch.setenv(env_var, "1")
 
     # WHEN
     with spawn_child_process(
