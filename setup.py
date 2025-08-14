@@ -33,6 +33,7 @@ COMPILER_DIRECTIVES = {
     "cdivision": True,
     "c_string_type": "unicode",
     "c_string_encoding": "utf8",
+    "freethreading_compatible": True,
 }
 
 DEFINE_MACROS = []
@@ -50,6 +51,7 @@ if TEST_BUILD:
         "infer_types": True,
         "c_string_type": "unicode",
         "c_string_encoding": "utf8",
+        "freethreading_compatible": True,
     }
     DEFINE_MACROS.extend([("CYTHON_TRACE", "1"), ("CYTHON_TRACE_NOGIL", "1")])
 
