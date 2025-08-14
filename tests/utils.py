@@ -23,6 +23,8 @@ TIMEOUT = 30
 PythonVersion = Tuple[Tuple[int, int], pathlib.Path]
 
 ALL_VERSIONS = [
+    ((3, 14), "python3.14t"),
+    ((3, 14), "python3.14"),
     ((3, 13), "python3.13t"),
     ((3, 13), "python3.13"),
     ((3, 12), "python3.12"),
