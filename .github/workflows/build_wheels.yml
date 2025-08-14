@@ -68,7 +68,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.1.1
         env:
-          CIBW_BUILD: "cp3{8..14}-${{ matrix.wheel_type }}"
+          CIBW_BUILD: "cp3{8..14}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto aarch64
           CIBW_ENABLE: cpython-prerelease
       - uses: actions/upload-artifact@v4
