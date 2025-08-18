@@ -1,1 +1,0 @@
-Improve handling of core files where we cannot determine the executable.
