@@ -59,7 +59,7 @@ jobs:
       - uses: docker/setup-qemu-action@v3
         if: runner.os == 'Linux'
         name: Set up QEMU
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: sdist
       - name: Extract sdist
@@ -85,7 +85,7 @@ jobs:
         python_version: ["2.7", "3.7"]
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -129,7 +129,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "${{matrix.python_version}}-dev"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -167,7 +167,7 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "${{matrix.python_version}}-dev"
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -212,7 +212,7 @@ jobs:
       - name: Set up dependencies
         run: |
           apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: "musllinux_x86_64-wheels"
           path: dist
@@ -249,7 +249,7 @@ jobs:
             python3-devel
           dnf debuginfo-install -y \
             python3
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -286,7 +286,7 @@ jobs:
             python-wheel \
             elfutils \
             debuginfod
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -324,7 +324,7 @@ jobs:
             python3-pip \
             python3-venv \
             python3-dbg
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -344,7 +344,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-      - uses: actions/download-artifact@v4
+      - uses: actions/download-artifact@v5
         with:
           # with no name set, it downloads all of the artifacts
           path: dist
