@@ -19,7 +19,7 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Build sdist
         run: pipx run build --sdist
@@ -84,7 +84,7 @@ jobs:
       matrix:
         python_version: ["2.7", "3.7"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - uses: actions/download-artifact@v4
         with:
           name: "manylinux_x86_64-wheels"
@@ -124,7 +124,7 @@ jobs:
       matrix:
         python_version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -162,7 +162,7 @@ jobs:
       matrix:
         python_version: ["3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -208,7 +208,7 @@ jobs:
       options: --cap-add=SYS_PTRACE
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up dependencies
         run: |
           apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
@@ -238,7 +238,7 @@ jobs:
       options: --cap-add=SYS_PTRACE
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up dependencies
         run: |
           dnf install -y \
@@ -273,7 +273,7 @@ jobs:
       image: archlinux
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up dependencies
         run: |
           pacman -Syu --noconfirm \
@@ -313,7 +313,7 @@ jobs:
       options: --cap-add=SYS_PTRACE
 
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
       - name: Set up dependencies
         run: |
           apt-get update
