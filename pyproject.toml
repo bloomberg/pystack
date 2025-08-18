@@ -51,7 +51,7 @@ skip = "*-musllinux_aarch64"
 
 [tool.cibuildwheel.linux]
 before-all = [
-  "yum install -y python-devel-2.7.5 libzstd-devel",
+  "yum install -y libzstd-devel",
   "cd /",
   "VERS=0.193",
   "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
