@@ -8,6 +8,15 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.5.1 (2025-08-18)
+--------------------------
+
+Bug Fixes
+~~~~~~~~~
+
+- Correct a bug in our GitHub Actions workflow that prevented artifacts for 1.5.0 from being uploaded to PyPI. No changes have been made to the PyStack code itself since 1.5.0 (#250)
+
+
 pystack 1.5.0 (2025-08-18)
 --------------------------
 
