@@ -152,7 +152,7 @@ jobs:
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "auto"
-        run: python${{matrix.python_version}} -m pytest tests -k 'not 2.7' -n auto -vvv
+        run: python${{matrix.python_version}} -m pytest tests -n auto -vvv
 
   test_aarch64_wheels:
     needs: [build_wheels]
@@ -190,7 +190,7 @@ jobs:
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "auto"
-        run: python${{matrix.python_version}} -m pytest tests -k 'not 2.7' -n auto -vvv
+        run: python${{matrix.python_version}} -m pytest tests -n auto -vvv
 
   test_free_threading:
     needs: [build_wheels]
@@ -233,7 +233,7 @@ jobs:
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "${{matrix.python_version}}t"
-        run: python${{matrix.python_version}} -m pytest tests -k 'not 2.7' -n auto -vvv
+        run: python${{matrix.python_version}} -m pytest tests -n auto -vvv
 
   test_in_alpine:
     needs: [build_wheels]
@@ -263,7 +263,7 @@ jobs:
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "auto"
-        run: venv/bin/python3 -m pytest tests -k 'not 2.7' -n auto -vvv
+        run: venv/bin/python3 -m pytest tests -n auto -vvv
 
   test_wheels_in_fedora:
     needs: [build_wheels]
@@ -299,7 +299,7 @@ jobs:
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "auto"
-        run: python3 -m pytest tests -k 'not 2.7' -n auto -vvv
+        run: python3 -m pytest tests -n auto -vvv
 
   test_wheels_in_arch:
     needs: [build_wheels]
@@ -338,7 +338,7 @@ jobs:
         env:
           PYTHON_TEST_VERSION: "auto"
           DEBUGINFOD_URLS: "https://debuginfod.archlinux.org"
-        run: venv/bin/python -m pytest tests -k 'not 2.7' -n auto -vvv
+        run: venv/bin/python -m pytest tests -n auto -vvv
 
   test_wheels_in_debian:
     needs: [build_wheels]
@@ -375,7 +375,7 @@ jobs:
       - name: Run pytest
         env:
           PYTHON_TEST_VERSION: "auto"
-        run: venv/bin/python3 -m pytest tests -k 'not 2.7' -n auto -vvv
+        run: venv/bin/python3 -m pytest tests -n auto -vvv
 
   upload_pypi:
     needs: [test_wheels]
