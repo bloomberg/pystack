@@ -1,1 +1,0 @@
-We no longer provide x86-64 musllinux_1_1 wheels. The manylinux project dropped support for musllinux_1_1 on November 1st, 2024.

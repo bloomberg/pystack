@@ -8,6 +8,35 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.5.0 (2025-08-18)
+--------------------------
+
+Features
+~~~~~~~~
+
+- Add a new ``--native-last`` command line flag to only show the C frames after the last Python frame. (#182)
+- Add support for Python 3.14 (#229)
+- Support kernels that don't have CONFIG_CROSS_MEMORY_ATTACH set. (#240)
+
+
+Deprecations and Removals
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- We no longer provide x86-64 musllinux_1_1 wheels. The manylinux project dropped support for musllinux_1_1 on November 1st, 2024. (#237)
+- We no longer provide Python 3.7 wheels. Python 3.7 has been end-of-life since June 2023. (#237)
+
+
+Bug Fixes
+~~~~~~~~~
+
+- Fix incorrect file offset calculation when analyzing ELF files with
+  non-standard ELF layouts. Previously, pystack would fail to correctly analyze
+  Python binaries that had non-standard ELF layouts (for example when compiled
+  with certain linker options). The fix properly accounts for PT_LOAD segment
+  mappings when calculating file offsets. (#220)
+- Improve handling of core files where we cannot determine the executable. (#221)
+
+
 pystack 1.4.1 (2024-10-04)
 --------------------------
 

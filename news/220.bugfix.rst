@@ -1,5 +1,0 @@
-Fix incorrect file offset calculation when analyzing ELF files with
-non-standard ELF layouts. Previously, pystack would fail to correctly analyze
-Python binaries that had non-standard ELF layouts (for example when compiled
-with certain linker options). The fix properly accounts for PT_LOAD segment
-mappings when calculating file offsets.

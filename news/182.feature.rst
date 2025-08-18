@@ -1,1 +1,0 @@
-Add a new ``--native-last`` command line flag to only show the C frames after the last Python frame.
