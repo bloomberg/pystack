@@ -108,3 +108,4 @@ show_missing = true
 # pytest retains all temp files from the last 3 test suite runs by default.
 # Keep only ones for failed tests to avoid filling up a disk.
 tmp_path_retention_policy = "failed"
+testpaths = ["tests"]
