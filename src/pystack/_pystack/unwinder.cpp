@@ -378,7 +378,7 @@ module_callback(
             module_arg->addr = addr;
             LOG(INFO) << "Symbol '" << sname << "' found at address " << std::hex << std::showbase
                       << addr;
-            break;
+            return DWARF_CB_ABORT;
         }
     }
     return DWARF_CB_OK;
@@ -389,7 +389,7 @@ AbstractUnwinder::getAddressforSymbol(const std::string& symbol, const std::stri
 {
     LOG(DEBUG) << "Trying to find address for symbol " << symbol;
     ModuleArg arg = {symbol.c_str(), modulename.c_str(), 0};
-    if (dwfl_getmodules(Dwfl(), module_callback, &arg, 0) != 0) {
+    if (dwfl_getmodules(Dwfl(), module_callback, &arg, 0) == -1) {
         throw UnwinderError("Failed to fetch modules!");
     }
     LOG(DEBUG) << "Address for symbol " << symbol << " resolved to: " << std::hex << std::showbase
