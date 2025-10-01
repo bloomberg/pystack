@@ -80,7 +80,7 @@ operator<<(std::ostream& out, const ParsedPyVersion& version)
     // Use a temporary stringstream in case `out` is using hex or showbase
     std::ostringstream oss;
     oss << version.major << "." << version.minor << "." << version.patch;
-    if (version.release_level) {
+    if (version.release_level[0]) {
         oss << version.release_level << version.serial;
     }
 
@@ -97,7 +97,7 @@ parsePyVersionHex(uint64_t version, ParsedPyVersion& parsed)
     int level = (version >> 4) & 0x0F;
     int count = (version >> 0) & 0x0F;
 
-    const char* level_str = nullptr;
+    const char* level_str = "(unknown release level)";
     if (level == 0xA) {
         level_str = "a";
     } else if (level == 0xB) {
