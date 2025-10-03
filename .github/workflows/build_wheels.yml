@@ -116,6 +116,41 @@ jobs:
           PYTHON_TEST_VERSION: ${{ matrix.python_version }}
         run: python3 -m pytest tests -n auto -vvv
 
+  test_attaching_to_uv_interpreters:
+    needs: [build_wheels]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python_version: ["3.13"]
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/download-artifact@v5
+        with:
+          name: "manylinux_x86_64-wheels"
+          path: dist
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
+        with:
+          version: latest
+          python-version: ${{ matrix.python_version }}
+          activate-environment: true
+      - name: Set up dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -qy gdb
+      - name: Install Python dependencies
+        run: |
+          uv pip install -r requirements-test.txt
+          uv pip install --no-index --find-links=dist/ --only-binary=pystack pystack
+      - name: Disable ptrace security restrictions
+        run: |
+          echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
+      - name: Run pytest
+        env:
+          PYTHON_TEST_VERSION: ${{ matrix.python_version }}
+        run: python3 -m pytest tests -n auto -vvv
+
   test_wheels:
     needs: [build_wheels]
     runs-on: ubuntu-22.04
