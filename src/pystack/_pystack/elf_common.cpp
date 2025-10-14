@@ -401,7 +401,7 @@ getSectionInfo(const std::string& filename, const std::string& section_name, Sec
     LOG(DEBUG) << "Trying to locate .PyRuntime data offset from program headers";
     file_unique_ptr file(fopen(filename.c_str(), "r"), fclose);
     if (!file || fileno(file.get()) == -1) {
-        LOG(ERROR) << "Cannot open ELF file " << filename;
+        LOG(ERROR) << "Cannot open ELF file " << filename << " (" << std::strerror(errno) << ")";
         return false;
     }
     const int fd = fileno(file.get());
@@ -559,9 +559,10 @@ getBuildId(const std::string& filename)
     LOG(DEBUG) << "Trying to locate .PyRuntime data offset from program headers";
     file_unique_ptr file(fopen(filename.c_str(), "r"), fclose);
     if (!file || fileno(file.get()) == -1) {
-        LOG(ERROR) << "Cannot open ELF file " << filename;
+        LOG(ERROR) << "Cannot open ELF file " << filename << " (" << std::strerror(errno) << ")";
         return "";
     }
+
     const int fd = fileno(file.get());
 
     elf_unique_ptr elf = elf_unique_ptr(elf_begin(fd, ELF_C_READ_MMAP, nullptr), elf_end);
