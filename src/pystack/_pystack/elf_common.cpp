@@ -562,7 +562,6 @@ getBuildId(const std::string& filename)
         LOG(ERROR) << "Cannot open ELF file " << filename << " (" << std::strerror(errno) << ")";
         return "";
     }
-
     const int fd = fileno(file.get());
 
     elf_unique_ptr elf = elf_unique_ptr(elf_begin(fd, ELF_C_READ_MMAP, nullptr), elf_end);
