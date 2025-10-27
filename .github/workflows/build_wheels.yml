@@ -24,7 +24,7 @@ jobs:
       - name: Build sdist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -71,7 +71,7 @@ jobs:
           CIBW_BUILD: "cp3{8..14}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
           CIBW_ENABLE: cpython-prerelease
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         with:
           name: ${{ matrix.wheel_type }}-wheels
           path: ./wheelhouse/*.whl
