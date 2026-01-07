@@ -70,7 +70,7 @@ jobs:
         env:
           CIBW_BUILD: "cp3{8..14}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
-          CIBW_ENABLE: cpython-prerelease
+          CIBW_ENABLE: cpython-prerelease cpython-freethreading
       - uses: actions/upload-artifact@v4
         with:
           name: ${{ matrix.wheel_type }}-wheels
@@ -122,7 +122,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.14"]
+        python_version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
     steps:
       - uses: actions/checkout@v5
       - name: Set up Python
@@ -137,10 +137,7 @@ jobs:
         run: |
           sudo add-apt-repository ppa:deadsnakes/ppa
           sudo apt-get update
-          sudo apt-get install -qy \
-            gdb \
-            python${{matrix.python_version}}-dev \
-            python${{matrix.python_version}}-dbg
+          sudo apt-get install -qy gdb
       - name: Install Python dependencies
         run: |
           python${{matrix.python_version}} -m pip install --upgrade pip
