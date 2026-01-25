@@ -1,0 +1,303 @@
+<!doctype html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <title>PyStack: the endgame Python stack debugger</title>
+
+    <!-- Bootstrap core CSS -->
+    <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css?family=Open+Sans:300,400,700" rel="stylesheet">
+
+    <!-- Custom styles for this template -->
+    <link href=" _static/css/custom.css" rel="stylesheet">
+    <link rel="icon" href="_static/favicon.ico">
+</head>
+
+<body>
+
+    <header>
+        <nav class="navbar navbar-expand-md fixed-top">
+            <div class="navbar-brand">
+                <img src=" _static/images/logo.png " style="height: 2rem; z-index: 1;" alt="PyStack logo">
+            </div>
+
+            <div class="navbar-light bg-light">
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNavDropdown"
+                    aria-controls="navbarNavDropdown" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+            </div>
+
+            <div class="collapse navbar-collapse" id="navbarNavDropdown">
+                <ul class="navbar-nav mr-auto">
+                    <li class="nav-item">
+                        <a class="nav-link" href="overview.html">Documentation</a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="https://github.com/bloomberg/pytest-pystack">Our <code>pytest</code> Plugin</a>
+                    </li>
+                    <li class="nav-item dropdown">
+                        <a class="nav-link dropdown-toggle" href="#" id="navbarDropdownMenuLink2" data-toggle="dropdown"
+                            aria-haspopup="true" aria-expanded="false">
+                            Community
+                        </a>
+                        <div class="dropdown-menu" aria-labelledby="navbarDropdownMenuLink2">
+                            <a class="dropdown-item" href="https://github.com/bloomberg/pystack">Github</a>
+                            <a class="dropdown-item" href="https://pypi.org/project/pystack/">PyPI</a>
+                            <a class="dropdown-item"
+                                href="https://github.com/bloomberg/pystack/discussions">Discussions</a>
+                        </div>
+                    </li>
+                </ul>
+            </div>
+        </nav>
+    </header>
+
+    <main role="main">
+
+        <section class="splash text-center">
+            <div class="m-intro">
+                <div class="waveWrapper waveAnimation">
+                    <div class="waveWrapperInner bgTop">
+                      <div class="wave waveTop" style="background-image: url('http://front-end-noobs.com/jecko/img/wave-top.png')"></div>
+                    </div>
+                    <div class="waveWrapperInner bgMiddle">
+                      <div class="wave waveMiddle" style="background-image: url('http://front-end-noobs.com/jecko/img/wave-mid.png')"></div>
+                    </div>
+                    <div class="waveWrapperInner bgBottom">
+                      <div class="wave waveBottom" style="background-image: url('http://front-end-noobs.com/jecko/img/wave-bot.png')"></div>
+                    </div>
+                  </div>
+                <div class="splash-container" style="z-index: 2;">
+                    <img class="splash-image" src=" _static/images/logo.png " alt="PyStack logo">
+                    <div class="typewriter_container">
+                        <h1 class="lead typewriter"><b>The endgame Python stack debugger</b></h1>
+                    </div>
+                    <p class="lead text-muted">
+                        PyStack reports the stack frames of a running Python process or a Python core dump
+                    </p>
+                    <p>
+                        <a href=" overview.html "
+                            class="btn btn-primary filled-pystack btn-lg">Documentation</a>
+                        <a href="https://github.com/bloomberg/pystack/discussions"
+                            class="btn btn-secondary btn-lg">Community</a>
+                    </p>
+                    <div class="mouse"> <span></span> </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Marketing messaging and featurettes
+      ================================================== -->
+        <!-- Wrap the rest of the page in another container to center all the content. -->
+
+        <div class="container marketing">
+
+            <hr class="featurette-divider">
+
+            <!-- Three columns of text below the carousel -->
+            <div class="row">
+                <div class="col-lg-4">
+                    <img class="rounded-circle rounded-header-image"
+                        src="_static/images/box.png"
+                        alt="Cardboard box" width="140" height="140">
+                    <h2>Processes and core files</h2>
+                    <p>
+                        No matter the situation, PyStack is your reliable
+                        companion for program analysis. If a process is running
+                        more slowly than you expected, PyStack can tell you what
+                        it's doing. If it's hanging, PyStack can tell you where
+                        it got stuck. If it crashed, PyStack can even tell you
+                        what it was doing from the core dump it left behind.
+                    </p>
+                    <p><a class="btn btn-secondary filled-pystack"
+                        href="process.html"
+                        role="button">Get started &raquo;</a></p>
+                </div><!-- /.col-lg-4 -->
+                <div class="col-lg-4">
+                    <img class="rounded-circle rounded-header-image"
+                        src="_static/images/python.png"
+                        alt="Python logo" width="140" height="140">
+                    <h2>Ready for anything</h2>
+                    <p>
+                        PyStack thrives in extreme conditions, always ensuring
+                        accurate insights. It can handle deep call stacks like
+                        a breeze. It can get you a comprehensive report even if
+                        your Python interpreter is heavily optimized and shipped
+                        without debug information. Even if memory corruption has
+                        trashed some of the interpreter's internal data
+                        structures, PyStack can handle it!
+                    </p>
+                    <p><a class="btn btn-secondary filled-pystack"
+                        href="corefile.html"
+                        role="button">See for yourself &raquo;</a></p>
+                </div><!-- /.col-lg-4 -->
+                <div class="col-lg-4">
+                    <img class="rounded-circle rounded-header-image"
+                        src="https://docs.pytest.org/en/7.2.x/_static/pytest_logo_curves.svg"
+                        alt="pytest logo" width="140" height="140">
+                    <h2>Prevent regressions</h2>
+                    <p>
+                        You can easily integrate PyStack into your
+                        <code>pytest</code> test suite. If a test gets stuck,
+                        our plugin can automatically report each thread's stack
+                        and help you figure out what went wrong.
+                    </p>
+                    <p><a class="btn btn-secondary filled-pystack"
+                        href="https://github.com/bloomberg/pytest-pystack"
+                        role="button">Discover the plugin &raquo;</a></p>
+                </div><!-- /.col-lg-4 -->
+            </div><!-- /.row -->
+
+            <!-- START THE FEATURETTES -->
+            <hr class="featurette-divider">
+
+            <div class="row featurette">
+                <div class="col-md-7">
+                    <h2 class="featurette-heading">
+                        Uncover your program's secrets.
+                        <span class="text-muted">No more deadlocks or mysterious crashes.</span>
+                    </h2>
+                    <p class="lead">
+                        PyStack provides a powerful tool for inspecting the
+                        stack frames of a running Python process or a Python
+                        core dump. It allows developers to quickly and easily
+                        understand what's happening in their Python programs
+                        without delving into the intricate details of CPython
+                        internals. When you ask PyStack to analyze a running
+                        process or core file, it prints a stack trace for each
+                        thread, which shows the sequence of function calls and
+                        their corresponding line numbers in the Python code.
+                        This feature is invaluable for debugging and
+                        understanding the runtime behavior of an application,
+                        especially when encountering unexpected hangs or
+                        crashes.
+                    </p>
+                </div>
+                <div class="col-md-5">
+                    <img class="featurette-image img-fluid mx-auto reveal_l"
+                        src="_static/images/stack.png"
+                        alt="Python traceback">
+                </div>
+            </div>
+
+            <hr class="featurette-divider">
+
+            <div class="row featurette">
+                <div class="col-md-7 order-md-2">
+                    <h2 class="featurette-heading">
+                        No more hidden code!
+                        <span class="text-muted">Peer inside native extensions.</span>
+                    </h2>
+                    <p class="lead">
+                        PyStack's native mode offers an additional layer of
+                        insight by including native function calls in the stack
+                        trace. When your Python code calls into some code that
+                        isn't written in Python, PyStack shows you what native
+                        functions are executed. If one of those functions calls
+                        a function written in Python, the reported stack will
+                        switch right back to displaying Python frames.
+                    </p>
+                    <p class="lead">
+                        This mode lets developers see the full stack trace,
+                        including calls to C/C++/Rust functions, while still
+                        providing context about the Python code being executed
+                        at each level. PyStack automatically demangles symbols
+                        in the native stack, and it can even include calls to
+                        inlined functions whenever there is sufficient debug
+                        information available! Native mode is particularly
+                        useful when analyzing the interactions between Python
+                        and native code in a mixed-language application — which
+                        of course is exactly where many crashes and deadlocks
+                        occur.
+                    </p>
+                </div>
+                <div class="col-md-5 order-md-1">
+                    <img class="featurette-image img-fluid mx-auto reveal_r"
+                        src="_static/images/native.png" alt="Live mode">
+                </div>
+            </div>
+
+            <hr class="featurette-divider">
+
+            <div class="row featurette">
+                <div class="col-md-7">
+                    <h2 class="featurette-heading">
+                        Deep Dive into Program State.
+                        <span class="text-muted">See inside your functions!</span>
+                    </h2>
+                    <p class="lead">
+                        You can ask PyStack to go beyond providing a stack
+                        trace, and to also print the values of local variables
+                        and function arguments within Python stack frames. This
+                        lets developers obtain a more detailed understanding of
+                        what the program is currently doing inside each call.
+                        This feature is especially helpful when trying to
+                        understand why a particular function was called, or to
+                        see what work was being performed when a process
+                        crashed. By examining the local variables and arguments,
+                        developers can gain crucial insights into the runtime
+                        behavior of their Python. This is one of the best ways
+                        to leverage PyStack's debugging capabilities to analyze
+                        your application and identify potential errors or
+                        unexpected behaviors.
+                    </p>
+                </div>
+                <div class="col-md-5">
+                    <img class="featurette-image img-fluid mx-auto reveal_l"
+                        src="_static/images/locals.png" alt="Many reporters">
+                </div>
+            </div>
+
+            <div class="row featurette">
+                <h2 class="featurette-heading">PyStack in the media</h2>
+                <div class="row">
+                    <br>
+                    <div class="card-container">
+                        <div class="card-columns">
+                            <a href="https://www.bloomberg.com/company/stories/bloomberg-publishes-pystack-debugging-tool-python/" class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Bloomberg publishes PyStack</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">Bloomberg- 2023-04-19</h6>
+                                </div>
+                            </a>
+                            <a href="https://talkpython.fm/episodes/show/419/debugging-python-in-production-with-pystack"
+                                class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Debugging Python in Production with PyStack</h5>
+                                    <h6 class="card-subtitle mb-2 text-muted">Talk Python (podcast) - 2023-06-14</h6>
+                                </div>
+                            </a>
+                        </div>
+                    </div>
+                </div><!-- /.row -->
+            </div>
+            <!-- /END THE FEATURETTES -->
+
+        </div><!-- /.container -->
+
+        <!-- FOOTER -->
+        <footer class="container">
+            <p class="float-right"><a href="#">Back to top</a></p>
+            <p> <a href="https://github.com/bloomberg/pystack">GitHub Page</a> &middot; <a
+                    href="https://github.com/bloomberg/pystack/blob/main/LICENSE">License</a></p>
+        </footer>
+    </main>
+
+    <!-- Bootstrap core JavaScript
+      ================================================== -->
+    <!-- Placed at the end of the document so the pages load faster -->
+    <script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"
+        integrity="sha384-KJ3o2DKtIkvYIK3UENzmM7KCkRr/rE9/Qpg6aAZGJwFDMVNA/GpGFF93hXpG5KkN"
+        crossorigin="anonymous"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+
+    <!-- Custom JS -->
+    <script src="_static/js/custom.js"></script>
+
+</html>
