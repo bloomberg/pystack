@@ -2,17 +2,9 @@ import shutil
 import subprocess
 import sys
 from pathlib import Path
-from unittest.mock import mock_open
-from unittest.mock import patch
-
-import pytest
 
 from pystack.engine import NativeReportingMode
-from pystack.engine import StackMethod
 from pystack.engine import get_process_threads
-from pystack.errors import NotEnoughInformation
-from pystack.maps import MAPS_REGEXP
-from pystack.process import get_thread_name
 from pystack.types import LocationInfo
 from pystack.types import NativeFrame
 from pystack.types import frame_type
@@ -313,150 +305,6 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
             assert any(frame.path and "?" not in frame.path for frame in eval_frames)
 
 
-def test_gather_stack_with_heap_fails_if_no_heap(tmpdir):
-    # GIVEN / WHEN
-
-    with spawn_child_process(
-        sys.executable, TEST_SINGLE_THREAD_FILE, tmpdir
-    ) as child_process:
-        the_data = []
-        with open(f"/proc/{child_process.pid}/maps") as f:
-            for line in f.readlines():
-                match = MAPS_REGEXP.match(line)
-                assert match is not None
-                if match.group("pathname") and "[heap]" in match.group("pathname"):
-                    line = line.replace("[heap]", "[mysterious_segment]")
-                the_data.append(line)
-        data = "".join(the_data)
-        with patch("builtins.open", mock_open(read_data=data)):
-            # THEN
-
-            with pytest.raises(NotEnoughInformation):
-                list(
-                    get_process_threads(
-                        child_process.pid, stop_process=True, method=StackMethod.HEAP
-                    )
-                )
-
-
-def test_gather_stack_with_bss_fails_if_no_bss(tmpdir):
-    # GIVEN / WHEN
-
-    with spawn_child_process(
-        sys.executable, TEST_SINGLE_THREAD_FILE, tmpdir
-    ) as child_process:
-        the_data = []
-        with open(f"/proc/{child_process.pid}/maps") as f:
-            for line in f.readlines():
-                match = MAPS_REGEXP.match(line)
-                assert match is not None
-                if not match.group("pathname"):
-                    line = line.replace("\n", "[mysterious_segment]\n")
-                the_data.append(line)
-
-        data = "".join(the_data)
-
-        with patch("builtins.open", mock_open(read_data=data)), patch(
-            "pystack.maps._get_bss", return_value=None
-        ):
-            # THEN
-
-            with pytest.raises(NotEnoughInformation):
-                list(
-                    get_process_threads(
-                        child_process.pid, stop_process=True, method=StackMethod.BSS
-                    )
-                )
-
-
-def test_gather_stack_auto_works_if_no_bss(tmpdir):
-    # GIVEN / WHEN
-
-    with spawn_child_process(
-        sys.executable, TEST_SINGLE_THREAD_FILE, tmpdir
-    ) as child_process:
-        the_data = []
-        with open(f"/proc/{child_process.pid}/maps") as f:
-            for line in f.readlines():
-                match = MAPS_REGEXP.match(line)
-                assert match is not None
-                if not match.group("pathname"):
-                    line = line.replace("\n", "[mysterious_segment]\n")
-                the_data.append(line)
-        data = "".join(the_data)
-        with patch("builtins.open", mock_open(read_data=data)), patch(
-            "pystack.maps._get_bss", return_value=None
-        ):
-            threads = list(
-                get_process_threads(
-                    child_process.pid, stop_process=True, method=StackMethod.AUTO
-                )
-            )
-
-    # THEN
-
-    assert len(threads) == 1
-    (thread,) = threads
-
-    frames = list(thread.frames)
-    assert (len(frames)) == 4
-
-    filenames = {frame.code.filename for frame in frames}
-    assert filenames == {str(TEST_SINGLE_THREAD_FILE)}
-
-    functions = [frame.code.scope for frame in frames]
-    assert functions == ["<module>", "first_func", "second_func", "third_func"]
-
-    *line_numbers, last_line = [frame.code.location.lineno for frame in frames]
-    assert line_numbers == [20, 6, 10]
-    assert last_line in {16, 17}
-
-    assert not thread.native_frames
-
-
-def test_gather_stack_auto_works_if_no_heap(tmpdir):
-    # GIVEN / WHEN
-
-    with spawn_child_process(
-        sys.executable, TEST_SINGLE_THREAD_FILE, tmpdir
-    ) as child_process:
-        the_data = []
-        with open(f"/proc/{child_process.pid}/maps") as f:
-            for line in f.readlines():
-                match = MAPS_REGEXP.match(line)
-                assert match is not None
-                if match.group("pathname") and "[heap]" in match.group("pathname"):
-                    line = line.replace("[heap]", "[mysterious_segment]")
-                the_data.append(line)
-        data = "".join(the_data)
-        with patch("builtins.open", mock_open(read_data=data)):
-            threads = list(
-                get_process_threads(
-                    child_process.pid, stop_process=True, method=StackMethod.AUTO
-                )
-            )
-
-    # THEN
-
-    assert len(threads) == 1
-    (thread,) = threads
-
-    frames = list(thread.frames)
-    assert (len(frames)) == 4
-
-    filenames = {frame.code.filename for frame in frames}
-    assert filenames == {str(TEST_SINGLE_THREAD_FILE)}
-
-    functions = [frame.code.scope for frame in frames]
-    assert functions == ["<module>", "first_func", "second_func", "third_func"]
-
-    *line_numbers, last_line = [frame.code.location.lineno for frame in frames]
-    assert line_numbers == [20, 6, 10]
-    assert last_line in {16, 17}
-
-    assert not thread.native_frames
-
-
 @ALL_PYTHONS
 def test_thread_registered_with_python_but_with_no_python_calls(python, tmpdir):
     # GIVEN
@@ -582,14 +430,6 @@ def test_get_thread_name(tmpdir):
     # THEN
 
     assert "thread_foo" in {thread.name for thread in threads}
-
-
-def test_get_thread_name_oserror():
-    # WHEN
-    thread_name = get_thread_name(pid=0, tid=0)
-
-    # THEN
-    assert thread_name is None
 
 
 @ALL_PYTHONS

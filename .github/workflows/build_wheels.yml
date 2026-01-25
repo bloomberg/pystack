@@ -68,7 +68,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@v3.3.1
         env:
-          CIBW_BUILD: "cp3{8..14}{t,}-${{ matrix.wheel_type }}"
+          CIBW_BUILD: "cp3{9..14}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
           CIBW_ENABLE: cpython-prerelease cpython-freethreading
       - uses: actions/upload-artifact@v6
@@ -157,7 +157,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.8", "3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
+        python_version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python
@@ -192,7 +192,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.8", "3.13", "3.14"]
+        python_version: ["3.9", "3.13", "3.14"]
     steps:
       - uses: actions/checkout@v6
       - name: Set up Python

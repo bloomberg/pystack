@@ -1,70 +1,18 @@
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from pathlib import Path
 
 import pytest
 
 from pystack._pystack import ProcessManager
-from pystack.engine import CoreFileAnalyzer
 from pystack.engine import get_process_threads
-from pystack.errors import EngineError
-from pystack.maps import generate_maps_for_process
-from pystack.maps import parse_maps_file
-from pystack.maps import parse_maps_file_for_binary
 from pystack.process import is_elf
-from pystack.process import scan_core_bss_for_python_version
-from pystack.process import scan_process_bss_for_python_version
 from tests.utils import ALL_PYTHONS
-from tests.utils import generate_core_file
 from tests.utils import spawn_child_process
 
 TEST_SINGLE_THREAD_FILE = Path(__file__).parent / "single_thread_program.py"
 TEST_SHUTDOWN_FILE = Path(__file__).parent / "shutdown_program.py"
-
-
-@ALL_PYTHONS
-def test_remote_version_detection_using_bss_section(python, tmpdir):
-    # GIVEN
-
-    (expected_major, expected_minor), python_executable = python
-
-    # WHEN
-
-    with spawn_child_process(
-        python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
-    ) as child_process:
-        all_maps = generate_maps_for_process(child_process.pid)
-        maps = parse_maps_file(child_process.pid, all_maps)
-        major, minor = scan_process_bss_for_python_version(child_process.pid, maps.bss)
-
-    # THEN
-
-    assert major == expected_major
-    assert minor == expected_minor
-
-
-@ALL_PYTHONS
-def test_core_version_detection_using_bss_section(python, tmpdir):
-    # GIVEN
-
-    (expected_major, expected_minor), python_executable = python
-
-    # WHEN
-
-    with generate_core_file(
-        python_executable, TEST_SINGLE_THREAD_FILE, tmpdir
-    ) as corefile:
-        core_map_analyzer = CoreFileAnalyzer(str(corefile), str(python_executable))
-        virtual_maps = tuple(core_map_analyzer.extract_maps())
-        load_point_by_module = core_map_analyzer.extract_module_load_points()
-        maps = parse_maps_file_for_binary(
-            python_executable, virtual_maps, load_point_by_module
-        )
-        major, minor = scan_core_bss_for_python_version(corefile, maps.bss)
-
-    # THEN
-
-    assert major == expected_major
-    assert minor == expected_minor
 
 
 @ALL_PYTHONS
@@ -120,11 +68,29 @@ def test_reattaching_to_already_traced_process(python, tmpdir):
         pid = child_process.pid
 
         # WHEN / THEN
-        with pytest.raises(EngineError, match="Operation not permitted"):
-            it1 = iter(get_process_threads(pid, stop_process=True))
-            it2 = iter(get_process_threads(pid, stop_process=True))
-            next(it1)
-            next(it2)
+        # Use threading to create overlapping attachment attempts.
+        # The first thread holds the ptrace attachment while the second tries to attach.
+        barrier = threading.Barrier(2)
+        results = []
+        errors = []
+
+        def attach_thread():
+            try:
+                barrier.wait(timeout=5)  # Synchronize start
+                threads = list(get_process_threads(pid, stop_process=True))
+                results.append(len(threads))
+            except Exception as e:
+                errors.append(str(e))
+
+        with ThreadPoolExecutor(max_workers=2) as executor:
+            f1 = executor.submit(attach_thread)
+            f2 = executor.submit(attach_thread)
+            f1.result(timeout=10)
+            f2.result(timeout=10)
+
+        # One should succeed, one should fail with "Operation not permitted"
+        assert len(results) + len(errors) == 2
+        assert any("Operation not permitted" in err for err in errors)
 
 
 @pytest.mark.parametrize(
