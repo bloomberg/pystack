@@ -8,6 +8,23 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.6.0 (2026-01-25)
+--------------------------
+
+Features
+~~~~~~~~
+
+- Provide wheels for free-threaded builds of Python 3.13 (#271)
+- Add the Python 3.14 trove classifier to our package metadata (#269)
+- Improve some error messages and log messages (#260, #258)
+
+
+Bug Fixes
+~~~~~~~~~
+
+- Fix handling of duplicate ``_PyRuntime`` symbols when ctypes mmaps a statically linked Python interpreter's binary in order to create a trampoline. Previously this led to "Invalid address in remote process" errors. (#258)
+
+
 pystack 1.5.1 (2025-08-18)
 --------------------------
 
