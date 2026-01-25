@@ -82,9 +82,14 @@ frameCallback(Dwfl_Frame* state, void* arg)
     Dwarf_Addr pc;
     bool isActivation;
     if (!dwfl_frame_pc(state, &pc, &isActivation)) {
-        LOG(DEBUG) << "dwfl_frame_pc failed";
+        int dwfl_err = dwfl_errno();
+        LOG(DEBUG) << "dwfl_frame_pc failed: " << (dwfl_err ? dwfl_errmsg(dwfl_err) : "no error");
+        LOG(DEBUG) << "Total frames gathered before failure: " << frames->size();
         return -1;
     }
+
+    LOG(DEBUG) << std::hex << std::showbase << "frameCallback: pc=" << pc
+               << " isActivation=" << isActivation << " frame_count=" << std::dec << frames->size();
 
     std::optional<Dwarf_Word> stackPointer;
     // Unwinding through musl libc with elfutils can get stuck returning the
@@ -308,6 +313,8 @@ AbstractUnwinder::gatherFrames(const std::vector<Frame>& frames) const
         if (!raw_symname) {
             LOG(DEBUG) << std::hex << std::showbase << "Non-inline symbol name could not be resolved @ "
                        << pc;
+            // Add frame with unknown symbol rather than skipping it
+            native_frames.push_back({pc, "???", mod_name, 0, 0, mod_name});
             continue;
         }
 
@@ -481,24 +488,34 @@ thread_callback_for_frames(Dwfl_Thread* thread, void* arg)
 {
     auto* thread_arg = static_cast<ThreadArg*>(arg);
     pid_t tid = dwfl_thread_tid(thread);
+    LOG(DEBUG) << "thread_callback_for_frames: checking thread tid=" << tid << " (looking for "
+               << thread_arg->tid << ")";
     if (tid != thread_arg->tid) {
         return DWARF_CB_OK;
     }
 
-    switch (dwfl_thread_getframes(thread, frameCallback, (void*)(&(thread_arg->frames)))) {
+    LOG(DEBUG) << "thread_callback_for_frames: found matching thread, calling dwfl_thread_getframes";
+    int result = dwfl_thread_getframes(thread, frameCallback, (void*)(&(thread_arg->frames)));
+    LOG(DEBUG) << "thread_callback_for_frames: dwfl_thread_getframes returned " << result << ", got "
+               << thread_arg->frames.size() << " frames";
+
+    switch (result) {
         case DWARF_CB_OK:
         case DWARF_CB_ABORT:
             break;
-        case -1:
+        case -1: {
             // This may or may not be an error, as it can signal the end of the stack
             // unwinding.
+            int dwfl_err = dwfl_errno();
+            LOG(DEBUG) << "thread_callback_for_frames: dwfl error: "
+                       << (dwfl_err ? dwfl_errmsg(dwfl_err) : "no error");
             if (thread_arg->frames.empty()) {
-                int dwfl_err = dwfl_errno();
                 std::string error(
                         dwfl_err ? dwfl_errmsg(dwfl_err) : "unwinding failed with no error reported");
                 throw UnwinderError("Unknown error happened when gathering thread frames: " + error);
             }
             break;
+        }
         default:
             throw UnwinderError("Unknown error happened when gathering thread frames");
     }

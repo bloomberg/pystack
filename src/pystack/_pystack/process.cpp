@@ -1,6 +1,7 @@
 #include <algorithm>
 #include <cstring>
 #include <dirent.h>
+#include <filesystem>
 #include <memory>
 
 #include <iostream>
@@ -13,6 +14,7 @@
 
 #include "corefile.h"
 #include "logging.h"
+#include "maps_parser.h"
 #include "mem.h"
 #include "native_frame.h"
 #include "process.h"
@@ -22,6 +24,7 @@
 #include "pythread.h"
 #include "pytypes.h"
 #include "version.h"
+#include "version_detector.h"
 
 namespace {
 
@@ -62,6 +65,19 @@ class DirectoryReader
 
 }  // namespace
 namespace pystack {
+
+namespace fs = std::filesystem;
+
+namespace {
+
+// Helper to extract the main interpreter map from ProcessMemoryMapInfo
+std::optional<VirtualMap>
+getMainMap(const ProcessMemoryMapInfo& map_info)
+{
+    return map_info.libpython ? *map_info.libpython : map_info.python;
+}
+
+}  // namespace
 
 namespace {  // unnamed
 
@@ -213,19 +229,33 @@ ProcessTracer::getTids() const
 AbstractProcessManager::AbstractProcessManager(
         pid_t pid,
         std::vector<VirtualMap>&& memory_maps,
-        MemoryMapInformation&& map_info)
+        std::optional<VirtualMap> main_map,
+        std::optional<VirtualMap> bss,
+        std::optional<VirtualMap> heap)
 : d_pid(pid)
-, d_memory_maps(memory_maps)
+, d_main_map(std::move(main_map))
+, d_bss(std::move(bss))
+, d_heap(std::move(heap))
+, d_memory_maps(std::move(memory_maps))
 , d_manager(nullptr)
 , d_unwinder(nullptr)
 , d_analyzer(nullptr)
 {
-    d_main_map = map_info.MainMap();
-    d_bss = map_info.Bss();
-    d_heap = map_info.Heap();
     if (!d_main_map) {
         throw std::runtime_error("The main interpreter map could not be located");
     }
+}
+
+const std::vector<VirtualMap>&
+AbstractProcessManager::MemoryMaps() const
+{
+    return d_memory_maps;
+}
+
+std::pair<int, int>
+AbstractProcessManager::Version() const
+{
+    return std::make_pair(d_major, d_minor);
 }
 
 bool
@@ -1361,17 +1391,49 @@ AbstractProcessManager::findInterpreterStateFromDebugOffsets() const
     return 0;
 }
 
+std::shared_ptr<ProcessManager>
+ProcessManager::create(pid_t pid, bool stop_process)
+{
+    std::shared_ptr<ProcessTracer> tracer;
+    if (stop_process) {
+        tracer = std::make_shared<ProcessTracer>(pid);
+    }
+
+    auto virtual_maps = parseProcMaps(pid);
+    auto map_info = parseMapInformationForProcess(pid, virtual_maps);
+    auto analyzer = std::make_shared<ProcessAnalyzer>(pid);
+
+    auto manager = std::make_shared<ProcessManager>(
+            pid,
+            tracer,
+            analyzer,
+            std::move(virtual_maps),
+            getMainMap(map_info),
+            map_info.bss,
+            map_info.heap);
+
+    manager->initializeVersion(pid, map_info);
+    return manager;
+}
+
 ProcessManager::ProcessManager(
         pid_t pid,
         const std::shared_ptr<ProcessTracer>& tracer,
         const std::shared_ptr<ProcessAnalyzer>& analyzer,
         std::vector<VirtualMap> memory_maps,
-        MemoryMapInformation map_info)
-: AbstractProcessManager(pid, std::move(memory_maps), std::move(map_info))
-, tracer(tracer)
+        std::optional<VirtualMap> main_map,
+        std::optional<VirtualMap> bss,
+        std::optional<VirtualMap> heap)
+: AbstractProcessManager(
+        pid,
+        std::move(memory_maps),
+        std::move(main_map),
+        std::move(bss),
+        std::move(heap))
+, d_tracer(tracer)
 {
-    if (tracer) {
-        d_tids = tracer->getTids();
+    if (d_tracer) {
+        d_tids = d_tracer->getTids();
     } else {
         d_tids = getProcessTids(pid);
     }
@@ -1380,25 +1442,103 @@ ProcessManager::ProcessManager(
     d_unwinder = std::make_unique<Unwinder>(analyzer);
 }
 
+void
+ProcessManager::initializeVersion(pid_t pid, const ProcessMemoryMapInfo& map_info)
+{
+    // Try to get version from debug offsets first
+    setPythonVersionFromDebugOffsets();
+    auto python_version = findPythonVersion();
+
+    // Fallback to external version detection if needed
+    if (python_version.first == -1 && python_version.second == -1) {
+        python_version = getVersionForProcess(pid, map_info, d_manager.get());
+    }
+
+    setPythonVersion(python_version);
+}
+
 const std::vector<int>&
 ProcessManager::Tids() const
 {
     return d_tids;
 }
 
+std::shared_ptr<CoreFileProcessManager>
+CoreFileProcessManager::create(
+        const std::string& core_file,
+        const std::string& executable,
+        const std::optional<std::string>& lib_search_path)
+{
+    std::shared_ptr<CoreFileAnalyzer> analyzer;
+    if (lib_search_path) {
+        analyzer = std::make_shared<CoreFileAnalyzer>(core_file, executable, *lib_search_path);
+    } else {
+        analyzer = std::make_shared<CoreFileAnalyzer>(core_file, executable);
+    }
+
+    auto extractor = std::make_unique<CoreFileExtractor>(analyzer);
+
+    auto mapped_files = extractor->extractMappedFiles();
+    auto memory_maps = extractor->MemoryMaps();
+
+    std::unordered_map<std::string, uintptr_t> load_point_by_module;
+    for (const auto& mod : extractor->ModuleInformation()) {
+        auto name = fs::path(mod.filename).filename().string();
+        load_point_by_module[name] = mod.start;
+    }
+
+    auto virtual_maps = parseCoreFileMaps(mapped_files, memory_maps);
+    pid_t pid = extractor->Pid();
+    auto map_info = parseMapInformation(executable, virtual_maps, &load_point_by_module);
+
+    auto manager = std::make_shared<CoreFileProcessManager>(
+            pid,
+            analyzer,
+            std::move(virtual_maps),
+            getMainMap(map_info),
+            map_info.bss,
+            map_info.heap);
+
+    manager->initializeVersion(core_file, map_info);
+    return manager;
+}
+
 CoreFileProcessManager::CoreFileProcessManager(
         pid_t pid,
         const std::shared_ptr<CoreFileAnalyzer>& analyzer,
         std::vector<VirtualMap> memory_maps,
-        MemoryMapInformation map_info)
-: AbstractProcessManager(pid, std::move(memory_maps), std::move(map_info))
+        std::optional<VirtualMap> main_map,
+        std::optional<VirtualMap> bss,
+        std::optional<VirtualMap> heap)
+: AbstractProcessManager(
+        pid,
+        std::move(memory_maps),
+        std::move(main_map),
+        std::move(bss),
+        std::move(heap))
 {
     d_analyzer = analyzer;
     d_manager = std::make_unique<CorefileRemoteMemoryManager>(analyzer, d_memory_maps);
-    d_executable = analyzer->d_executable;
-    std::unique_ptr<CoreFileUnwinder> the_unwinder = std::make_unique<CoreFileUnwinder>(analyzer);
-    d_tids = the_unwinder->getCoreTids();
-    d_unwinder = std::move(the_unwinder);
+    auto unwinder = std::make_unique<CoreFileUnwinder>(analyzer);
+    d_tids = unwinder->getCoreTids();
+    d_unwinder = std::move(unwinder);
+}
+
+void
+CoreFileProcessManager::initializeVersion(
+        const std::string& core_file,
+        const ProcessMemoryMapInfo& map_info)
+{
+    // Try to get version from debug offsets first
+    setPythonVersionFromDebugOffsets();
+    auto python_version = findPythonVersion();
+
+    // Fallback to external version detection if needed
+    if (python_version.first == -1 && python_version.second == -1) {
+        python_version = getVersionForCore(core_file, map_info);
+    }
+
+    setPythonVersion(python_version);
 }
 
 const std::vector<int>&
