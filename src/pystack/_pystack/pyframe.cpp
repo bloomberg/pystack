@@ -47,8 +47,12 @@ FrameObject::getIsShim(
         Structure<py_frame_v>& frame)
 {
     if (manager->versionIsAtLeast(3, 12)) {
-        constexpr int FRAME_OWNED_BY_CSTACK = 3;
-        return frame.getField(&py_frame_v::o_owner) == FRAME_OWNED_BY_CSTACK;
+        int owner = frame.getField(&py_frame_v::o_owner);
+        if (manager->versionIsAtLeast(3, 14)) {
+            return owner == Python3_14::FRAME_OWNED_BY_CSTACK
+                   || owner == Python3_14::FRAME_OWNED_BY_INTERPRETER;
+        }
+        return owner == Python3_12::FRAME_OWNED_BY_CSTACK;
     }
     return false;  // Versions before 3.12 don't have shim frames.
 }
@@ -61,6 +65,13 @@ FrameObject::getCode(
     remote_addr_t py_code_addr = frame.getField(&py_frame_v::o_code);
     if (manager->versionIsAtLeast(3, 14)) {
         py_code_addr = py_code_addr & (~3);
+    }
+
+    if (py_code_addr == (remote_addr_t) nullptr) {
+        // In Python 3.14+, the base/sentinel frame at the bottom of each
+        // thread's frame stack has a NULL f_executable. This is an internal
+        // interpreter frame that should be skipped.
+        return nullptr;
     }
 
     LOG(DEBUG) << std::hex << std::showbase << "Attempting to construct code object from address "

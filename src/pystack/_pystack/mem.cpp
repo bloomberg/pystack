@@ -310,8 +310,14 @@ ProcessMemoryManager::copyMemoryFromProcess(remote_addr_t addr, size_t len, void
 
     if (!d_lru_cache.exists(key)) {
         std::vector<char> buf(chunk_size);
-        readChunk(vmap_start_addr, chunk_size, buf.data());
-        d_lru_cache.put(key, std::move(buf));
+        try {
+            readChunk(vmap_start_addr, chunk_size, buf.data());
+            d_lru_cache.put(key, std::move(buf));
+        } catch (const InvalidRemoteAddress&) {
+            // The full vmap read failed (e.g. guard pages in JIT mappings).
+            // Fall back to reading just the requested bytes directly.
+            return readChunk(addr, len, reinterpret_cast<char*>(dst));
+        }
     }
 
     std::memcpy(dst, d_lru_cache.get(key).data() + offset_addr, len);
