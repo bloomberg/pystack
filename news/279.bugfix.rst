@@ -1,0 +1,5 @@
+Fix an issue where the PID offset could not be determined when multiple
+subinterpreters were present. Previously, pystack only checked the first
+interpreter in the linked list, which was not guaranteed to be the main
+interpreter. The fix now iterates over all interpreters and correctly locates
+the TID.

@@ -964,6 +964,7 @@ AbstractProcessManager::copyDebugOffsets(Structure<py_runtime_v>& py_runtime, py
     set_offset(py_is.o_sysdict, &py_runtime_v::o_dbg_off_interpreter_state_sysdict);
     set_offset(py_is.o_builtins, &py_runtime_v::o_dbg_off_interpreter_state_builtins);
     set_offset(py_is.o_gil_runtime_state, &py_runtime_v::o_dbg_off_interpreter_state_ceval_gil);
+    set_offset(py_is.o_id, &py_runtime_v::o_dbg_off_interpreter_state_id);
 
     set_size(py_thread, &py_runtime_v::o_dbg_off_thread_state_struct_size);
     set_offset(py_thread.o_prev, &py_runtime_v::o_dbg_off_thread_state_prev);

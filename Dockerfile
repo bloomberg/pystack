@@ -66,6 +66,9 @@ RUN apt-get update \
     python3.13-dev \
     python3.13-dbg \
     python3.13-venv \
+    python3.14-dev \
+    python3.14-dbg \
+    python3.14-venv \
     make \
     cmake \
     gdb \
