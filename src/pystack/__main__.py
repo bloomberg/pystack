@@ -19,13 +19,13 @@ from pystack.process import is_elf
 from pystack.process import is_gzip
 
 from . import errors
-from . import print_thread
 from .colors import colored
 from .engine import CoreFileAnalyzer
 from .engine import NativeReportingMode
 from .engine import StackMethod
 from .engine import get_process_threads
 from .engine import get_process_threads_for_core
+from .traceback_formatter import TracebackPrinter
 
 PERMISSION_ERROR_MSG = "Operation not permitted"
 NO_SUCH_PROCESS_ERROR_MSG = "No such process"
@@ -285,6 +285,9 @@ def process_remote(parser: argparse.ArgumentParser, args: argparse.Namespace) ->
     if not args.block and args.native_mode != NativeReportingMode.OFF:
         parser.error("Native traces are only available in blocking mode")
 
+    printer = TracebackPrinter(
+        native_mode=args.native_mode,
+    )
     for thread in get_process_threads(
         args.pid,
         stop_process=args.block,
@@ -292,7 +295,7 @@ def process_remote(parser: argparse.ArgumentParser, args: argparse.Namespace) ->
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
     ):
-        print_thread(thread, args.native_mode)
+        printer.print_thread(thread)
 
 
 def format_psinfo_information(psinfo: Dict[str, Any]) -> str:
@@ -414,6 +417,7 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
                 elf_id if elf_id else "<MISSING>",
             )
 
+    printer = TracebackPrinter(args.native_mode)
     for thread in get_process_threads_for_core(
         corefile,
         executable,
@@ -422,7 +426,7 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
     ):
-        print_thread(thread, args.native_mode)
+        printer.print_thread(thread)
 
 
 if __name__ == "__main__":  # pragma: no cover

@@ -22,6 +22,7 @@ from _pystack.elf_common cimport CoreFileAnalyzer as NativeCoreFileAnalyzer
 from _pystack.elf_common cimport ProcessAnalyzer as NativeProcessAnalyzer
 from _pystack.elf_common cimport SectionInfo
 from _pystack.elf_common cimport getSectionInfo
+from _pystack.interpreter cimport InterpreterUtils
 from _pystack.logging cimport initializePythonLoggerInterface
 from _pystack.mem cimport AbstractRemoteMemoryManager
 from _pystack.mem cimport MemoryMapInformation as CppMemoryMapInformation
@@ -462,6 +463,7 @@ cdef object _construct_threads_from_interpreter_state(
     bint add_native_traces,
     bint resolve_locals,
 ):
+    interp_id = InterpreterUtils.getInterpreterId(manager, head)
     LOGGER.info("Fetching Python threads")
     threads = []
 
@@ -486,6 +488,7 @@ cdef object _construct_threads_from_interpreter_state(
                 current_thread.isGilHolder(),
                 current_thread.isGCCollecting(),
                 python_version,
+                interp_id,
                 name=get_thread_name(pid, current_thread.Tid()),
             )
         )
@@ -622,7 +625,7 @@ def _get_process_threads(
         )
 
     all_tids = list(manager.get().Tids())
-    if head:
+    while head:
         add_native_traces = native_mode != NativeReportingMode.OFF
         for thread in _construct_threads_from_interpreter_state(
             manager,
@@ -635,6 +638,7 @@ def _get_process_threads(
             if thread.tid in all_tids:
                 all_tids.remove(thread.tid)
             yield thread
+        head = InterpreterUtils.getNextInterpreter(manager, head);
 
     if native_mode == NativeReportingMode.ALL:
         yield from _construct_os_threads(manager, pid, all_tids)
@@ -761,6 +765,7 @@ def _get_process_threads_for_core(
     cdef remote_addr_t head = _get_interpreter_state_addr(
         manager.get(), method, core=True
     )
+
 
     if not head and native_mode != NativeReportingMode.ALL:
         raise NotEnoughInformation(

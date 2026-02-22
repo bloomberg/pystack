@@ -236,11 +236,12 @@ struct py_is_v
     FieldOffset<remote_addr_t> o_next;
     FieldOffset<remote_addr_t> o_tstate_head;
     FieldOffset<char> o_gc;  // Using char because we can only use the offset,
-                             // as the size and members change between versions
+    // as the size and members change between versions
     FieldOffset<remote_addr_t> o_modules;
     FieldOffset<remote_addr_t> o_sysdict;
     FieldOffset<remote_addr_t> o_builtins;
     FieldOffset<remote_addr_t> o_gil_runtime_state;
+    FieldOffset<int64_t> o_id;
 };
 
 struct py_gc_v
