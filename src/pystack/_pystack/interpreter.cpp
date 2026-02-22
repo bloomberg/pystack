@@ -17,7 +17,7 @@ InterpreterUtils::getNextInterpreter(
     return is.getField(&py_is_v::o_next);
 }
 
-int
+int64_t
 InterpreterUtils::getInterpreterId(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         remote_addr_t interpreter_addr)

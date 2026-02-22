@@ -1709,7 +1709,7 @@ def test_print_thread_with_subinterpreters(capsys):
 
     # THEN
     captured = capsys.readouterr()
-    assert "Interpreter-Unknown (main)" in captured.out
+    assert "Interpreter-0 (main)" in captured.out
     # Lines should be indented with 2 spaces
     assert "  line1\n" in captured.out
     assert "  line2\n" in captured.out

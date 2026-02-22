@@ -16,7 +16,7 @@ class InterpreterUtils
             const std::shared_ptr<const AbstractProcessManager>& manager,
             remote_addr_t interpreter_addr);
 
-    static int getInterpreterId(
+    static int64_t getInterpreterId(
             const std::shared_ptr<const AbstractProcessManager>& manager,
             remote_addr_t interpreter_addr);
 };
