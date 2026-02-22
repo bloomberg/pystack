@@ -1650,7 +1650,7 @@ def test_traceback_printer_created_with_native_level(native_mode):
     # THEN
     assert printer.native_mode is native_mode
     assert printer.include_subinterpreters is False
-    assert printer._current_interp_id == -1
+    assert printer._current_interpreter_id == -1
 
 
 def test_traceback_printer_created_with_subinterpreters():
@@ -1697,7 +1697,7 @@ def test_print_thread_with_subinterpreters(capsys):
         holds_the_gil=False,
         is_gc_collecting=False,
         python_version=(3, 8),
-        interp_id=0,
+        interpreter_id=0,
     )
 
     # WHEN
@@ -1725,7 +1725,7 @@ def test_print_thread_with_subinterpreters_nonzero_interp(capsys):
         holds_the_gil=False,
         is_gc_collecting=False,
         python_version=(3, 8),
-        interp_id=2,
+        interpreter_id=2,
     )
 
     # WHEN
@@ -1751,7 +1751,7 @@ def test_print_thread_with_subinterpreters_none_interp(capsys):
         holds_the_gil=False,
         is_gc_collecting=False,
         python_version=(3, 8),
-        interp_id=None,
+        interpreter_id=None,
     )
 
     # WHEN
@@ -1776,7 +1776,7 @@ def test_print_thread_with_subinterpreters_same_interp_no_repeat_header(capsys):
         holds_the_gil=False,
         is_gc_collecting=False,
         python_version=(3, 8),
-        interp_id=1,
+        interpreter_id=1,
     )
     thread2 = PyThread(
         tid=2,
@@ -1785,7 +1785,7 @@ def test_print_thread_with_subinterpreters_same_interp_no_repeat_header(capsys):
         holds_the_gil=False,
         is_gc_collecting=False,
         python_version=(3, 8),
-        interp_id=1,
+        interpreter_id=1,
     )
 
     # WHEN
@@ -1812,7 +1812,7 @@ def test_print_thread_with_subinterpreters_different_interps_prints_headers(caps
         holds_the_gil=False,
         is_gc_collecting=False,
         python_version=(3, 8),
-        interp_id=1,
+        interpreter_id=1,
     )
     thread2 = PyThread(
         tid=2,
@@ -1821,7 +1821,7 @@ def test_print_thread_with_subinterpreters_different_interps_prints_headers(caps
         holds_the_gil=False,
         is_gc_collecting=False,
         python_version=(3, 8),
-        interp_id=2,
+        interpreter_id=2,
     )
 
     # WHEN
@@ -1848,7 +1848,7 @@ def test_print_thread_without_subinterpreters_no_indentation(capsys):
         holds_the_gil=False,
         is_gc_collecting=False,
         python_version=(3, 8),
-        interp_id=1,
+        interpreter_id=1,
     )
 
     # WHEN

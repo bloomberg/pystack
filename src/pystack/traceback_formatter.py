@@ -18,14 +18,14 @@ class TracebackPrinter:
     ):
         self.native_mode = native_mode
         self.include_subinterpreters = include_subinterpreters
-        self._current_interp_id = -1
+        self._current_interpreter_id = -1
 
     def print_thread(self, thread: PyThread) -> None:
         # Print interpreter header if we've switched interpreters
         if self.include_subinterpreters:
-            if thread.interp_id != self._current_interp_id:
-                self._print_interpreter_header(thread.interp_id)
-                self._current_interp_id = thread.interp_id
+            if thread.interpreter_id != self._current_interpreter_id:
+                self._print_interpreter_header(thread.interpreter_id)
+                self._current_interpreter_id = thread.interpreter_id
 
         # Print the thread with indentation
         for line in format_thread(thread, self.native_mode):
@@ -33,13 +33,11 @@ class TracebackPrinter:
                 print(" " * 2, end="")
             print(line, file=sys.stdout, flush=True)
 
-    def _print_interpreter_header(self, interp_id: Optional[int]) -> None:
-        header = "Interpreter-"
-        if interp_id is not None:
-            header += str(interp_id)
-        else:
-            header += "Unknown"
-        if interp_id == 0:
+    def _print_interpreter_header(self, interpreter_id: Optional[int]) -> None:
+        header = (
+            f"Interpreter-{interpreter_id if interpreter_id is not None else 'Unknown'}"
+        )
+        if interpreter_id == 0:
             header += " (main)"
         print(header, file=sys.stdout, flush=True)
 

@@ -286,7 +286,7 @@ def process_remote(parser: argparse.ArgumentParser, args: argparse.Namespace) ->
         parser.error("Native traces are only available in blocking mode")
 
     printer = TracebackPrinter(
-        native_mode=args.native_mode,
+        native_mode=args.native_mode, include_subinterpreters=True
     )
     for thread in get_process_threads(
         args.pid,
@@ -417,7 +417,7 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
                 elf_id if elf_id else "<MISSING>",
             )
 
-    printer = TracebackPrinter(args.native_mode)
+    printer = TracebackPrinter(args.native_mode, include_subinterpreters=True)
     for thread in get_process_threads_for_core(
         corefile,
         executable,

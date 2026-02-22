@@ -48,9 +48,9 @@ findPthreadTidOffset(
 {
     LOG(DEBUG) << "Attempting to locate tid offset in pthread structure";
 
-    // If interp_state_addr does not point to the main interpreter we won't find the
-    // PID == TID in the interpreter threads (as it is in the main interpreter). Hence,
-    // we traverse the linked list of interpreters and pray.
+    // If interp_state_addr does not point to the main interpreter (id 0) we won't find the
+    // PID == TID in the interpreter threads. Hence, we traverse the linked list of interpreters. The
+    // main interpreter is not necessarily the head of the linked lists of interpreters.
 
     while (interp_state_addr != 0) {
         Structure<py_is_v> is(manager, interp_state_addr);

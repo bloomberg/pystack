@@ -65,13 +65,13 @@ def test_subinterpreters(python, tmpdir):
         threads = list(get_process_threads(child_process.pid, stop_process=True))
 
     # Collect all interpreter IDs from the threads
-    interp_ids = {thread.interp_id for thread in threads}
+    interpreter_ids = {thread.interpreter_id for thread in threads}
 
     # THEN
 
     # We expect the main interpreter (0) plus NUM_INTERPRETERS sub-interpreters
-    assert 0 in interp_ids
-    assert len(interp_ids) == NUM_INTERPRETERS + 1
+    assert 0 in interpreter_ids
+    assert len(interpreter_ids) == NUM_INTERPRETERS + 1
 
     # Verify the TracebackPrinter output contains the interpreter headers
     printer = TracebackPrinter(
@@ -85,7 +85,7 @@ def test_subinterpreters(python, tmpdir):
 
     result = output.getvalue()
     assert "Interpreter-0 (main)" in result
-    for interp_id in interp_ids:
-        if interp_id == 0:
+    for interpreter_id in interpreter_ids:
+        if interpreter_id == 0:
             continue
-        assert f"Interpreter-{interp_id}" in result
+        assert f"Interpreter-{interpreter_id}" in result
