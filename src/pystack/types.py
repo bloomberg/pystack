@@ -47,7 +47,12 @@ class NativeFrame:
 def _is_eval_frame(symbol: str, python_version: Tuple[int, int]) -> bool:
     if python_version < (3, 6):
         return "PyEval_EvalFrameEx" in symbol
-    return "_PyEval_EvalFrameDefault" in symbol
+    if "_PyEval_EvalFrameDefault" in symbol:
+        return True
+    # Python 3.14 tail call interpreter uses LLVM-generated functions
+    if symbol.startswith("_TAIL_CALL_") and ".llvm." in symbol:
+        return True
+    return False
 
 
 def frame_type(
@@ -59,6 +64,8 @@ def frame_type(
     if symbol.startswith("PyEval") or symbol.startswith("_PyEval"):
         return frame.FrameType.IGNORE
     if symbol.startswith("_Py"):
+        return frame.FrameType.IGNORE
+    if symbol.startswith("_TAIL_CALL_"):
         return frame.FrameType.IGNORE
     if python_version and python_version >= (3, 8) and "vectorcall" in symbol.lower():
         return frame.FrameType.IGNORE
