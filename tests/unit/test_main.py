@@ -207,7 +207,9 @@ def test_process_remote_default():
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(native_mode=NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -241,7 +243,9 @@ def test_process_remote_no_block():
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(native_mode=NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -283,7 +287,9 @@ def test_process_remote_native(argument, mode):
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(native_mode=mode)
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=mode, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -317,7 +323,9 @@ def test_process_remote_locals():
         locals=True,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(native_mode=NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -378,7 +386,9 @@ def test_process_remote_exhaustive():
         locals=False,
         method=StackMethod.ALL,
     )
-    TracebackPrinterMock.assert_called_once_with(native_mode=NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -411,7 +421,9 @@ def test_process_remote_error(exception, exval, capsys):
     # THEN
 
     get_process_threads_mock.assert_called_once()
-    TracebackPrinterMock.assert_called_once_with(native_mode=NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
     TracebackPrinterMock.return_value.print_thread.assert_not_called()
     capture = capsys.readouterr()
     assert "Oh no!" in capture.err
@@ -457,7 +469,9 @@ def test_process_core_default_without_executable():
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -514,7 +528,9 @@ def test_process_core_default_gzip_without_executable():
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -611,7 +627,9 @@ def test_process_core_default_with_executable():
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -662,7 +680,7 @@ def test_process_core_native(argument, mode):
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(mode)
+    TracebackPrinterMock.assert_called_once_with(mode, include_subinterpreters=True)
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -705,7 +723,9 @@ def test_process_core_locals():
         locals=True,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -755,7 +775,9 @@ def test_process_core_with_search_path():
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -806,7 +828,9 @@ def test_process_core_with_search_root():
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -955,7 +979,9 @@ def test_process_core_error(exception, exval, capsys):
     # THEN
 
     get_process_threads_mock.assert_called_once()
-    TracebackPrinterMock.assert_called_once_with(NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
     TracebackPrinterMock.return_value.print_thread.assert_not_called()
     capture = capsys.readouterr()
     assert "Oh no!" in capture.err
@@ -997,7 +1023,9 @@ def test_process_core_exhaustive():
         locals=False,
         method=StackMethod.ALL,
     )
-    TracebackPrinterMock.assert_called_once_with(NativeReportingMode.OFF)
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
