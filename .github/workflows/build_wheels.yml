@@ -124,7 +124,7 @@ jobs:
       matrix:
         python_version: ["3.13"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v5
         with:
           name: "manylinux_x86_64-wheels"
