@@ -59,7 +59,7 @@ jobs:
       - name: Disable ptrace security restrictions
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: sdist
       - name: Extract sdist
@@ -85,7 +85,7 @@ jobs:
         python_version: ["2.7", "3.7"]
     steps:
       - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -125,7 +125,7 @@ jobs:
         python_version: ["3.13"]
     steps:
       - uses: actions/checkout@v5
-      - uses: actions/download-artifact@v5
+      - uses: actions/download-artifact@v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -164,7 +164,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "${{matrix.python_version}}-dev"
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -199,7 +199,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "${{matrix.python_version}}-dev"
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: "manylinux_aarch64-wheels"
           path: dist
@@ -237,7 +237,7 @@ jobs:
         uses: actions/setup-python@v6
         with:
           python-version: "${{matrix.python_version}}-dev"
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -282,7 +282,7 @@ jobs:
       - name: Set up dependencies
         run: |
           apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: "musllinux_x86_64-wheels"
           path: dist
@@ -319,7 +319,7 @@ jobs:
             python3-devel
           dnf debuginfo-install -y \
             python3
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -356,7 +356,7 @@ jobs:
             python-wheel \
             elfutils \
             debuginfod
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -394,7 +394,7 @@ jobs:
             python3-pip \
             python3-venv \
             python3-dbg
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -414,7 +414,7 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'release' && github.event.action == 'published'
     steps:
-      - uses: actions/download-artifact@v7
+      - uses: actions/download-artifact@v8
         with:
           # with no name set, it downloads all of the artifacts
           path: dist
