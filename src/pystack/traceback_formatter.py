@@ -12,9 +12,38 @@ from .types import PyThread
 from .types import frame_type
 
 
-def print_thread(thread: PyThread, native_mode: NativeReportingMode) -> None:
-    for line in format_thread(thread, native_mode):
-        print(line, file=sys.stdout, flush=True)
+class TracebackPrinter:
+    def __init__(
+        self, native_mode: NativeReportingMode, include_subinterpreters: bool = False
+    ):
+        self.native_mode = native_mode
+        self.include_subinterpreters = include_subinterpreters
+        self._current_interpreter_id = -1
+
+    def print_thread(self, thread: PyThread) -> None:
+        # Print interpreter header if we've switched interpreters
+        if self.include_subinterpreters:
+            if thread.interpreter_id != self._current_interpreter_id:
+                self._print_interpreter_header(thread.interpreter_id)
+                self._current_interpreter_id = (
+                    thread.interpreter_id
+                    if thread.interpreter_id is not None
+                    else -1
+                )
+
+        # Print the thread with indentation
+        for line in format_thread(thread, self.native_mode):
+            if self.include_subinterpreters:
+                print(" " * 2, end="")
+            print(line, file=sys.stdout, flush=True)
+
+    def _print_interpreter_header(self, interpreter_id: Optional[int]) -> None:
+        header = (
+            f"Interpreter-{interpreter_id if interpreter_id is not None else 'Unknown'}"
+        )
+        if interpreter_id == 0:
+            header += " (main)"
+        print(header, file=sys.stdout, flush=True)
 
 
 def format_frame(frame: PyFrame) -> Iterable[str]:

@@ -21,6 +21,7 @@ add_library(_pystack STATIC
             pythread.cpp
             version.cpp
             elf_common.cpp
-            pytypes.cpp)
+            pytypes.cpp
+            interpreter.cpp)
 set_property(TARGET _pystack PROPERTY POSITION_INDEPENDENT_CODE ON)
 include_directories("." "cpython" ${PYTHON_INCLUDE_DIRS})

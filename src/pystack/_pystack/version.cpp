@@ -181,6 +181,23 @@ py_is()
 
 template<class T>
 constexpr py_is_v
+py_isv7()
+{
+    return {
+            sizeof(T),
+            {offsetof(T, next)},
+            {offsetof(T, tstate_head)},
+            {offsetof(T, gc)},
+            {offsetof(T, modules)},
+            {offsetof(T, sysdict)},
+            {offsetof(T, builtins)},
+            {0},
+            {offsetof(T, id)},
+    };
+}
+
+template<class T>
+constexpr py_is_v
 py_isv311()
 {
     return {
@@ -191,6 +208,8 @@ py_isv311()
             {offsetof(T, modules)},
             {offsetof(T, sysdict)},
             {offsetof(T, builtins)},
+            {0},
+            {offsetof(T, id)},
     };
 }
 
@@ -207,6 +226,24 @@ py_isv312()
             {offsetof(T, sysdict)},
             {offsetof(T, builtins)},
             {offsetof(T, ceval.gil)},
+            {offsetof(T, id)},
+    };
+}
+
+template<class T>
+constexpr py_is_v
+py_isv314()
+{
+    return {
+            sizeof(T),
+            {offsetof(T, next)},
+            {offsetof(T, threads.head)},
+            {offsetof(T, gc)},
+            {offsetof(T, imports.modules)},
+            {offsetof(T, sysdict)},
+            {offsetof(T, builtins)},
+            {offsetof(T, _gil)},
+            {offsetof(T, id)},
     };
 }
 
@@ -578,7 +615,7 @@ python_v python_v3_7 = {
         py_code<Python3_6::PyCodeObject>(),
         py_frame<Python3_7::PyFrameObject>(),
         py_thread<Python3_7::PyThreadState>(),
-        py_is<Python3_7::PyInterpreterState>(),
+        py_isv7<Python3_7::PyInterpreterState>(),
         py_runtime<Python3_7::PyRuntimeState>(),
         py_gc<Python3_7::_gc_runtime_state>(),
 };
@@ -600,7 +637,7 @@ python_v python_v3_8 = {
         py_code<Python3_8::PyCodeObject>(),
         py_frame<Python3_7::PyFrameObject>(),
         py_thread<Python3_7::PyThreadState>(),
-        py_is<Python3_8::PyInterpreterState>(),
+        py_isv7<Python3_8::PyInterpreterState>(),
         py_runtime<Python3_8::PyRuntimeState>(),
         py_gc<Python3_8::_gc_runtime_state>(),
 };
@@ -622,7 +659,7 @@ python_v python_v3_9 = {
         py_code<Python3_8::PyCodeObject>(),
         py_frame<Python3_7::PyFrameObject>(),
         py_thread<Python3_7::PyThreadState>(),
-        py_is<Python3_9::PyInterpreterState>(),
+        py_isv7<Python3_9::PyInterpreterState>(),
         py_runtime<Python3_9::PyRuntimeState>(),
         py_gc<Python3_8::_gc_runtime_state>(),
 };
@@ -644,7 +681,7 @@ python_v python_v3_10 = {
         py_code<Python3_8::PyCodeObject>(),
         py_frame<Python3_10::PyFrameObject>(),
         py_thread<Python3_7::PyThreadState>(),
-        py_is<Python3_9::PyInterpreterState>(),
+        py_isv7<Python3_9::PyInterpreterState>(),
         py_runtime<Python3_9::PyRuntimeState>(),
         py_gc<Python3_8::_gc_runtime_state>(),
 };
@@ -737,7 +774,7 @@ python_v python_v3_14 = {
         py_codev311<Python3_14::PyCodeObject>(),
         py_framev314<Python3_14::PyFrameObject>(),
         py_threadv313<Python3_13::PyThreadState>(),
-        py_isv312<Python3_13::PyInterpreterState>(),
+        py_isv314<Python3_14::PyInterpreterState>(),
         py_runtimev313<Python3_14::PyRuntimeState>(),
         py_gc<Python3_14::_gc_runtime_state>(),
         py_cframe<Python3_12::CFrame>(),

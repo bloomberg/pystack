@@ -4,8 +4,8 @@ from unittest.mock import patch
 import pytest
 
 from pystack.engine import NativeReportingMode
+from pystack.traceback_formatter import TracebackPrinter
 from pystack.traceback_formatter import format_thread
-from pystack.traceback_formatter import print_thread
 from pystack.types import SYMBOL_IGNORELIST
 from pystack.types import LocationInfo
 from pystack.types import NativeFrame
@@ -1205,6 +1205,7 @@ def test_traceback_formatter_native_last():
 
 
 def test_print_thread(capsys):
+    printer = TracebackPrinter(NativeReportingMode.OFF)
     # GIVEN
     thread = PyThread(
         tid=1,
@@ -1220,7 +1221,9 @@ def test_print_thread(capsys):
         "pystack.traceback_formatter.format_thread",
         return_value=("1", "2", "3"),
     ):
-        print_thread(thread, NativeReportingMode.OFF)
+        printer.print_thread(
+            thread,
+        )
 
     # THEN
 
@@ -1629,3 +1632,270 @@ def test_native_traceback_with_shim_frames():
     colored_mock.assert_any_call("x =", color="blue")
     colored_mock.assert_any_call('"This is the line 2" ', color="blue")
     colored_mock.assert_any_call("(1+1)", color="blue")
+
+
+@pytest.mark.parametrize(
+    "native_mode",
+    [
+        NativeReportingMode.OFF,
+        NativeReportingMode.ALL,
+        NativeReportingMode.PYTHON,
+        NativeReportingMode.LAST,
+    ],
+)
+def test_traceback_printer_created_with_native_level(native_mode):
+    # GIVEN / WHEN
+    printer = TracebackPrinter(native_mode)
+
+    # THEN
+    assert printer.native_mode is native_mode
+    assert printer.include_subinterpreters is False
+    assert printer._current_interpreter_id == -1
+
+
+def test_traceback_printer_created_with_subinterpreters():
+    # GIVEN / WHEN
+    printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=True)
+
+    # THEN
+    assert printer.native_mode is NativeReportingMode.OFF
+    assert printer.include_subinterpreters is True
+
+
+def test_print_thread_passes_native_mode_to_format_thread(capsys):
+    # GIVEN
+    printer = TracebackPrinter(NativeReportingMode.ALL)
+    thread = PyThread(
+        tid=1,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+    )
+
+    # WHEN
+    with patch(
+        "pystack.traceback_formatter.format_thread",
+        return_value=("line1", "line2"),
+    ) as format_mock:
+        printer.print_thread(thread)
+
+    # THEN
+    format_mock.assert_called_once_with(thread, NativeReportingMode.ALL)
+    captured = capsys.readouterr()
+    assert captured.out == "line1\nline2\n"
+
+
+def test_print_thread_with_subinterpreters(capsys):
+    # GIVEN
+    printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=True)
+    thread = PyThread(
+        tid=1,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=0,
+    )
+
+    # WHEN
+    with patch(
+        "pystack.traceback_formatter.format_thread",
+        return_value=("line1", "line2"),
+    ):
+        printer.print_thread(thread)
+
+    # THEN
+    captured = capsys.readouterr()
+    assert "Interpreter-0 (main)" in captured.out
+    # Lines should be indented with 2 spaces
+    assert "  line1\n" in captured.out
+    assert "  line2\n" in captured.out
+
+
+def test_print_thread_with_subinterpreters_nonzero_interp(capsys):
+    # GIVEN
+    printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=True)
+    thread = PyThread(
+        tid=1,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=2,
+    )
+
+    # WHEN
+    with patch(
+        "pystack.traceback_formatter.format_thread",
+        return_value=("line1",),
+    ):
+        printer.print_thread(thread)
+
+    # THEN
+    captured = capsys.readouterr()
+    assert "Interpreter-2\n" in captured.out
+    assert "  line1\n" in captured.out
+
+
+def test_print_thread_with_subinterpreters_none_interp(capsys):
+    # GIVEN
+    printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=True)
+    thread = PyThread(
+        tid=1,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=None,
+    )
+
+    # WHEN
+    with patch(
+        "pystack.traceback_formatter.format_thread",
+        return_value=("line1",),
+    ):
+        printer.print_thread(thread)
+
+    # THEN
+    captured = capsys.readouterr()
+    assert "Interpreter-Unknown\n" in captured.out
+
+
+def test_print_thread_with_subinterpreters_same_interp_no_repeat_header(capsys):
+    # GIVEN
+    printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=True)
+    thread1 = PyThread(
+        tid=1,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=1,
+    )
+    thread2 = PyThread(
+        tid=2,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=1,
+    )
+
+    # WHEN
+    with patch(
+        "pystack.traceback_formatter.format_thread",
+        return_value=("line1",),
+    ):
+        printer.print_thread(thread1)
+        printer.print_thread(thread2)
+
+    # THEN
+    captured = capsys.readouterr()
+    # Header should appear only once
+    assert captured.out.count("Interpreter-1") == 1
+
+
+def test_print_thread_with_subinterpreters_main_interp_no_repeat_header(capsys):
+    # GIVEN
+    printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=True)
+    thread1 = PyThread(
+        tid=1,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=0,
+    )
+    thread2 = PyThread(
+        tid=2,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=0,
+    )
+
+    # WHEN
+    with patch(
+        "pystack.traceback_formatter.format_thread",
+        return_value=("line1",),
+    ):
+        printer.print_thread(thread1)
+        printer.print_thread(thread2)
+
+    # THEN
+    captured = capsys.readouterr()
+    # Header should appear only once
+    assert captured.out.count("Interpreter-0 (main)") == 1
+
+
+def test_print_thread_with_subinterpreters_different_interps_prints_headers(capsys):
+    # GIVEN
+    printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=True)
+    thread1 = PyThread(
+        tid=1,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=1,
+    )
+    thread2 = PyThread(
+        tid=2,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=2,
+    )
+
+    # WHEN
+    with patch(
+        "pystack.traceback_formatter.format_thread",
+        return_value=("line1",),
+    ):
+        printer.print_thread(thread1)
+        printer.print_thread(thread2)
+
+    # THEN
+    captured = capsys.readouterr()
+    assert "Interpreter-1\n" in captured.out
+    assert "Interpreter-2\n" in captured.out
+
+
+def test_print_thread_without_subinterpreters_no_indentation(capsys):
+    # GIVEN
+    printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=False)
+    thread = PyThread(
+        tid=1,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=1,
+    )
+
+    # WHEN
+    with patch(
+        "pystack.traceback_formatter.format_thread",
+        return_value=("line1", "line2"),
+    ):
+        printer.print_thread(thread)
+
+    # THEN
+    captured = capsys.readouterr()
+    # No interpreter header and no indentation
+    assert "Interpreter" not in captured.out
+    assert captured.out == "line1\nline2\n"
