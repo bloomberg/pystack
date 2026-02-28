@@ -375,10 +375,10 @@ struct _gil_runtime_state
     int locked;
     unsigned long switch_number;
     pthread_cond_t cond;
-    pthread_cond_t mutex;
+    pthread_mutex_t mutex;
 #ifdef FORCE_SWITCHING
     pthread_cond_t switch_cond;
-    pthread_cond_t switch_mutex;
+    pthread_mutex_t switch_mutex;
 #endif
 };
 

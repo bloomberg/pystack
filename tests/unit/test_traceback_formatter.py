@@ -1802,6 +1802,42 @@ def test_print_thread_with_subinterpreters_same_interp_no_repeat_header(capsys):
     assert captured.out.count("Interpreter-1") == 1
 
 
+def test_print_thread_with_subinterpreters_main_interp_no_repeat_header(capsys):
+    # GIVEN
+    printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=True)
+    thread1 = PyThread(
+        tid=1,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=0,
+    )
+    thread2 = PyThread(
+        tid=2,
+        frame=None,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+        interpreter_id=0,
+    )
+
+    # WHEN
+    with patch(
+        "pystack.traceback_formatter.format_thread",
+        return_value=("line1",),
+    ):
+        printer.print_thread(thread1)
+        printer.print_thread(thread2)
+
+    # THEN
+    captured = capsys.readouterr()
+    # Header should appear only once
+    assert captured.out.count("Interpreter-0 (main)") == 1
+
+
 def test_print_thread_with_subinterpreters_different_interps_prints_headers(capsys):
     # GIVEN
     printer = TracebackPrinter(NativeReportingMode.OFF, include_subinterpreters=True)
