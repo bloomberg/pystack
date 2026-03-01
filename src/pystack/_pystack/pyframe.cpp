@@ -19,6 +19,7 @@ FrameObject::FrameObject(
 {
     LOG(DEBUG) << "Copying frame number " << frame_no;
     LOG(DEBUG) << std::hex << std::showbase << "Copying frame struct from address " << addr;
+
     Structure<py_frame_v> frame(manager, addr);
 
     d_addr = addr;
@@ -36,7 +37,15 @@ FrameObject::FrameObject(
     auto prev_addr = frame.getField(&py_frame_v::o_back);
     LOG(DEBUG) << std::hex << std::showbase << "Previous frame address: " << prev_addr;
     if (prev_addr) {
-        d_prev = std::make_shared<FrameObject>(manager, prev_addr, next_frame_no);
+        try {
+            d_prev = std::make_shared<FrameObject>(manager, prev_addr, next_frame_no);
+        } catch (const RemoteMemCopyError& ex) {
+            // The previous frame address points to unreadable memory (e.g., guard page,
+            // unmapped region). Treat this as the end of the frame chain.
+            LOG(DEBUG) << "Failed to read previous frame at " << std::hex << std::showbase << prev_addr
+                       << ", treating as end of frame chain: " << ex.what();
+            d_prev = nullptr;
+        }
     }
     d_is_entry = isEntry(manager, frame);
 }

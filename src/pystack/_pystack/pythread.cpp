@@ -71,7 +71,11 @@ findPthreadTidOffset(
                 offsetof(_pthread_structure_with_simple_header, tid),
                 offsetof(_pthread_structure_with_tcbhead, tid)};
         for (off_t candidate : glibc_pthread_offset_candidates) {
-            manager->copyObjectFromProcess((remote_addr_t)(pthread_id_addr + candidate), &the_tid);
+            try {
+                manager->copyObjectFromProcess((remote_addr_t)(pthread_id_addr + candidate), &the_tid);
+            } catch (const RemoteMemCopyError& ex) {
+                continue;
+            }
             if (the_tid == manager->Pid()) {
                 LOG(DEBUG) << "Tid offset located using GLIBC offsets at offset " << std::showbase
                            << std::hex << candidate << " in pthread structure";

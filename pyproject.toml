@@ -1,13 +1,46 @@
 [build-system]
+requires = ["scikit-build-core>=0.4", "nanobind>=1.8"]
+build-backend = "scikit_build_core.build"
 
-requires = [
-     "setuptools",
-     "wheel",
-     "Cython",
-     "pkgconfig"
+[project]
+name = "pystack"
+dynamic = ["version"]
+description = "Analysis of the stack of remote python processes"
+readme = "README.md"
+requires-python = ">=3.9"
+license = {text = "Apache-2.0"}
+authors = [
+    {name = "Pablo Galindo Salgado"}
+]
+classifiers = [
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.9",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Programming Language :: Python :: 3.14",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Debuggers",
 ]
 
-build-backend = 'setuptools.build_meta'
+[project.urls]
+Homepage = "https://github.com/bloomberg/pystack"
+
+[project.scripts]
+pystack = "pystack.__main__:main"
+
+[tool.scikit-build]
+wheel.packages = ["src/pystack"]
+wheel.install-dir = "pystack"
+metadata.version.provider = "scikit_build_core.metadata.regex"
+metadata.version.input = "src/pystack/_version.py"
+sdist.include = ["src/pystack/_version.py"]
+
+[tool.scikit-build.cmake.define]
+CMAKE_BUILD_TYPE = "Release"
 
 [tool.ruff]
 line-length = 95
@@ -43,7 +76,7 @@ type = [
 underlines = "-~"
 
 [tool.cibuildwheel]
-build = ["cp38-*", "cp39-*", "cp310-*", "cp311-*"]
+build = ["cp39-*", "cp310-*", "cp311-*", "cp312-*", "cp313-*", "cp314-*"]
 manylinux-x86_64-image = "manylinux2014"
 manylinux-i686-image = "manylinux2014"
 musllinux-x86_64-image = "musllinux_1_2"
@@ -51,7 +84,7 @@ skip = "*-musllinux_aarch64"
 
 [tool.cibuildwheel.linux]
 before-all = [
-  "yum install -y libzstd-devel",
+  "yum install -y libzstd-devel cmake",
   "cd /",
   "VERS=0.193",
   "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
@@ -74,7 +107,7 @@ before-all = [
   # set the FNM_EXTMATCH macro to get the build to succeed is seen here:
   # https://git.alpinelinux.org/aports/tree/main/elfutils/musl-macros.patch
   "cd /",
-  "apk add --update argp-standalone bison bsd-compat-headers bzip2-dev flex-dev libtool linux-headers musl-fts-dev musl-libintl musl-obstack-dev xz-dev zlib-dev zstd-dev",
+  "apk add --update argp-standalone bison bsd-compat-headers bzip2-dev flex-dev libtool linux-headers musl-fts-dev musl-libintl musl-obstack-dev xz-dev zlib-dev zstd-dev cmake",
   "VERS=0.193",
   "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
   "tar -xf elfutils.tar.bz2",
@@ -88,16 +121,12 @@ before-all = [
 ]
 
 [tool.coverage.run]
-plugins = [
-  "Cython.Coverage",
-]
 source = [
   "src/pystack",
 ]
 branch = true
 parallel = true
 omit = [
-  "stringsource",
   "tests/integration/*program*.py",
 ]
 
