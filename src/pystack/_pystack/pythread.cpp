@@ -2,6 +2,7 @@
 #include <cassert>
 #include <memory>
 
+#include "cpython/frame.h"
 #include "cpython/pthread.h"
 #include "interpreter.h"
 #include "logging.h"
@@ -18,6 +19,7 @@ namespace pystack {
 Thread::Thread(pid_t pid, pid_t tid)
 : d_pid(pid)
 , d_tid(tid)
+, d_stack_anchor(0)
 {
 }
 
@@ -25,6 +27,12 @@ pid_t
 Thread::Tid() const
 {
     return d_tid;
+}
+
+remote_addr_t
+Thread::StackAnchor() const
+{
+    return d_stack_anchor;
 }
 
 const std::vector<NativeFrame>&
@@ -148,6 +156,7 @@ PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager,
                    << frame_addr;
         d_first_frame = std::make_unique<FrameObject>(manager, frame_addr, 0);
     }
+    d_stack_anchor = getStackAnchor(manager, frame_addr);
 
     d_addr = addr;
     remote_addr_t candidate_next_addr = ts.getField(&py_thread_v::o_next);
@@ -235,6 +244,44 @@ PyThread::getFrameAddr(
     } else {
         return ts.getField(&py_thread_v::o_frame);
     }
+}
+
+remote_addr_t
+PyThread::getStackAnchor(
+        const std::shared_ptr<const AbstractProcessManager>& manager,
+        remote_addr_t frame_addr)
+{
+    if (!frame_addr) {
+        return 0;
+    }
+    if (!manager->versionIsAtLeast(3, 12)) {
+        return frame_addr;
+    }
+
+    remote_addr_t current_addr = frame_addr;
+    for (int i = 0; i < 4096 && current_addr; ++i) {
+        Structure<py_frame_v> current_frame(manager, current_addr);
+        auto owner = current_frame.getField(&py_frame_v::o_owner);
+
+        if (manager->versionIsAtLeast(3, 14)) {
+            if (owner == Python3_14::FRAME_OWNED_BY_INTERPRETER
+                || owner == Python3_14::FRAME_OWNED_BY_CSTACK)
+            {
+                return current_addr;
+            }
+        } else {
+            if (owner == Python3_12::FRAME_OWNED_BY_CSTACK) {
+                return current_addr;
+            }
+        }
+
+        remote_addr_t next_addr = current_frame.getField(&py_frame_v::o_back);
+        if (next_addr == current_addr) {
+            break;
+        }
+        current_addr = next_addr;
+    }
+    return frame_addr;
 }
 
 std::shared_ptr<FrameObject>

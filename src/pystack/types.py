@@ -117,6 +117,7 @@ class PyThread:
     python_version: Optional[Tuple[int, int]]
     interpreter_id: Optional[int] = None
     name: Optional[str] = None
+    stack_anchor: Optional[int] = None
 
     @property
     def frames(self) -> Iterable[PyFrame]:
