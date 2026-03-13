@@ -191,8 +191,8 @@ def test_process_remote_default():
     with patch(
         "pystack.__main__.get_process_threads"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ):
         get_process_threads_mock.return_value = threads
@@ -207,8 +207,11 @@ def test_process_remote_default():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -224,8 +227,8 @@ def test_process_remote_no_block():
     with patch(
         "pystack.__main__.get_process_threads"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ):
         get_process_threads_mock.return_value = threads
@@ -240,8 +243,11 @@ def test_process_remote_no_block():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -265,8 +271,8 @@ def test_process_remote_native(argument, mode):
     with patch(
         "pystack.__main__.get_process_threads"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ):
         get_process_threads_mock.return_value = threads
@@ -281,7 +287,12 @@ def test_process_remote_native(argument, mode):
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, mode) for thread in threads]
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=mode, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
+    ]
 
 
 def test_process_remote_locals():
@@ -296,8 +307,8 @@ def test_process_remote_locals():
     with patch(
         "pystack.__main__.get_process_threads"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ):
         get_process_threads_mock.return_value = threads
@@ -312,8 +323,11 @@ def test_process_remote_locals():
         locals=True,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -329,8 +343,8 @@ def test_process_remote_native_no_block(capsys):
     with patch(
         "pystack.__main__.get_process_threads"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ):
         get_process_threads_mock.return_value = threads
@@ -340,7 +354,8 @@ def test_process_remote_native_no_block(capsys):
             main()
 
     get_process_threads_mock.assert_not_called()
-    print_thread_mock.assert_not_called()
+    TracebackPrinterMock.assert_not_called()
+    TracebackPrinterMock.return_value.print_thread.assert_not_called()
 
 
 def test_process_remote_exhaustive():
@@ -355,8 +370,8 @@ def test_process_remote_exhaustive():
     with patch(
         "pystack.__main__.get_process_threads"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ):
         get_process_threads_mock.return_value = threads
@@ -371,8 +386,11 @@ def test_process_remote_exhaustive():
         locals=False,
         method=StackMethod.ALL,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -389,8 +407,8 @@ def test_process_remote_error(exception, exval, capsys):
     with patch(
         "pystack.__main__.get_process_threads"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -403,7 +421,10 @@ def test_process_remote_error(exception, exval, capsys):
     # THEN
 
     get_process_threads_mock.assert_called_once()
-    print_thread_mock.assert_not_called()
+    TracebackPrinterMock.assert_called_once_with(
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    TracebackPrinterMock.return_value.print_thread.assert_not_called()
     capture = capsys.readouterr()
     assert "Oh no!" in capture.err
 
@@ -420,8 +441,8 @@ def test_process_core_default_without_executable():
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -448,8 +469,11 @@ def test_process_core_default_without_executable():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -471,8 +495,8 @@ def test_process_core_default_gzip_without_executable():
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -504,8 +528,11 @@ def test_process_core_default_gzip_without_executable():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
     gzip_open_mock.assert_called_with(Path("corefile.gz"), "rb")
 
@@ -575,8 +602,8 @@ def test_process_core_default_with_executable():
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -600,8 +627,11 @@ def test_process_core_default_with_executable():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -625,8 +655,8 @@ def test_process_core_native(argument, mode):
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -650,7 +680,10 @@ def test_process_core_native(argument, mode):
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [call(thread, mode) for thread in threads]
+    TracebackPrinterMock.assert_called_once_with(mode, include_subinterpreters=True)
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
+    ]
 
 
 def test_process_core_locals():
@@ -665,8 +698,8 @@ def test_process_core_locals():
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -690,8 +723,11 @@ def test_process_core_locals():
         locals=True,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -714,8 +750,8 @@ def test_process_core_with_search_path():
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -739,8 +775,11 @@ def test_process_core_with_search_path():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -756,8 +795,8 @@ def test_process_core_with_search_root():
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -789,8 +828,11 @@ def test_process_core_with_search_root():
         locals=False,
         method=StackMethod.AUTO,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -802,7 +844,7 @@ def test_process_core_with_not_readable_search_root():
     # WHEN
 
     with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("sys.argv", argv), patch("pathlib.Path.exists", return_value=True), patch(
         "pystack.__main__.CoreFileAnalyzer"
     ), patch(
@@ -826,7 +868,7 @@ def test_process_core_with_invalid_search_root():
     # WHEN
 
     with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("sys.argv", argv), patch("pathlib.Path.exists", return_value=True), patch(
         "pystack.__main__.CoreFileAnalyzer"
     ), patch(
@@ -851,8 +893,8 @@ def test_process_core_corefile_does_not_exit():
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch.object(
         Path, "exists", path_exists
@@ -865,7 +907,8 @@ def test_process_core_corefile_does_not_exit():
     # THEN
 
     get_process_threads_mock.assert_not_called()
-    print_thread_mock.assert_not_called()
+    TracebackPrinterMock.assert_not_called()
+    TracebackPrinterMock.return_value.print_thread.assert_not_called()
 
 
 def test_process_core_executable_does_not_exit():
@@ -883,8 +926,8 @@ def test_process_core_executable_does_not_exit():
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "pystack.__main__.is_gzip", return_value=False
     ), patch(
         "sys.argv", argv
@@ -898,7 +941,8 @@ def test_process_core_executable_does_not_exit():
     # THEN
 
     get_process_threads_mock.assert_not_called()
-    print_thread_mock.assert_not_called()
+    TracebackPrinterMock.assert_not_called()
+    TracebackPrinterMock.return_value.print_thread.assert_not_called()
 
 
 @pytest.mark.parametrize(
@@ -914,8 +958,8 @@ def test_process_core_error(exception, exval, capsys):
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -935,7 +979,10 @@ def test_process_core_error(exception, exval, capsys):
     # THEN
 
     get_process_threads_mock.assert_called_once()
-    print_thread_mock.assert_not_called()
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    TracebackPrinterMock.return_value.print_thread.assert_not_called()
     capture = capsys.readouterr()
     assert "Oh no!" in capture.err
 
@@ -951,8 +998,8 @@ def test_process_core_exhaustive():
     with patch(
         "pystack.__main__.get_process_threads_for_core"
     ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
+        "pystack.__main__.TracebackPrinter"
+    ) as TracebackPrinterMock, patch(
         "sys.argv", argv
     ), patch(
         "pathlib.Path.exists", return_value=True
@@ -976,8 +1023,11 @@ def test_process_core_exhaustive():
         locals=False,
         method=StackMethod.ALL,
     )
-    assert print_thread_mock.mock_calls == [
-        call(thread, NativeReportingMode.OFF) for thread in threads
+    TracebackPrinterMock.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
+    assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
+        call(thread) for thread in threads
     ]
 
 
@@ -990,7 +1040,7 @@ def test_default_colored_output():
     # WHEN
 
     with patch("pystack.__main__.get_process_threads"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("sys.argv", argv), patch("os.environ", environ):
         main()
 
@@ -1008,7 +1058,7 @@ def test_nocolor_output():
     # WHEN
 
     with patch("pystack.__main__.get_process_threads"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("sys.argv", argv), patch("os.environ", environ):
         main()
 
@@ -1026,7 +1076,7 @@ def test_nocolor_output_at_the_front_for_process():
     # WHEN
 
     with patch("pystack.__main__.get_process_threads"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("sys.argv", argv), patch("os.environ", environ):
         main()
 
@@ -1043,7 +1093,7 @@ def test_nocolor_output_at_the_front_for_core():
 
     # WHEN
     with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("sys.argv", argv), patch("os.environ", environ), patch(
         "pathlib.Path.exists", return_value=True
     ), patch(
@@ -1069,7 +1119,7 @@ def test_global_options_can_be_placed_at_any_point(option):
 
     # WHEN
     with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("sys.argv", argv), patch("os.environ", environ), patch(
         "pathlib.Path.exists", return_value=True
     ), patch(
@@ -1092,7 +1142,7 @@ def test_verbose_as_global_options_sets_correctly_the_logger():
 
     # WHEN
     with patch("pystack.__main__.get_process_threads"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("sys.argv", argv), patch("os.environ", environ), patch(
         "pathlib.Path.exists", return_value=True
     ), patch(
@@ -1241,7 +1291,7 @@ def test_process_core_does_not_crash_if_core_analyzer_fails(method):
     # WHEN / THEN
 
     with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("pystack.__main__.is_elf", return_value=True), patch(
         "pystack.__main__.is_gzip", return_value=False
     ), patch(
@@ -1268,7 +1318,7 @@ def test_core_file_missing_modules_are_logged(caplog, native):
     # WHEN
 
     with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("pystack.__main__.is_elf", return_value=True), patch(
         "pystack.__main__.is_gzip", return_value=False
     ), patch(
@@ -1301,7 +1351,7 @@ def test_core_file_missing_build_ids_are_logged(caplog, native):
     # WHEN
 
     with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
+        "pystack.__main__.TracebackPrinter"
     ), patch("pystack.__main__.is_elf", return_value=True), patch(
         "pystack.__main__.is_gzip", return_value=False
     ), patch(
@@ -1342,7 +1392,7 @@ def test_executable_is_not_elf_uses_the_first_map():
 
     with patch(
         "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch("pystack.__main__.print_thread"), patch(
+    ) as get_process_threads_mock, patch("pystack.__main__.TracebackPrinter"), patch(
         "pystack.__main__.is_elf", lambda x: x == real_executable
     ), patch(
         "pystack.__main__.is_gzip", return_value=False

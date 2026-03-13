@@ -22,6 +22,7 @@ from _pystack.elf_common cimport CoreFileAnalyzer as NativeCoreFileAnalyzer
 from _pystack.elf_common cimport ProcessAnalyzer as NativeProcessAnalyzer
 from _pystack.elf_common cimport SectionInfo
 from _pystack.elf_common cimport getSectionInfo
+from _pystack.interpreter cimport InterpreterUtils
 from _pystack.logging cimport initializePythonLoggerInterface
 from _pystack.mem cimport AbstractRemoteMemoryManager
 from _pystack.mem cimport MemoryMapInformation as CppMemoryMapInformation
@@ -65,6 +66,7 @@ from .types import NativeFrame
 from .types import PyCodeObject
 from .types import PyFrame
 from .types import PyThread
+from .types import frame_type
 
 LOGGER = logging.getLogger(__file__)
 
@@ -462,6 +464,7 @@ cdef object _construct_threads_from_interpreter_state(
     bint add_native_traces,
     bint resolve_locals,
 ):
+    interpreter_id = InterpreterUtils.getInterpreterId(manager, head)
     LOGGER.info("Fetching Python threads")
     threads = []
 
@@ -486,13 +489,100 @@ cdef object _construct_threads_from_interpreter_state(
                 current_thread.isGilHolder(),
                 current_thread.isGCCollecting(),
                 python_version,
+                interpreter_id,
                 name=get_thread_name(pid, current_thread.Tid()),
+                stack_anchor=current_thread.StackAnchor(),
             )
         )
         current_thread = (
             current_thread.NextThread().get() if current_thread.NextThread() else NULL
         )
 
+    return threads
+
+
+def _entry_frame_count(thread: PyThread) -> int:
+    return sum(1 for frame in thread.all_frames if frame.is_entry)
+
+
+def _eval_frame_positions(thread: PyThread):
+    if not thread.python_version:
+        return []
+    return [
+        index
+        for index, native_frame in enumerate(thread.native_frames)
+        if frame_type(native_frame, thread.python_version) == NativeFrame.FrameType.EVAL
+    ]
+
+
+def _slice_native_stacks_for_same_tid_threads(threads) -> None:
+    if len(threads) < 2:
+        return
+
+    canonical = next((thread for thread in threads if thread.native_frames), None)
+    if canonical is None:
+        return
+
+    canonical_frames = list(canonical.native_frames)
+    eval_positions = [
+        index
+        for index, native_frame in enumerate(canonical_frames)
+        if frame_type(native_frame, canonical.python_version) == NativeFrame.FrameType.EVAL
+    ]
+    if not eval_positions:
+        return
+
+    entry_counts = [_entry_frame_count(thread) for thread in threads]
+    if sum(entry_counts) != len(eval_positions):
+        LOGGER.debug(
+            "Skipping same-tid native slicing for tid %s due to mismatched counts: "
+            "entry=%s eval=%s",
+            threads[0].tid,
+            sum(entry_counts),
+            len(eval_positions),
+        )
+        return
+
+    ordered_threads = sorted(
+        enumerate(threads),
+        key=lambda item: (
+            item[1].stack_anchor is None,
+            -(item[1].stack_anchor or 0),
+            item[0],
+        ),
+    )
+
+    cursor = 0
+    for _, thread in ordered_threads:
+        required_eval_frames = _entry_frame_count(thread)
+        if required_eval_frames == 0:
+            thread.native_frames = []
+            continue
+
+        group_start = cursor
+        group_end = cursor + required_eval_frames
+        prev_eval = eval_positions[group_start - 1] if group_start > 0 else -1
+        next_eval = (
+            eval_positions[group_end]
+            if group_end < len(eval_positions)
+            else len(canonical_frames)
+        )
+        thread.native_frames = canonical_frames[prev_eval + 1 : next_eval]
+        cursor = group_end
+
+
+def _normalize_python_threads(threads, native_mode: NativeReportingMode):
+    if native_mode == NativeReportingMode.OFF:
+        return threads
+
+    threads_by_tid = {}
+    for thread in threads:
+        threads_by_tid.setdefault(thread.tid, []).append(thread)
+
+    for group in threads_by_tid.values():
+        if len(group) <= 1:
+            continue
+        _slice_native_stacks_for_same_tid_threads(group)
     return threads
 
 cdef object _construct_os_thread(
@@ -622,7 +712,8 @@ def _get_process_threads(
         )
 
     all_tids = list(manager.get().Tids())
-    if head:
+    threads = []
+    while head:
         add_native_traces = native_mode != NativeReportingMode.OFF
         for thread in _construct_threads_from_interpreter_state(
             manager,
@@ -634,7 +725,11 @@ def _get_process_threads(
         ):
             if thread.tid in all_tids:
                 all_tids.remove(thread.tid)
-            yield thread
+            threads.append(thread)
+        head = InterpreterUtils.getNextInterpreter(manager, head)
+
+    for thread in _normalize_python_threads(threads, native_mode):
+        yield thread
 
     if native_mode == NativeReportingMode.ALL:
         yield from _construct_os_threads(manager, pid, all_tids)
@@ -768,15 +863,25 @@ def _get_process_threads_for_core(
         )
 
     all_tids = list(manager.get().Tids())
+    threads = []
 
-    if head:
-        native = native_mode in {NativeReportingMode.PYTHON, NativeReportingMode.ALL}
+    while head:
+        add_native_traces = native_mode != NativeReportingMode.OFF
         for thread in _construct_threads_from_interpreter_state(
-            manager, head, pymanager.pid, pymanager.python_version, native, locals
+            manager,
+            head,
+            pymanager.pid,
+            pymanager.python_version,
+            add_native_traces,
+            locals,
         ):
             if thread.tid in all_tids:
                 all_tids.remove(thread.tid)
-            yield thread
+            threads.append(thread)
+        head = InterpreterUtils.getNextInterpreter(manager, head)
+
+    for thread in _normalize_python_threads(threads, native_mode):
+        yield thread
 
     if native_mode == NativeReportingMode.ALL:
         yield from _construct_os_threads(manager, pymanager.pid, all_tids)
