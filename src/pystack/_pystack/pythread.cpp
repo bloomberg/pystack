@@ -410,6 +410,8 @@ getThreadFromInterpreterState(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         remote_addr_t addr)
 {
+    // `tid_offset_in_pthread_struct` is only used in `inferTidFromPThreadStructure`, which is only
+    // needed for Python versions < 3.11.
     if (tid_offset_in_pthread_struct == 0 && !manager->versionIsAtLeast(3, 11)) {
         tid_offset_in_pthread_struct = findPthreadTidOffset(manager, addr);
     }
