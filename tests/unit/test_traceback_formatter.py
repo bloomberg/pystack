@@ -1650,7 +1650,7 @@ def test_traceback_printer_created_with_native_level(native_mode):
     # THEN
     assert printer.native_mode is native_mode
     assert printer.include_subinterpreters is False
-    assert printer._current_interpreter_id == -1
+    assert printer._current_interpreter_id is None
 
 
 def test_traceback_printer_created_with_subinterpreters():
@@ -1763,6 +1763,7 @@ def test_print_thread_with_subinterpreters_none_interp(capsys):
 
     # THEN
     captured = capsys.readouterr()
+    print(captured.out)
     assert "Interpreter-Unknown\n" in captured.out
 
 
