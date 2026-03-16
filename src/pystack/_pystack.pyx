@@ -505,20 +505,7 @@ def _entry_frame_count(thread: PyThread) -> int:
     return sum(1 for frame in thread.all_frames if frame.is_entry)
 
 
-def _eval_frame_positions(thread: PyThread):
-    if not thread.python_version:
-        return []
-    return [
-        index
-        for index, native_frame in enumerate(thread.native_frames)
-        if frame_type(native_frame, thread.python_version) == NativeFrame.FrameType.EVAL
-    ]
-
-
 def _slice_native_stacks_for_same_tid_threads(threads) -> None:
-    if len(threads) < 2:
-        return
-
     canonical = next((thread for thread in threads if thread.native_frames), None)
     if canonical is None:
         return

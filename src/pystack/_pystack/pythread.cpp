@@ -55,88 +55,79 @@ findPthreadTidOffset(
         remote_addr_t interp_state_addr)
 {
     LOG(DEBUG) << "Attempting to locate tid offset in pthread structure";
+    Structure<py_is_v> is(manager, interp_state_addr);
 
-    // If interp_state_addr does not point to the main interpreter (id 0) we won't find the
-    // PID == TID in the interpreter threads. Hence, we traverse the linked list of interpreters. The
-    // main interpreter is not necessarily the head of the linked lists of interpreters.
+    auto current_thread_addr = is.getField(&py_is_v::o_tstate_head);
 
-    while (interp_state_addr != 0) {
-        Structure<py_is_v> is(manager, interp_state_addr);
+    auto thread_head = current_thread_addr;
 
-        auto current_thread_addr = is.getField(&py_is_v::o_tstate_head);
-
-        auto thread_head = current_thread_addr;
-
-        // Iterate over all Python threads until we find a thread that has a tid equal to
-        // the process pid. This works because in the main thread the tid is equal to the pid,
-        // so when this happens it has to happen on the main thread. Note that the main thread
-        // is not necessarily at the head of the Python thread linked list
+    // Iterate over all Python threads until we find a thread that has a tid equal to
+    // the process pid. This works because in the main thread the tid is equal to the pid,
+    // so when this happens it has to happen on the main thread. Note that the main thread
+    // is not necessarily at the head of the Python thread linked list
 
 #if defined(__GLIBC__)
-        // If we detect GLIBC, we can try the two main known structs for 'struct
-        // pthread' that we know about to avoid having to do guess-work by doing a
-        // linear scan over the struct.
-        while (current_thread_addr != (remote_addr_t) nullptr) {
-            Structure<py_thread_v> current_thread(manager, current_thread_addr);
-            auto pthread_id_addr = current_thread.getField(&py_thread_v::o_thread_id);
+    // If we detect GLIBC, we can try the two main known structs for 'struct
+    // pthread' that we know about to avoid having to do guess-work by doing a
+    // linear scan over the struct.
+    while (current_thread_addr != (remote_addr_t) nullptr) {
+        Structure<py_thread_v> current_thread(manager, current_thread_addr);
+        auto pthread_id_addr = current_thread.getField(&py_thread_v::o_thread_id);
 
-            pid_t the_tid;
-            std::vector<off_t> glibc_pthread_offset_candidates = {
-                    offsetof(_pthread_structure_with_simple_header, tid),
-                    offsetof(_pthread_structure_with_tcbhead, tid)};
-            for (off_t candidate : glibc_pthread_offset_candidates) {
-                manager->copyObjectFromProcess((remote_addr_t)(pthread_id_addr + candidate), &the_tid);
-                if (the_tid == manager->Pid()) {
-                    LOG(DEBUG) << "Tid offset located using GLIBC offsets at offset " << std::showbase
-                               << std::hex << candidate << " in pthread structure";
-                    return candidate;
-                }
+        pid_t the_tid;
+        std::vector<off_t> glibc_pthread_offset_candidates = {
+                offsetof(_pthread_structure_with_simple_header, tid),
+                offsetof(_pthread_structure_with_tcbhead, tid)};
+        for (off_t candidate : glibc_pthread_offset_candidates) {
+            manager->copyObjectFromProcess((remote_addr_t)(pthread_id_addr + candidate), &the_tid);
+            if (the_tid == manager->Pid()) {
+                LOG(DEBUG) << "Tid offset located using GLIBC offsets at offset " << std::showbase
+                           << std::hex << candidate << " in pthread structure";
+                return candidate;
             }
-            remote_addr_t next_thread_addr = current_thread.getField(&py_thread_v::o_next);
-            if (next_thread_addr == current_thread_addr) {
-                break;
-            }
-            current_thread_addr = next_thread_addr;
         }
+        remote_addr_t next_thread_addr = current_thread.getField(&py_thread_v::o_next);
+        if (next_thread_addr == current_thread_addr) {
+            break;
+        }
+        current_thread_addr = next_thread_addr;
+    }
 #endif
 
-        current_thread_addr = thread_head;
+    current_thread_addr = thread_head;
 
-        while (current_thread_addr != (remote_addr_t) nullptr) {
-            Structure<py_thread_v> current_thread(manager, current_thread_addr);
-            auto pthread_id_addr = current_thread.getField(&py_thread_v::o_thread_id);
+    while (current_thread_addr != (remote_addr_t) nullptr) {
+        Structure<py_thread_v> current_thread(manager, current_thread_addr);
+        auto pthread_id_addr = current_thread.getField(&py_thread_v::o_thread_id);
 
-            // Attempt to locate a field in the pthread struct that's equal to the pid.
-            uintptr_t buffer[100];
-            size_t buffer_size = sizeof(buffer);
-            while (buffer_size > 0) {
-                try {
-                    LOG(DEBUG) << "Trying to copy a buffer of " << buffer_size
-                               << " bytes to get pthread ID";
-                    manager->copyMemoryFromProcess(pthread_id_addr, buffer_size, &buffer);
-                    break;
-                } catch (const RemoteMemCopyError& ex) {
-                    LOG(DEBUG) << "Failed to copy buffer to get pthread ID";
-                    buffer_size /= 2;
-                }
-            }
-            LOG(DEBUG) << "Copied a buffer of " << buffer_size << " bytes to get pthread ID";
-            for (size_t i = 0; i < buffer_size / sizeof(uintptr_t); i++) {
-                if (static_cast<pid_t>(buffer[i]) == manager->Pid()) {
-                    off_t offset = sizeof(uintptr_t) * i;
-                    LOG(DEBUG) << "Tid offset located by scanning at offset " << std::showbase
-                               << std::hex << offset << " in pthread structure";
-                    return offset;
-                }
-            }
-
-            remote_addr_t next_thread_addr = current_thread.getField(&py_thread_v::o_next);
-            if (next_thread_addr == current_thread_addr) {
+        // Attempt to locate a field in the pthread struct that's equal to the pid.
+        uintptr_t buffer[100];
+        size_t buffer_size = sizeof(buffer);
+        while (buffer_size > 0) {
+            try {
+                LOG(DEBUG) << "Trying to copy a buffer of " << buffer_size << " bytes to get pthread ID";
+                manager->copyMemoryFromProcess(pthread_id_addr, buffer_size, &buffer);
                 break;
+            } catch (const RemoteMemCopyError& ex) {
+                LOG(DEBUG) << "Failed to copy buffer to get pthread ID";
+                buffer_size /= 2;
             }
-            current_thread_addr = next_thread_addr;
         }
-        interp_state_addr = InterpreterUtils::getNextInterpreter(manager, interp_state_addr);
+        LOG(DEBUG) << "Copied a buffer of " << buffer_size << " bytes to get pthread ID";
+        for (size_t i = 0; i < buffer_size / sizeof(uintptr_t); i++) {
+            if (static_cast<pid_t>(buffer[i]) == manager->Pid()) {
+                off_t offset = sizeof(uintptr_t) * i;
+                LOG(DEBUG) << "Tid offset located by scanning at offset " << std::showbase << std::hex
+                           << offset << " in pthread structure";
+                return offset;
+            }
+        }
+
+        remote_addr_t next_thread_addr = current_thread.getField(&py_thread_v::o_next);
+        if (next_thread_addr == current_thread_addr) {
+            break;
+        }
+        current_thread_addr = next_thread_addr;
     }
     LOG(ERROR) << "Could not find tid offset in pthread structure";
     return 0;
@@ -155,8 +146,9 @@ PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager,
         LOG(DEBUG) << std::hex << std::showbase << "Attempting to construct frame from address "
                    << frame_addr;
         d_first_frame = std::make_unique<FrameObject>(manager, frame_addr, 0);
+
+        d_stack_anchor = getStackAnchor(manager, frame_addr);
     }
-    d_stack_anchor = getStackAnchor(manager, frame_addr);
 
     d_addr = addr;
     remote_addr_t candidate_next_addr = ts.getField(&py_thread_v::o_next);
@@ -418,7 +410,7 @@ getThreadFromInterpreterState(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         remote_addr_t addr)
 {
-    if (tid_offset_in_pthread_struct == 0) {
+    if (tid_offset_in_pthread_struct == 0 && !manager->versionIsAtLeast(3, 11)) {
         tid_offset_in_pthread_struct = findPthreadTidOffset(manager, addr);
     }
 

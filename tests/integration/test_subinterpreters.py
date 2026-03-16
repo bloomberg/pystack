@@ -4,6 +4,8 @@ import time
 from collections import Counter
 from contextlib import redirect_stdout
 from pathlib import Path
+from typing import Dict
+from typing import List
 from typing import Set
 
 import pytest
@@ -322,7 +324,7 @@ def _assert_native_eval_symbols(threads) -> None:
 
 
 def _assert_mergeable_same_tid_groups(threads) -> bool:
-    groups = {}
+    groups: Dict[int, List] = {}
     for thread in threads:
         groups.setdefault(thread.tid, []).append(thread)
 

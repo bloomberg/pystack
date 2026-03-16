@@ -285,16 +285,23 @@ def process_remote(parser: argparse.ArgumentParser, args: argparse.Namespace) ->
     if not args.block and args.native_mode != NativeReportingMode.OFF:
         parser.error("Native traces are only available in blocking mode")
 
-    printer = TracebackPrinter(
-        native_mode=args.native_mode, include_subinterpreters=True
-    )
-    for thread in get_process_threads(
+    threads = get_process_threads(
         args.pid,
         stop_process=args.block,
         native_mode=args.native_mode,
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
-    ):
+    )
+
+    has_multiple_subinterpreters = (
+        len(set(thread.interpreter_id for thread in threads)) > 1
+    )
+
+    printer = TracebackPrinter(
+        native_mode=args.native_mode,
+        include_subinterpreters=has_multiple_subinterpreters,
+    )
+    for thread in threads:
         printer.print_thread(thread)
 
 
@@ -417,15 +424,24 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
                 elf_id if elf_id else "<MISSING>",
             )
 
-    printer = TracebackPrinter(args.native_mode, include_subinterpreters=True)
-    for thread in get_process_threads_for_core(
+    threads = get_process_threads_for_core(
         corefile,
         executable,
         library_search_path=lib_search_path,
         native_mode=args.native_mode,
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
-    ):
+    )
+
+    has_multiple_subinterpreters = (
+        len(set(thread.interpreter_id for thread in threads)) > 1
+    )
+
+    printer = TracebackPrinter(
+        args.native_mode, include_subinterpreters=has_multiple_subinterpreters
+    )
+
+    for thread in threads:
         printer.print_thread(thread)
 
 

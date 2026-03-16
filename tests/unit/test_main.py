@@ -1,6 +1,7 @@
 import logging
 from pathlib import Path
 from textwrap import dedent
+from typing import List
 from unittest.mock import Mock
 from unittest.mock import call
 from unittest.mock import mock_open
@@ -179,12 +180,22 @@ def test_error_message_wih_not_enough_information_error_text():
     assert NOT_ENOUGH_INFORMATION_HELP_TEXT in message
 
 
-def test_process_remote_default():
+@pytest.mark.parametrize(
+    "interpreter_ids,has_subinterpreters",
+    [
+        [(0, 1, 2), True],
+        [(0, 0, 1), True],
+        [(0, 0, 0), False],
+    ],
+)
+def test_process_remote_default(interpreter_ids: List[int], has_subinterpreters: bool):
     # GIVEN
 
     argv = ["pystack", "remote", "31"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = []
+    for interpreter_id in interpreter_ids:
+        threads.append(Mock(interpreter_id=interpreter_id))
 
     # WHEN
 
@@ -208,7 +219,7 @@ def test_process_remote_default():
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=has_subinterpreters
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -220,7 +231,7 @@ def test_process_remote_no_block():
 
     argv = ["pystack", "remote", "31", "--no-block"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -244,7 +255,7 @@ def test_process_remote_no_block():
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -264,7 +275,7 @@ def test_process_remote_native(argument, mode):
 
     argv = ["pystack", "remote", "31", argument]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -288,7 +299,7 @@ def test_process_remote_native(argument, mode):
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        native_mode=mode, include_subinterpreters=True
+        native_mode=mode, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -300,7 +311,7 @@ def test_process_remote_locals():
 
     argv = ["pystack", "remote", "31", "--locals"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -324,7 +335,7 @@ def test_process_remote_locals():
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -336,7 +347,7 @@ def test_process_remote_native_no_block(capsys):
 
     argv = ["pystack", "remote", "31", "--native", "--no-block"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -363,7 +374,7 @@ def test_process_remote_exhaustive():
 
     argv = ["pystack", "remote", "31", "--exhaustive"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -387,7 +398,7 @@ def test_process_remote_exhaustive():
         method=StackMethod.ALL,
     )
     TracebackPrinterMock.assert_called_once_with(
-        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
+        native_mode=NativeReportingMode.OFF, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -421,9 +432,7 @@ def test_process_remote_error(exception, exval, capsys):
     # THEN
 
     get_process_threads_mock.assert_called_once()
-    TracebackPrinterMock.assert_called_once_with(
-        native_mode=NativeReportingMode.OFF, include_subinterpreters=True
-    )
+    TracebackPrinterMock.assert_not_called()
     TracebackPrinterMock.return_value.print_thread.assert_not_called()
     capture = capsys.readouterr()
     assert "Oh no!" in capture.err
@@ -434,7 +443,7 @@ def test_process_core_default_without_executable():
 
     argv = ["pystack", "core", "corefile"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -470,7 +479,7 @@ def test_process_core_default_without_executable():
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        NativeReportingMode.OFF, include_subinterpreters=True
+        NativeReportingMode.OFF, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -482,7 +491,7 @@ def test_process_core_default_gzip_without_executable():
 
     argv = ["pystack", "core", "corefile.gz"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     temp_mock_file = Mock()
     temp_mock_file.name = Path("/tmp/file")
@@ -529,7 +538,7 @@ def test_process_core_default_gzip_without_executable():
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        NativeReportingMode.OFF, include_subinterpreters=True
+        NativeReportingMode.OFF, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -567,7 +576,7 @@ def test_process_core_executable_not_elf_file(capsys):
 
     argv = ["pystack", "core", "corefile", "executable"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -590,12 +599,24 @@ def test_process_core_executable_not_elf_file(capsys):
     assert INVALID_EXECUTABLE_HELP_TEXT in capture.err
 
 
-def test_process_core_default_with_executable():
+@pytest.mark.parametrize(
+    "interpreter_ids,has_subinterpreters",
+    [
+        [(0, 1, 2), True],
+        [(0, 0, 1), True],
+        [(0, 0, 0), False],
+    ],
+)
+def test_process_core_default_with_executable(
+    interpreter_ids: List[int], has_subinterpreters: bool
+):
     # GIVEN
 
     argv = ["pystack", "core", "corefile", "executable"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = []
+    for interpreter_id in interpreter_ids:
+        threads.append(Mock(interpreter_id=interpreter_id))
 
     # WHEN
 
@@ -628,7 +649,7 @@ def test_process_core_default_with_executable():
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        NativeReportingMode.OFF, include_subinterpreters=True
+        NativeReportingMode.OFF, include_subinterpreters=has_subinterpreters
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -648,7 +669,7 @@ def test_process_core_native(argument, mode):
 
     argv = ["pystack", "core", "corefile", "executable", argument]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -680,7 +701,7 @@ def test_process_core_native(argument, mode):
         locals=False,
         method=StackMethod.AUTO,
     )
-    TracebackPrinterMock.assert_called_once_with(mode, include_subinterpreters=True)
+    TracebackPrinterMock.assert_called_once_with(mode, include_subinterpreters=False)
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
     ]
@@ -691,7 +712,7 @@ def test_process_core_locals():
 
     argv = ["pystack", "core", "corefile", "executable", "--locals"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -724,7 +745,7 @@ def test_process_core_locals():
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        NativeReportingMode.OFF, include_subinterpreters=True
+        NativeReportingMode.OFF, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -743,7 +764,7 @@ def test_process_core_with_search_path():
         "foo:bar:baz",
     ]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -776,7 +797,7 @@ def test_process_core_with_search_path():
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        NativeReportingMode.OFF, include_subinterpreters=True
+        NativeReportingMode.OFF, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -788,7 +809,7 @@ def test_process_core_with_search_root():
 
     argv = ["pystack", "core", "corefile", "executable", "--lib-search-root", "foo"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
 
@@ -829,7 +850,7 @@ def test_process_core_with_search_root():
         method=StackMethod.AUTO,
     )
     TracebackPrinterMock.assert_called_once_with(
-        NativeReportingMode.OFF, include_subinterpreters=True
+        NativeReportingMode.OFF, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
@@ -979,9 +1000,7 @@ def test_process_core_error(exception, exval, capsys):
     # THEN
 
     get_process_threads_mock.assert_called_once()
-    TracebackPrinterMock.assert_called_once_with(
-        NativeReportingMode.OFF, include_subinterpreters=True
-    )
+    TracebackPrinterMock.assert_not_called()
     TracebackPrinterMock.return_value.print_thread.assert_not_called()
     capture = capsys.readouterr()
     assert "Oh no!" in capture.err
@@ -992,7 +1011,7 @@ def test_process_core_exhaustive():
 
     argv = ["pystack", "core", "corefile", "executable", "--exhaustive"]
 
-    threads = [Mock(), Mock(), Mock()]
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
 
     # WHEN
     with patch(
@@ -1024,7 +1043,7 @@ def test_process_core_exhaustive():
         method=StackMethod.ALL,
     )
     TracebackPrinterMock.assert_called_once_with(
-        NativeReportingMode.OFF, include_subinterpreters=True
+        NativeReportingMode.OFF, include_subinterpreters=False
     )
     assert TracebackPrinterMock.return_value.print_thread.mock_calls == [
         call(thread) for thread in threads
