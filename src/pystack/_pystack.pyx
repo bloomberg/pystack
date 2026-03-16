@@ -535,7 +535,7 @@ def _slice_native_stacks_for_same_tid_threads(threads) -> None:
         key=lambda item: (
             item[1].stack_anchor is None,  # Everything with a stack anchor before everything without one
             -(item[1].stack_anchor or 0),  # The stack anchor in descending order
-            item[0],  # The index of the item in the list
+            item[0],  # The index of the item in the list in ascending order
         ),
     )
 
