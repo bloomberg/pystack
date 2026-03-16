@@ -533,7 +533,7 @@ def _slice_native_stacks_for_same_tid_threads(threads) -> None:
     ordered_threads = sorted(
         enumerate(threads),
         key=lambda item: (
-            item[1].stack_anchor is None,  # If they have a stack anchor
+            item[1].stack_anchor is None,  # Everything with a stack anchor before everything without one
             -(item[1].stack_anchor or 0),  # The stack anchor in descending order
             item[0],  # The index of the item in the list
         ),
