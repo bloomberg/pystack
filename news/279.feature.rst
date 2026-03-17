@@ -1,3 +1,2 @@
 Add support for subinterpreters when reporting pure Python stacks. Threads
 running in subinterpreters are now identified and grouped by interpreter ID.
-Native stack reporting for subinterpreters is not yet supported.
