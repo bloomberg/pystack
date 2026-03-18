@@ -77,6 +77,7 @@ PYSTACK_EXTENSION = setuptools.Extension(
         "src/pystack/_pystack.pyx",
         "src/pystack/_pystack/corefile.cpp",
         "src/pystack/_pystack/elf_common.cpp",
+        "src/pystack/_pystack/interpreter.cpp",
         "src/pystack/_pystack/logging.cpp",
         "src/pystack/_pystack/mem.cpp",
         "src/pystack/_pystack/process.cpp",

@@ -241,6 +241,7 @@ struct py_is_v
     FieldOffset<remote_addr_t> o_sysdict;
     FieldOffset<remote_addr_t> o_builtins;
     FieldOffset<remote_addr_t> o_gil_runtime_state;
+    FieldOffset<int64_t> o_id;
 };
 
 struct py_gc_v

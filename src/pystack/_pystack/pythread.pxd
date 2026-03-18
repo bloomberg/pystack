@@ -11,6 +11,7 @@ cdef extern from "pythread.h" namespace "pystack":
     cdef cppclass NativeThread "pystack::Thread":
         NativeThread(int, int) except+
         int Tid()
+        remote_addr_t StackAnchor()
         vector[NativeFrame]& NativeFrames()
         void populateNativeStackTrace(shared_ptr[AbstractProcessManager] manager) except+
 
@@ -28,6 +29,7 @@ cdef extern from "pythread.h" namespace "pystack::PyThread":
 cdef extern from "pythread.h" namespace "pystack":
     cdef cppclass Thread "pystack::PyThread":
         int Tid()
+        remote_addr_t StackAnchor()
         shared_ptr[FrameObject] FirstFrame()
         shared_ptr[Thread] NextThread()
         vector[NativeFrame]& NativeFrames()

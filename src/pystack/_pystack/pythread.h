@@ -16,6 +16,7 @@ class Thread
   public:
     Thread(pid_t pid, pid_t tid);
     pid_t Tid() const;
+    remote_addr_t StackAnchor() const;
     const std::vector<NativeFrame>& NativeFrames() const;
 
     // Methods
@@ -25,6 +26,7 @@ class Thread
     // Data members
     pid_t d_pid;
     pid_t d_tid;
+    remote_addr_t d_stack_anchor;
     std::vector<NativeFrame> d_native_frames;
 };
 
@@ -50,6 +52,9 @@ class PyThread : public Thread
     static remote_addr_t getFrameAddr(
             const std::shared_ptr<const AbstractProcessManager>& manager,
             Structure<py_thread_v>& ts);
+    static remote_addr_t getStackAnchor(
+            const std::shared_ptr<const AbstractProcessManager>& manager,
+            remote_addr_t frame_addr);
 
   private:
     // Data members
