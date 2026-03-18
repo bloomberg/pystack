@@ -66,7 +66,7 @@ jobs:
         run: |
           tar zxvf *.tar.gz --strip-components=1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.3.1
+        uses: pypa/cibuildwheel@v3.4.0
         env:
           CIBW_BUILD: "cp3{8..14}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
@@ -124,13 +124,13 @@ jobs:
       matrix:
         python_version: ["3.13"]
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/download-artifact@v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
       - name: Install uv
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v7
         with:
           version: latest
           python-version: ${{ matrix.python_version }}
