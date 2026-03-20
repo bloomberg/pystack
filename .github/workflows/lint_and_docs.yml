@@ -22,7 +22,7 @@ jobs:
           python3 -m pip install -e .
       - name: Lint sources
         run: |
-          make lint
+          make lint PYTHON=python3
           python3 -m pre_commit run --all-files --hook-stage pre-push
       - name: Build docs
         run: |
