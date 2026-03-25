@@ -38,29 +38,40 @@ jobs:
           sudo apt-get install -qy \
             gdb \
             lcov \
+            cmake \
+            ninja-build \
             libdw-dev \
             libelf-dev \
             python3.10-dev \
             python3.10-dbg
       - name: Install Python dependencies
         run: |
-          python3 -m pip install --upgrade pip cython pkgconfig
-          make test-install
+          python3 -m pip install --upgrade pip scikit-build-core nanobind
+          python3 -m pip install -e . -r requirements-test.txt
       - name: Disable ptrace security restrictions
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
-      - name: Compute Python + Cython coverage
+      - name: Compute Python coverage
         run: |
-          make pycoverage
+          python3 -m pytest -vvv --log-cli-level=info -s --color=yes \
+                      --cov=pystack --cov=tests --cov-config=pyproject.toml --cov-report=term \
+                      --cov-append tests --cov-fail-under=85
+          python3 -m coverage lcov -i -o pycoverage.lcov
+          genhtml *coverage.lcov --branch-coverage --output-directory pystack-coverage
       - name: Compute C++ coverage
         run: |
-          make ccoverage
-      - name: Upload {P,C}ython report to Codecov
+          rm -rf build
+          CFLAGS="-O0 -pg --coverage" CXXFLAGS="-O0 -pg --coverage" SKBUILD_BUILD_DIR=build pip install -e . --no-build-isolation
+          python3 -m pytest tests -v
+          find build -name "*.gcda" -o -name "*.gcno" | head -5
+          lcov --capture --directory build --output-file cppcoverage.lcov
+          lcov --extract cppcoverage.lcov '*/src/pystack/_pystack/*' --output-file cppcoverage.lcov
+      - name: Upload Python report to Codecov
         uses: codecov/codecov-action@v5
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: pycoverage.lcov
-          flags: python_and_cython
+          flags: python
       - name: Upload C++ report to Codecov
         uses: codecov/codecov-action@v5
         with:

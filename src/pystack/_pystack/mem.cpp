@@ -113,49 +113,6 @@ VirtualMap::Size() const
     return d_end - d_start;
 }
 
-MemoryMapInformation::MemoryMapInformation()
-: d_main_map(std::nullopt)
-, d_bss(std::nullopt)
-, d_heap(std::nullopt)
-{
-}
-
-const std::optional<VirtualMap>&
-MemoryMapInformation::MainMap()
-{
-    return d_main_map;
-}
-
-const std::optional<VirtualMap>&
-MemoryMapInformation::Bss()
-{
-    return d_bss;
-}
-
-const std::optional<VirtualMap>&
-MemoryMapInformation::Heap()
-{
-    return d_heap;
-}
-
-void
-MemoryMapInformation::setMainMap(const VirtualMap& main_map)
-{
-    d_main_map = main_map;
-}
-
-void
-MemoryMapInformation::setBss(const VirtualMap& bss)
-{
-    d_bss = bss;
-}
-
-void
-MemoryMapInformation::setHeap(const VirtualMap& heap)
-{
-    d_heap = heap;
-}
-
 LRUCache::LRUCache(size_t capacity)
 : d_cache_capacity(capacity)
 , d_size(0){};

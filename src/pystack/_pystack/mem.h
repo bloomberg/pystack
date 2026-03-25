@@ -81,6 +81,27 @@ class VirtualMap
     // Methods
     bool containsAddr(remote_addr_t addr) const;
 
+    // Permission helpers
+    bool isExecutable() const
+    {
+        return d_flags.find('x') != std::string::npos;
+    }
+
+    bool isReadable() const
+    {
+        return d_flags.find('r') != std::string::npos;
+    }
+
+    bool isWritable() const
+    {
+        return d_flags.find('w') != std::string::npos;
+    }
+
+    bool isPrivate() const
+    {
+        return d_flags.find('p') != std::string::npos;
+    }
+
   private:
     // Data members
     uintptr_t d_start{};
@@ -91,29 +112,6 @@ class VirtualMap
     std::string d_device{};
     unsigned long d_inode{};
     std::string d_path{};
-};
-
-class MemoryMapInformation
-{
-  public:
-    MemoryMapInformation();
-
-    // Getters
-    const std::optional<VirtualMap>& MainMap();
-    const std::optional<VirtualMap>& Bss();
-    const std::optional<VirtualMap>& Heap();
-
-    // Setters
-
-    void setMainMap(const VirtualMap& main_map);
-    void setBss(const VirtualMap& bss);
-    void setHeap(const VirtualMap& heap);
-
-  private:
-    // Data members
-    std::optional<VirtualMap> d_main_map;
-    std::optional<VirtualMap> d_bss;
-    std::optional<VirtualMap> d_heap;
 };
 
 class LRUCache

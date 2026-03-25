@@ -1,7 +1,5 @@
 #pragma once
 
-#include <cstdio>
-
 #include <memory>
 #include <optional>
 #include <stdexcept>
@@ -12,6 +10,7 @@
 #include <vector>
 
 #include "elf_common.h"
+#include "maps_parser.h"
 #include "mem.h"
 #include "native_frame.h"
 #include "pycompat.h"
@@ -63,11 +62,15 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     AbstractProcessManager(
             pid_t pid,
             std::vector<VirtualMap>&& memory_maps,
-            MemoryMapInformation&& map_info);
+            std::optional<VirtualMap> main_map,
+            std::optional<VirtualMap> bss,
+            std::optional<VirtualMap> heap);
 
     // Getters
     pid_t Pid() const;
     virtual const std::vector<int>& Tids() const = 0;
+    const std::vector<VirtualMap>& MemoryMaps() const;
+    std::pair<int, int> Version() const;
     remote_addr_t getAddressFromCache(const std::string& symbol) const;
     void registerAddressInCache(const std::string& symbol, remote_addr_t address) const;
 
@@ -144,13 +147,18 @@ AbstractProcessManager::copyObjectFromProcess(remote_addr_t addr, T* destination
 class ProcessManager : public AbstractProcessManager
 {
   public:
+    // Factory method
+    static std::shared_ptr<ProcessManager> create(pid_t pid, bool stop_process = true);
+
     // Constructors
     ProcessManager(
             pid_t pid,
             const std::shared_ptr<ProcessTracer>& tracer,
             const std::shared_ptr<ProcessAnalyzer>& analyzer,
             std::vector<VirtualMap> memory_maps,
-            MemoryMapInformation map_info);
+            std::optional<VirtualMap> main_map,
+            std::optional<VirtualMap> bss,
+            std::optional<VirtualMap> heap);
 
     // Destructors
     virtual ~ProcessManager() = default;
@@ -160,19 +168,30 @@ class ProcessManager : public AbstractProcessManager
 
   private:
     // Data members
-    std::shared_ptr<ProcessTracer> tracer;
+    std::shared_ptr<ProcessTracer> d_tracer;
     std::vector<int> d_tids;
+
+    // Methods
+    void initializeVersion(pid_t pid, const ProcessMemoryMapInfo& map_info);
 };
 
 class CoreFileProcessManager : public AbstractProcessManager
 {
   public:
+    // Factory method
+    static std::shared_ptr<CoreFileProcessManager>
+    create(const std::string& core_file,
+           const std::string& executable,
+           const std::optional<std::string>& lib_search_path = std::nullopt);
+
     // Constructors
     CoreFileProcessManager(
             pid_t pid,
             const std::shared_ptr<CoreFileAnalyzer>& analyzer,
             std::vector<VirtualMap> memory_maps,
-            MemoryMapInformation map_info);
+            std::optional<VirtualMap> main_map,
+            std::optional<VirtualMap> bss,
+            std::optional<VirtualMap> heap);
 
     // Destructors
     virtual ~CoreFileProcessManager() = default;
@@ -183,6 +202,8 @@ class CoreFileProcessManager : public AbstractProcessManager
   private:
     // Data members
     std::vector<int> d_tids;
-    std::optional<std::string> d_executable;
+
+    // Methods
+    void initializeVersion(const std::string& core_file, const ProcessMemoryMapInfo& map_info);
 };
 }  // namespace pystack
