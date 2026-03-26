@@ -67,13 +67,13 @@ jobs:
           lcov --capture --directory build --output-file cppcoverage.lcov
           lcov --extract cppcoverage.lcov '*/src/pystack/_pystack/*' --output-file cppcoverage.lcov
       - name: Upload Python report to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: pycoverage.lcov
           flags: python
       - name: Upload C++ report to Codecov
-        uses: codecov/codecov-action@v5
+        uses: codecov/codecov-action@v6
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: cppcoverage.lcov
