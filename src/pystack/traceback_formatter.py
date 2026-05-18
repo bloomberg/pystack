@@ -35,7 +35,7 @@ def format_frame(frame: PyFrame) -> Iterable[str]:
             if line_end != line_start:
                 col_end = len(source)
             a = source[:col_start]
-            b = source[col_start:col_end]
+            b = source[col_start:col_end].strip("\n")
             c = source[col_end:]
             final = f'{a}{colored(b, color="blue")}{c}'
             yield f"        {final.strip()}"
