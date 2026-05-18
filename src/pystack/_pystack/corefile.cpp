@@ -426,7 +426,7 @@ CoreFileExtractor::findExecFn() const
 
     if (elf_getshdrnum(elf, &shnum) < 0) {
         LOG(ERROR) << "Cannot determine the number of sections in the ELF file";
-        return (uintptr_t) nullptr;
+        return (uintptr_t)nullptr;
     }
 
     LOG(DEBUG) << "Found " << shnum << " sections in the ELF file";
@@ -460,7 +460,7 @@ CoreFileExtractor::findExecFn() const
         }
     }
     LOG(ERROR) << "Failed to extract the ExecFn information from the core file";
-    return (uintptr_t) nullptr;
+    return (uintptr_t)nullptr;
 }
 std::vector<std::string>
 CoreFileExtractor::missingModules() const

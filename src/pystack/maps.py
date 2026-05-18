@@ -3,6 +3,7 @@
 This module provides data classes for representing memory maps.
 The actual parsing is done in C++.
 """
+
 import dataclasses
 from pathlib import Path
 from typing import Optional

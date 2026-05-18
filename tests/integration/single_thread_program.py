@@ -11,7 +11,6 @@ def second_func():
 
 
 def third_func():
-    fifo = sys.argv[1]
     with open(sys.argv[1], "w") as fifo:
         fifo.write("ready")
     time.sleep(1000)

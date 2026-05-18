@@ -22,7 +22,7 @@ class LOG
   public:
     // Constructors
     LOG()
-    : msgLevel(INFO){};
+    : msgLevel(INFO) {};
 
     explicit LOG(logLevel type)
     {

@@ -18,7 +18,7 @@ class UnwinderError : public std::exception
 {
   public:
     explicit UnwinderError(std::string error)
-    : d_error(std::move(error)){};
+    : d_error(std::move(error)) {};
 
     [[nodiscard]] const char* what() const noexcept override
     {

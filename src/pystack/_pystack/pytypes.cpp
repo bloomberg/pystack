@@ -305,9 +305,7 @@ getDictEntries(
                 unicode_entries.cbegin(),
                 unicode_entries.cend(),
                 std::back_inserter(raw_entries),
-                [](auto& entry) {
-                    return Python3::PyDictKeyEntry{0, entry.me_key, entry.me_value};
-                });
+                [](auto& entry) { return Python3::PyDictKeyEntry{0, entry.me_key, entry.me_value}; });
     } else {
         manager->copyMemoryFromProcess(
                 entries_addr,

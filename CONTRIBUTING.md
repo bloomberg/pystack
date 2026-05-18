@@ -5,11 +5,11 @@ issue, or any other method of communication with the maintainers of this reposit
 
 You can also search this project for issues with the following labels:
 
-| Label                                                                                                                                      | Search Term                               | Description                                                                                                                                                        |
+| Label | Search Term | Description |
 | ------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | [good-first-issue](https://github.com/bloomberg/pystack/search?q=is%3Aissue+is%3Aopen+label%3Agood-first-issue&type=Issues&utf8=%E2%9C%93) | `is:issue is:open label:good-first-issue` | Recommended for first-time contributors! These are well-defined, and allow a user to get familiar with the project's workflow before tackling more complex issues. |
-| [help wanted](https://github.com/bloomberg/pystack/search?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22+&type=Issues&utf8=%E2%9C%93)    | `is:issue is:open label:"help wanted"`    | General issues where contributors help is wanted.                                                                                                                  |
-| [question](https://github.com/bloomberg/pystack/search?q=is%3Aissue+is%3Aopen+label%3Aquestion&type=Issues&utf8=%E2%9C%93)                 | `is:issue is:open label:question`         | Open discussions to resolve everything from implementation details to desired functionality.                                                                       |
+| [help wanted](https://github.com/bloomberg/pystack/search?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22+&type=Issues&utf8=%E2%9C%93) | `is:issue is:open label:"help wanted"` | General issues where contributors help is wanted. |
+| [question](https://github.com/bloomberg/pystack/search?q=is%3Aissue+is%3Aopen+label%3Aquestion&type=Issues&utf8=%E2%9C%93) | `is:issue is:open label:question` | Open discussions to resolve everything from implementation details to desired functionality. |
 
 ## Contribution Licensing
 

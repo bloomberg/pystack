@@ -1,6 +1,6 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    rev: v4.4.0
+    rev: 3e8a8703264a2f4a69428a0aa4dcb512790b2c8c  # frozen: v6.0.0
     hooks:
       - id: check-added-large-files
       - id: check-json
@@ -12,41 +12,41 @@ repos:
         exclude: "^[.]bumpversion[.]cfg"
 
   - repo: https://github.com/pre-commit/pygrep-hooks
-    rev: v1.10.0
+    rev: 3a6eb0fadf60b3cccfd80bad9dbb6fae7e47b316  # frozen: v1.10.0
     hooks:
       - id: rst-directive-colons
       - id: rst-inline-touching-normal
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: "v0.0.262"
+    rev: "5e2fb545eba1ea9dc051f6f962d52fe8f76a9794"  # frozen: v0.15.13
     hooks:
       - id: ruff
         args: [--fix, --exit-non-zero-on-fix]
         stages: [pre-commit]
 
   - repo: https://github.com/psf/black
-    rev: 23.3.0
+    rev: 87928e6d6761a4a6d22250e1fee5601b3998086e  # frozen: 26.5.1
     hooks:
       - id: black
 
   - repo: https://github.com/pycqa/isort
-    rev: 5.12.0
+    rev: dac090ce4d9ee313d086e2e89ab1acb8c2664fa1  # frozen: 9.0.0a3
     hooks:
       - id: isort
         exclude_types: [python]
 
   - repo: https://github.com/sphinx-contrib/sphinx-lint
-    rev: v0.6.7
+    rev: c883505f64b59c3c5c9375191e4ad9f98e727ccd  # frozen: v1.0.2
     hooks:
       - id: sphinx-lint
 
   - repo: https://github.com/executablebooks/mdformat/
-    rev: 0.7.16
+    rev: 82912cdaea4fb830f751504486a7879c70526547  # frozen: 1.0.0
     hooks:
       - id: mdformat
 
   - repo: https://github.com/pre-commit/mirrors-clang-format
-    rev: v16.0.2
+    rev: dd18dad857d6133e90bbe478f4f2f22ec0030269  # frozen: v22.1.5
     hooks:
       - id: clang-format
         args: [--Werror, -i]

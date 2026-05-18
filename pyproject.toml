@@ -55,9 +55,9 @@ CMAKE_BUILD_TYPE = "Release"
 
 [tool.ruff]
 line-length = 95
-select = ["F", "E", "W", "I001"]
+lint.select = ["F", "E", "W", "I001"]
 
-[tool.ruff.isort]
+[tool.ruff.lint.isort]
 force-single-line = true
 known-first-party = ["pystack"]
 known-third-party=["rich", "elftools", "pytest"]

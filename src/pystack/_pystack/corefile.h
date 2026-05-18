@@ -43,7 +43,7 @@ class CoreAnalyzerError : public std::exception
 {
   public:
     explicit CoreAnalyzerError(std::string error)
-    : d_error(std::move(error)){};
+    : d_error(std::move(error)) {};
 
     [[nodiscard]] const char* what() const noexcept override
     {

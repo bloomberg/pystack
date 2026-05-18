@@ -3,6 +3,7 @@
 This module provides utility functions for checking file types
 and decompressing gzip files.
 """
+
 import gzip
 import pathlib
 import tempfile
