@@ -295,8 +295,9 @@ def test_traceback_formatter_with_source():
 
     # WHEN
     source_data = "\n".join(f'x = "This is the line {line}"' for line in range(1, 5))
-    with patch("builtins.open", mock_open(read_data=source_data)), patch(
-        "os.path.exists", return_value=True
+    with (
+        patch("builtins.open", mock_open(read_data=source_data)),
+        patch("os.path.exists", return_value=True),
     ):
         lines = list(format_thread(thread, NativeReportingMode.OFF))
 
@@ -1304,8 +1305,9 @@ def test_traceback_formatter_locals(
     source_data = "\n".join(
         f'x = "This is the line {line}" or (1+1)' for line in range(1, 5)
     )
-    with patch("builtins.open", mock_open(read_data=source_data)), patch(
-        "os.path.exists", return_value=True
+    with (
+        patch("builtins.open", mock_open(read_data=source_data)),
+        patch("os.path.exists", return_value=True),
     ):
         lines = list(format_thread(thread, NativeReportingMode.OFF))
 
@@ -1402,12 +1404,14 @@ def test_traceback_formatter_position_infomation():
     source_data = "\n".join(
         f'x = "This is the line {line}" or (1+1)' for line in range(1, 5)
     )
-    with patch("builtins.open", mock_open(read_data=source_data)), patch(
-        "os.path.exists", return_value=True
-    ), patch(
-        "pystack.traceback_formatter.colored",
-        side_effect=lambda x, *args, **kwargs: x,
-    ) as colored_mock:
+    with (
+        patch("builtins.open", mock_open(read_data=source_data)),
+        patch("os.path.exists", return_value=True),
+        patch(
+            "pystack.traceback_formatter.colored",
+            side_effect=lambda x, *args, **kwargs: x,
+        ) as colored_mock,
+    ):
         lines = list(format_thread(thread, NativeReportingMode.OFF))
 
     # THEN
@@ -1493,12 +1497,14 @@ def test_shim_frames_are_ignored():
     source_data = "\n".join(
         f'x = "This is the line {line}" or (1+1)' for line in range(1, 5)
     )
-    with patch("builtins.open", mock_open(read_data=source_data)), patch(
-        "os.path.exists", return_value=True
-    ), patch(
-        "pystack.traceback_formatter.colored",
-        side_effect=lambda x, *args, **kwargs: x,
-    ) as colored_mock:
+    with (
+        patch("builtins.open", mock_open(read_data=source_data)),
+        patch("os.path.exists", return_value=True),
+        patch(
+            "pystack.traceback_formatter.colored",
+            side_effect=lambda x, *args, **kwargs: x,
+        ) as colored_mock,
+    ):
         lines = list(format_thread(thread, NativeReportingMode.OFF))
 
     # THEN
@@ -1597,12 +1603,14 @@ def test_native_traceback_with_shim_frames():
     source_data = "\n".join(
         f'x = "This is the line {line}" or (1+1)' for line in range(1, 5)
     )
-    with patch("builtins.open", mock_open(read_data=source_data)), patch(
-        "os.path.exists", return_value=True
-    ), patch(
-        "pystack.traceback_formatter.colored",
-        side_effect=lambda x, *args, **kwargs: x,
-    ) as colored_mock:
+    with (
+        patch("builtins.open", mock_open(read_data=source_data)),
+        patch("os.path.exists", return_value=True),
+        patch(
+            "pystack.traceback_formatter.colored",
+            side_effect=lambda x, *args, **kwargs: x,
+        ) as colored_mock,
+    ):
         lines = list(format_thread(thread, NativeReportingMode.PYTHON))
 
     # THEN

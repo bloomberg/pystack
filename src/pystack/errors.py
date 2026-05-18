@@ -86,8 +86,7 @@ core' command.
 """
 
 
-class PystackError(Exception):
-    ...
+class PystackError(Exception): ...
 
 
 class EngineError(PystackError):
@@ -107,12 +106,10 @@ class EngineError(PystackError):
         return f"Engine error: {message}"
 
 
-class ProcessNotFound(PystackError, ProcessLookupError):
-    ...
+class ProcessNotFound(PystackError, ProcessLookupError): ...
 
 
-class InvalidPythonProcess(PystackError):
-    ...
+class InvalidPythonProcess(PystackError): ...
 
 
 class CoreExecutableNotFound(PystackError):

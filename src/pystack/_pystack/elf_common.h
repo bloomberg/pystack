@@ -23,7 +23,7 @@ class ElfAnalyzerError : public std::exception
 {
   public:
     explicit ElfAnalyzerError(std::string error)
-    : d_error(std::move(error)){};
+    : d_error(std::move(error)) {};
 
     const char* what() const noexcept override
     {

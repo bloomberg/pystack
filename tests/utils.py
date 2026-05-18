@@ -149,14 +149,12 @@ def generate_core_after_crash(
     test_file: pathlib.Path,
     tmpdir: pathlib.Path,
 ) -> Generator[pathlib.Path, None, None]:
-    gdb_commands = textwrap.dedent(
-        f"""
+    gdb_commands = textwrap.dedent(f"""
         set pagination off
         run
         generate-core-file {tmpdir}/core.%p
         quit
-        """
-    )
+        """)
 
     gdb_script = tmpdir / "gdb_script.txt"
     with open(gdb_script, "w") as f:
@@ -246,7 +244,7 @@ def generate_all_pystack_combinations(
         blocking_methods,
         AVAILABLE_PYTHONS,
     ):
-        (major_version, minor_version) = python.version
+        major_version, minor_version = python.version
         if method == StackMethod.DEBUG_OFFSETS and (
             major_version < 3 or (major_version == 3 and minor_version < 13)
         ):

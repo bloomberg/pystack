@@ -128,9 +128,12 @@ def test_colored_with_environment_variable():
 
 
 def test_colored_without_environment_variable():
-    with patch(
-        "pystack.colors.format_colored", return_value="formatted red"
-    ) as format_mock, patch("pystack.colors._is_stdout_a_tty", return_value=True):
+    with (
+        patch(
+            "pystack.colors.format_colored", return_value="formatted red"
+        ) as format_mock,
+        patch("pystack.colors._is_stdout_a_tty", return_value=True),
+    ):
         output = colored("some_text", "red")
     format_mock.assert_called_once()
     assert output == "formatted red"

@@ -115,7 +115,7 @@ VirtualMap::Size() const
 
 LRUCache::LRUCache(size_t capacity)
 : d_cache_capacity(capacity)
-, d_size(0){};
+, d_size(0) {};
 
 void
 LRUCache::put(uintptr_t key, std::vector<char>&& value)
@@ -285,7 +285,7 @@ ProcessMemoryManager::copyMemoryFromProcess(remote_addr_t addr, size_t len, void
 bool
 ProcessMemoryManager::isAddressValid(remote_addr_t addr, const VirtualMap& map) const
 {
-    if (addr == (uintptr_t) nullptr) {
+    if (addr == (uintptr_t)nullptr) {
         return false;
     }
     return map.Start() <= addr && addr < map.End();
@@ -506,7 +506,7 @@ CorefileRemoteMemoryManager::getMemoryLocationFromElf(
 bool
 CorefileRemoteMemoryManager::isAddressValid(remote_addr_t addr, const VirtualMap& map) const
 {
-    if (addr == (uintptr_t) nullptr) {
+    if (addr == (uintptr_t)nullptr) {
         return false;
     }
     return map.Start() <= addr && addr < map.Start() + map.Size();

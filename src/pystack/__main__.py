@@ -72,7 +72,9 @@ def _exit_with_code(exception: BaseException) -> NoReturn:  # pragma: no cover
 
 def produce_error_message(exception: BaseException) -> str:
     msg = (
-        f"💀 {exception} 💀\n" if os.environ.get("NO_COLOR") is None else f"{exception}\n"
+        f"💀 {exception} 💀\n"
+        if os.environ.get("NO_COLOR") is None
+        else f"{exception}\n"
     )
     if PERMISSION_ERROR_MSG in str(exception) or isinstance(exception, PermissionError):
         msg += PERMISSION_HELP_TEXT
@@ -304,15 +306,13 @@ def format_psinfo_information(psinfo: Dict[str, Any]) -> str:
 
     state = as_green_str(chr(psinfo["sname"]))
     zombie = as_green_str(bool([psinfo["zomb"]]))
-    return dedent(
-        f"""
+    return dedent(f"""
     {colored("Core file information:", "blue")}
     state: {state} zombie: {zombie} niceness: {green('nice')}
     pid: {green('pid')} ppid: {green('ppid')} sid: {green('sid')}
     uid: {green('uid')} gid: {green('gid')} pgrp: {green('pgrp')}
     executable: {green('fname')} arguments: {green('psargs')}
-    """
-    )
+    """)
 
 
 def format_failureinfo_information(failure_info: Dict[str, Any]) -> str:

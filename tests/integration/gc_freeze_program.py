@@ -7,7 +7,6 @@ import time
 
 class A:
     def __del__(self):
-        fifo = sys.argv[1]
         with open(sys.argv[1], "w") as fifo:
             fifo.write("ready")
         time.sleep(1000)

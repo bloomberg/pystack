@@ -188,12 +188,10 @@ def test_process_remote_default():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
+    with (
+        patch("pystack.__main__.get_process_threads") as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -221,12 +219,10 @@ def test_process_remote_no_block():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
+    with (
+        patch("pystack.__main__.get_process_threads") as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -262,12 +258,10 @@ def test_process_remote_native(argument, mode):
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
+    with (
+        patch("pystack.__main__.get_process_threads") as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -293,12 +287,10 @@ def test_process_remote_locals():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
+    with (
+        patch("pystack.__main__.get_process_threads") as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -326,12 +318,10 @@ def test_process_remote_native_no_block(capsys):
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
+    with (
+        patch("pystack.__main__.get_process_threads") as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
     ):
         get_process_threads_mock.return_value = threads
         # THEN
@@ -352,12 +342,10 @@ def test_process_remote_exhaustive():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
+    with (
+        patch("pystack.__main__.get_process_threads") as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -386,14 +374,11 @@ def test_process_remote_error(exception, exval, capsys):
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
+    with (
+        patch("pystack.__main__.get_process_threads") as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
     ):
         get_process_threads_mock.side_effect = exception("Oh no!")
         with pytest.raises(SystemExit) as excinfo:
@@ -417,21 +402,17 @@ def test_process_core_default_without_executable():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ) as core_file_analizer_mock:
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
+        patch("pystack.__main__.CoreFileAnalyzer") as core_file_analizer_mock,
+    ):
         core_file_analizer_mock().extract_executable.return_value = (
             "extracted_executable"
         )
@@ -468,25 +449,19 @@ def test_process_core_default_gzip_without_executable():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "builtins.open", mock_open(read_data=b"\x1f\x8b")
-    ), patch(
-        "gzip.open", mock_open(read_data=b"")
-    ) as gzip_open_mock, patch(
-        "tempfile.NamedTemporaryFile", return_value=temp_file_context_mock
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ) as core_file_analizer_mock:
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("builtins.open", mock_open(read_data=b"\x1f\x8b")),
+        patch("gzip.open", mock_open(read_data=b"")) as gzip_open_mock,
+        patch("tempfile.NamedTemporaryFile", return_value=temp_file_context_mock),
+        patch("pystack.__main__.CoreFileAnalyzer") as core_file_analizer_mock,
+    ):
         core_file_analizer_mock().extract_executable.return_value = (
             "extracted_executable"
         )
@@ -517,11 +492,12 @@ def test_process_core_default_without_executable_and_executable_does_not_exist(c
 
     # WHEN
 
-    with patch("sys.argv", argv), patch(
-        "pathlib.Path.exists"
-    ) as path_exists_mock, patch("pystack.__main__.is_gzip", return_value=False), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ) as core_file_analizer_mock:
+    with (
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists") as path_exists_mock,
+        patch("pystack.__main__.is_gzip", return_value=False),
+        patch("pystack.__main__.CoreFileAnalyzer") as core_file_analizer_mock,
+    ):
         core_file_analizer_mock().extract_executable.return_value = (
             "extracted_executable"
         )
@@ -544,16 +520,15 @@ def test_process_core_executable_not_elf_file(capsys):
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch("sys.argv", argv), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=False
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.is_elf", return_value=False),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         get_process_threads_mock.return_value = threads
         with pytest.raises(SystemExit):
@@ -572,20 +547,16 @@ def test_process_core_default_with_executable():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -622,20 +593,16 @@ def test_process_core_native(argument, mode):
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -662,20 +629,16 @@ def test_process_core_locals():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -711,20 +674,16 @@ def test_process_core_with_search_path():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -753,28 +712,27 @@ def test_process_core_with_search_root():
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pathlib.Path.glob", return_value=[Path("foo/lel.so"), Path("bar/lel.so")]
-    ), patch(
-        "os.path.isdir",
-        return_value=True,
-    ), patch(
-        "os.access",
-        return_value=True,
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch(
+            "pathlib.Path.glob", return_value=[Path("foo/lel.so"), Path("bar/lel.so")]
+        ),
+        patch(
+            "os.path.isdir",
+            return_value=True,
+        ),
+        patch(
+            "os.access",
+            return_value=True,
+        ),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -801,17 +759,18 @@ def test_process_core_with_not_readable_search_root():
 
     # WHEN
 
-    with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("sys.argv", argv), patch("pathlib.Path.exists", return_value=True), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "os.path.isdir",
-        return_value=True,
-    ), patch(
-        "os.access", return_value=False
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
+    with (
+        patch("pystack.__main__.get_process_threads_for_core"),
+        patch("pystack.__main__.print_thread"),
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch(
+            "os.path.isdir",
+            return_value=True,
+        ),
+        patch("os.access", return_value=False),
+        patch("pystack.__main__.is_elf", return_value=True),
     ):
         # THEN
         with pytest.raises(SystemExit):
@@ -825,13 +784,16 @@ def test_process_core_with_invalid_search_root():
 
     # WHEN
 
-    with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("sys.argv", argv), patch("pathlib.Path.exists", return_value=True), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "os.path.isdir",
-        return_value=False,
+    with (
+        patch("pystack.__main__.get_process_threads_for_core"),
+        patch("pystack.__main__.print_thread"),
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch(
+            "os.path.isdir",
+            return_value=False,
+        ),
     ):
         # THEN
         with pytest.raises(SystemExit):
@@ -848,14 +810,13 @@ def test_process_core_corefile_does_not_exit():
     def path_exists(what):
         return what != Path("corefile")
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch.object(
-        Path, "exists", path_exists
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch.object(Path, "exists", path_exists),
     ):
         # THEN
 
@@ -880,16 +841,14 @@ def test_process_core_executable_does_not_exit():
             return False
         return True
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "pystack.__main__.is_gzip", return_value=False
-    ), patch(
-        "sys.argv", argv
-    ), patch.object(
-        Path, "exists", does_exit
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("pystack.__main__.is_gzip", return_value=False),
+        patch("sys.argv", argv),
+        patch.object(Path, "exists", does_exit),
     ):
         # THEN
         with pytest.raises(SystemExit):
@@ -911,20 +870,16 @@ def test_process_core_error(exception, exval, capsys):
 
     # WHEN
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         # THEN
         get_process_threads_mock.side_effect = exception("Oh no!")
@@ -948,20 +903,16 @@ def test_process_core_exhaustive():
     threads = [Mock(), Mock(), Mock()]
 
     # WHEN
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch(
-        "pystack.__main__.print_thread"
-    ) as print_thread_mock, patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread") as print_thread_mock,
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         get_process_threads_mock.return_value = threads
         main()
@@ -989,9 +940,12 @@ def test_default_colored_output():
 
     # WHEN
 
-    with patch("pystack.__main__.get_process_threads"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("sys.argv", argv), patch("os.environ", environ):
+    with (
+        patch("pystack.__main__.get_process_threads"),
+        patch("pystack.__main__.print_thread"),
+        patch("sys.argv", argv),
+        patch("os.environ", environ),
+    ):
         main()
 
     # THEN
@@ -1007,9 +961,12 @@ def test_nocolor_output():
 
     # WHEN
 
-    with patch("pystack.__main__.get_process_threads"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("sys.argv", argv), patch("os.environ", environ):
+    with (
+        patch("pystack.__main__.get_process_threads"),
+        patch("pystack.__main__.print_thread"),
+        patch("sys.argv", argv),
+        patch("os.environ", environ),
+    ):
         main()
 
     # THEN
@@ -1025,9 +982,12 @@ def test_nocolor_output_at_the_front_for_process():
 
     # WHEN
 
-    with patch("pystack.__main__.get_process_threads"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("sys.argv", argv), patch("os.environ", environ):
+    with (
+        patch("pystack.__main__.get_process_threads"),
+        patch("pystack.__main__.print_thread"),
+        patch("sys.argv", argv),
+        patch("os.environ", environ),
+    ):
         main()
 
     # THEN
@@ -1042,16 +1002,15 @@ def test_nocolor_output_at_the_front_for_core():
     environ = {}
 
     # WHEN
-    with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("sys.argv", argv), patch("os.environ", environ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch("pystack.__main__.get_process_threads_for_core"),
+        patch("pystack.__main__.print_thread"),
+        patch("sys.argv", argv),
+        patch("os.environ", environ),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         main()
 
@@ -1068,16 +1027,15 @@ def test_global_options_can_be_placed_at_any_point(option):
     environ = {}
 
     # WHEN
-    with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("sys.argv", argv), patch("os.environ", environ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.is_elf", return_value=True
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
+    with (
+        patch("pystack.__main__.get_process_threads_for_core"),
+        patch("pystack.__main__.print_thread"),
+        patch("sys.argv", argv),
+        patch("os.environ", environ),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
     ):
         # THEN
 
@@ -1091,15 +1049,15 @@ def test_verbose_as_global_options_sets_correctly_the_logger():
     environ = {}
 
     # WHEN
-    with patch("pystack.__main__.get_process_threads"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("sys.argv", argv), patch("os.environ", environ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ), patch(
-        "pystack.__main__.logging.basicConfig"
-    ) as logger_mock:
+    with (
+        patch("pystack.__main__.get_process_threads"),
+        patch("pystack.__main__.print_thread"),
+        patch("sys.argv", argv),
+        patch("os.environ", environ),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer"),
+        patch("pystack.__main__.logging.basicConfig") as logger_mock,
+    ):
         # THEN
 
         main()
@@ -1219,15 +1177,13 @@ def test_format_psinfo():
 
     # THEN
 
-    expected = dedent(
-        """\
+    expected = dedent("""\
     Core file information:
     state: R zombie: True niceness: 0
     pid: 75639 ppid: 1 sid: 1
     uid: 0 gid: 0 pgrp: 75639
     executable: a.out arguments: ./a.out
-    """
-    )
+    """)
 
     assert expected.strip() == result.strip()
 
@@ -1240,17 +1196,15 @@ def test_process_core_does_not_crash_if_core_analyzer_fails(method):
 
     # WHEN / THEN
 
-    with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("pystack.__main__.is_elf", return_value=True), patch(
-        "pystack.__main__.is_gzip", return_value=False
-    ), patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ) as core_analyzer_test:
+    with (
+        patch("pystack.__main__.get_process_threads_for_core"),
+        patch("pystack.__main__.print_thread"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer") as core_analyzer_test,
+    ):
         method = getattr(core_analyzer_test(), method)
         method.side_effect = Exception("oh no")
         main()
@@ -1267,17 +1221,15 @@ def test_core_file_missing_modules_are_logged(caplog, native):
 
     # WHEN
 
-    with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("pystack.__main__.is_elf", return_value=True), patch(
-        "pystack.__main__.is_gzip", return_value=False
-    ), patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ) as core_analyzer_test:
+    with (
+        patch("pystack.__main__.get_process_threads_for_core"),
+        patch("pystack.__main__.print_thread"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer") as core_analyzer_test,
+    ):
         core_analyzer_test().missing_modules.return_value = ["A", "B"]
         with caplog.at_level(logging.WARNING):
             main()
@@ -1300,17 +1252,15 @@ def test_core_file_missing_build_ids_are_logged(caplog, native):
 
     # WHEN
 
-    with patch("pystack.__main__.get_process_threads_for_core"), patch(
-        "pystack.__main__.print_thread"
-    ), patch("pystack.__main__.is_elf", return_value=True), patch(
-        "pystack.__main__.is_gzip", return_value=False
-    ), patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ) as core_analyzer_test:
+    with (
+        patch("pystack.__main__.get_process_threads_for_core"),
+        patch("pystack.__main__.print_thread"),
+        patch("pystack.__main__.is_elf", return_value=True),
+        patch("pystack.__main__.is_gzip", return_value=False),
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer") as core_analyzer_test,
+    ):
         core_analyzer_test().extract_build_ids.return_value = [
             ("A", "1", "2"),
             ("B", "3", "4"),
@@ -1340,19 +1290,17 @@ def test_executable_is_not_elf_uses_the_first_map():
     # WHEN
     real_executable = Path("/foo/bar/executable")
 
-    with patch(
-        "pystack.__main__.get_process_threads_for_core"
-    ) as get_process_threads_mock, patch("pystack.__main__.print_thread"), patch(
-        "pystack.__main__.is_elf", lambda x: x == real_executable
-    ), patch(
-        "pystack.__main__.is_gzip", return_value=False
-    ), patch(
-        "sys.argv", argv
-    ), patch(
-        "pathlib.Path.exists", return_value=True
-    ), patch(
-        "pystack.__main__.CoreFileAnalyzer"
-    ) as core_analyzer_test:
+    with (
+        patch(
+            "pystack.__main__.get_process_threads_for_core"
+        ) as get_process_threads_mock,
+        patch("pystack.__main__.print_thread"),
+        patch("pystack.__main__.is_elf", lambda x: x == real_executable),
+        patch("pystack.__main__.is_gzip", return_value=False),
+        patch("sys.argv", argv),
+        patch("pathlib.Path.exists", return_value=True),
+        patch("pystack.__main__.CoreFileAnalyzer") as core_analyzer_test,
+    ):
         core_analyzer_test().extract_executable.return_value = "extracted_executable"
         core_analyzer_test().extract_maps.return_value = [
             VirtualMap(

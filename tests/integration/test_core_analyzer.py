@@ -275,7 +275,7 @@ def test_thread_registered_with_python_with_other_threads(tmpdir):
 
     # THEN
     assert len(threads) == 3
-    (main_thread, second_thread, non_python_thread) = threads
+    main_thread, second_thread, non_python_thread = threads
 
     main_frames = list(main_thread.frames)
     assert not main_frames

@@ -1425,11 +1425,11 @@ ProcessManager::ProcessManager(
         std::optional<VirtualMap> bss,
         std::optional<VirtualMap> heap)
 : AbstractProcessManager(
-        pid,
-        std::move(memory_maps),
-        std::move(main_map),
-        std::move(bss),
-        std::move(heap))
+          pid,
+          std::move(memory_maps),
+          std::move(main_map),
+          std::move(bss),
+          std::move(heap))
 , d_tracer(tracer)
 {
     if (d_tracer) {
@@ -1511,11 +1511,11 @@ CoreFileProcessManager::CoreFileProcessManager(
         std::optional<VirtualMap> bss,
         std::optional<VirtualMap> heap)
 : AbstractProcessManager(
-        pid,
-        std::move(memory_maps),
-        std::move(main_map),
-        std::move(bss),
-        std::move(heap))
+          pid,
+          std::move(memory_maps),
+          std::move(main_map),
+          std::move(bss),
+          std::move(heap))
 {
     d_analyzer = analyzer;
     d_manager = std::make_unique<CorefileRemoteMemoryManager>(analyzer, d_memory_maps);
