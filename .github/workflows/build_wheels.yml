@@ -1,5 +1,7 @@
 name: Wheels
 
+permissions: {}
+
 on:
   push:
   pull_request:
@@ -19,12 +21,14 @@ jobs:
     name: Build source distribution
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
 
       - name: Build sdist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -59,19 +63,19 @@ jobs:
       - name: Disable ptrace security restrictions
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: sdist
       - name: Extract sdist
         run: |
           tar zxvf *.tar.gz --strip-components=1
       - name: Build wheels
-        uses: pypa/cibuildwheel@v3.4.1
+        uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084 # v3.4.1
         env:
           CIBW_BUILD: "cp3{9..14}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
           CIBW_ENABLE: cpython-prerelease cpython-freethreading
-      - uses: actions/upload-artifact@v7
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ${{ matrix.wheel_type }}-wheels
           path: ./wheelhouse/*.whl
@@ -84,13 +88,15 @@ jobs:
       matrix:
         python_version: ["2.7", "3.7"]
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: '>=3.13'
       - name: Set up dependencies
@@ -124,17 +130,20 @@ jobs:
       matrix:
         python_version: ["3.13"]
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/download-artifact@v8
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
       - name: Install uv
-        uses: astral-sh/setup-uv@v7
+        uses: astral-sh/setup-uv@37802adc94f370d6bfd71619e3f0bf239e1f3b78 # v7
         with:
           version: latest
           python-version: ${{ matrix.python_version }}
           activate-environment: true
+          enable-cache: false
       - name: Set up dependencies
         run: |
           sudo apt-get update
@@ -159,12 +168,14 @@ jobs:
       matrix:
         python_version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "${{matrix.python_version}}-dev"
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -194,12 +205,14 @@ jobs:
       matrix:
         python_version: ["3.9", "3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "${{matrix.python_version}}-dev"
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "manylinux_aarch64-wheels"
           path: dist
@@ -232,12 +245,14 @@ jobs:
       matrix:
         python_version: ["3.13", "3.14"]
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "${{matrix.python_version}}-dev"
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -274,15 +289,17 @@ jobs:
       fail-fast: false
 
     container:
-      image: alpine
+      image: alpine@4d889c14e7d5
       options: --cap-add=SYS_PTRACE
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Set up dependencies
         run: |
           apk add --update alpine-sdk bash alpine-sdk python3 python3-dev gdb musl-dbg python3-dbg
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "musllinux_x86_64-wheels"
           path: dist
@@ -304,11 +321,13 @@ jobs:
       fail-fast: false
 
     container:
-      image: fedora
+      image: fedora@f717d3f59ea0
       options: --cap-add=SYS_PTRACE
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Set up dependencies
         run: |
           dnf install -y \
@@ -319,7 +338,7 @@ jobs:
             python3-devel
           dnf debuginfo-install -y \
             python3
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -340,10 +359,12 @@ jobs:
       fail-fast: false
 
     container:
-      image: archlinux
+      image: archlinux@32c78c548c1a
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Set up dependencies
         run: |
           pacman -Syu --noconfirm \
@@ -356,7 +377,7 @@ jobs:
             python-wheel \
             elfutils \
             debuginfod
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -379,11 +400,13 @@ jobs:
       fail-fast: false
 
     container:
-      image: debian
+      image: debian@de6a8f94c0e8
       options: --cap-add=SYS_PTRACE
 
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
       - name: Set up dependencies
         run: |
           apt-get update
@@ -394,7 +417,7 @@ jobs:
             python3-pip \
             python3-venv \
             python3-dbg
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "manylinux_x86_64-wheels"
           path: dist
@@ -416,7 +439,7 @@ jobs:
     permissions:
       id-token: write # Required to retrieve a Trusted Publishing token
     steps:
-      - uses: actions/download-artifact@v8
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           # with no name set, it downloads all of the artifacts
           path: dist
@@ -425,6 +448,6 @@ jobs:
           mv dist/*-wheels/*.whl dist/
           rmdir dist/{sdist,*-wheels}
           ls -R dist
-      - uses: pypa/gh-action-pypi-publish@release/v1
+      - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
           skip_existing: true

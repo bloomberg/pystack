@@ -1,13 +1,17 @@
 name: Lint and docs
 
+permissions: {}
+
 on: [push, pull_request]
 
 jobs:
   lint_and_docs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v6
-      - uses: actions/setup-python@v6
+      - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6
         with:
           python-version: "3.10"
       - name: Set up dependencies
@@ -23,7 +27,8 @@ jobs:
       - name: Lint sources
         run: |
           make lint PYTHON=python3
-          python3 -m prek run --all-files --hook-stage pre-push
+      - name: Run zizmor 🌈
+        uses: zizmorcore/zizmor-action@5f14fd08f7cf1cb1609c1e344975f152c7ee938d # v0.5.6
       - name: Build docs
         run: |
           towncrier build --version 99.99 --name pystack --keep

@@ -1,0 +1,6 @@
+rules:
+  secrets-outside-env:
+    ignore:
+      # Only exposes the codecov token; low risk
+      - coverage.yml:74
+      - coverage.yml:80
