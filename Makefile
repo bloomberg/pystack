@@ -79,11 +79,11 @@ ccoverage:  ## Run the test suite, with C++ code coverage
 
 .PHONY: format
 format:  ## Autoformat all files
-	$(PYTHON) -m pre_commit run --all-files
+	$(PYTHON) -m prek run --all-files
 
 .PHONY: lint
 lint:  ## Lint all files
-	$(PYTHON) -m pre_commit run --all-files
+	$(PYTHON) -m prek run --all-files
 	$(PYTHON) -m mypy src/pystack --strict --ignore-missing-imports
 	$(PYTHON) -m mypy tests --ignore-missing-imports
 
