@@ -93,12 +93,12 @@ ENV PYTHON=python3.12 \
     PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
 
 # Copy the required files
-COPY ["requirements-test.txt", "requirements-extra.txt", "requirements-docs.txt", "/tmp/"]
+COPY pyproject.toml /tmp/
 
 # Install Python packages
 RUN $PYTHON -m venv $VIRTUAL_ENV \
     && pip install -U pip wheel setuptools cython pkgconfig \
-    && pip install -U -r /tmp/requirements-test.txt -r /tmp/requirements-extra.txt
+    && pip install -U --group "/tmp/pyproject.toml:test" --group "/tmp/pyproject.toml:extra"
 
 # Set the working directory
 WORKDIR /src
