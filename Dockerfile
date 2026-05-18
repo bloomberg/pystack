@@ -1,5 +1,5 @@
 # Stage 1: Elfutils build stage
-FROM ubuntu:22.04 AS elfutils_builder
+FROM ubuntu:24.04 AS elfutils_builder
 ARG DEBIAN_FRONTEND=noninteractive
 ENV VERS=0.193
 
@@ -35,7 +35,7 @@ RUN apt-get update \
     && make install
 
 # Stage 2: Final stage
-FROM ubuntu:22.04
+FROM ubuntu:24.04
 ARG DEBIAN_FRONTEND=noninteractive
 
 # Install runtime dependencies
@@ -79,7 +79,7 @@ RUN apt-get update \
     libbz2-dev \
     zlib1g-dev \
     && apt-get clean \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* /etc/debuginfod/*.urls
 
 # Copy the installed files from the elfutils_builder stage
 COPY --from=elfutils_builder /usr/local /usr/local
