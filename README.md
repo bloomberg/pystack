@@ -92,10 +92,10 @@ This will install PyStack in the virtual environment in development mode (the `-
 `pip install` command), and then install the Python libraries needed to test it, lint it, and
 generate its documentation.
 
-If you plan to contribute back, you should install the pre-commit hooks:
+If you plan to contribute back, you should install the prek (pre-commit) hooks:
 
 ```shell
-pre-commit install
+prek install
 ```
 
 This will ensure that your contribution passes our linting checks.
