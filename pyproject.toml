@@ -26,6 +26,30 @@ classifiers = [
     "Topic :: Software Development :: Debuggers",
 ]
 
+[dependency-groups]
+docs = [
+    "recommonmark",
+    "sphinx",
+    "sphinx-autobuild",
+    "sphinx-argparse",
+    "furo",
+]
+extra = [
+    "mypy",
+    "bump2version",
+    "towncrier",
+    "prek",
+    {include-group = "docs"},
+]
+test = [
+    "coverage[toml]",
+    "pyinstaller",
+    "pytest",
+    "pytest-cov",
+    "pytest-xdist",
+    "setuptools",
+]
+
 [project.urls]
 Homepage = "https://github.com/bloomberg/pystack"
 

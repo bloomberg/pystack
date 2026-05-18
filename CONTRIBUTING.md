@@ -64,7 +64,7 @@ easier to validate it.
 Before commiting anything, install the prek (pre-commit) hooks:
 
 ```shell
-python3 -m pip install -r requirements-extra.txt
+python3 -m pip install --group extra
 prek install
 ```
 

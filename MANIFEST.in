@@ -3,7 +3,6 @@ exclude CONTRIBUTING.md
 exclude Dockerfile
 exclude src/pystack/*.cpp
 exclude src/pystack/*.h
-exclude requirements-*.txt
 exclude tox.ini
 exclude valgrind.supp
 

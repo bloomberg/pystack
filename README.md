@@ -84,8 +84,7 @@ cd pystack
 python3 -m venv ../pystack-env/  # just an example, put this wherever you want
 source ../pystack-env/bin/activate
 python3 -m pip install --upgrade pip
-python3 -m pip install -e .
-python3 -m pip install -r requirements-test.txt -r requirements-extra.txt
+python3 -m pip install -e . --group test --group extra
 ```
 
 This will install PyStack in the virtual environment in development mode (the `-e` of the last

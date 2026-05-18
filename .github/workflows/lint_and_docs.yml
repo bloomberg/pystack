@@ -16,7 +16,7 @@ jobs:
           sudo apt-get install -qy libdw-dev libelf-dev
       - name: Install Python dependencies
         run: |
-          python3 -m pip install -r requirements-extra.txt
+          python3 -m pip install --group extra
       - name: Install Package
         run: |
           python3 -m pip install -e .

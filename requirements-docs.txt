@@ -1,5 +1,0 @@
-recommonmark
-sphinx
-sphinx-autobuild
-sphinx-argparse
-furo
