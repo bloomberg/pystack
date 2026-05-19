@@ -1,0 +1,1 @@
+Fix ``IndexError`` in traceback formatting when the source file has fewer lines than expected.
