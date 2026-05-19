@@ -241,6 +241,53 @@ def test_traceback_formatter_no_mergeable_native_frames():
     ]
 
 
+def test_traceback_formatter_with_source_lineno_out_of_range():
+    # GIVEN
+
+    frame = PyFrame(
+        prev=None,
+        next=None,
+        code=PyCodeObject(
+            filename="template.html",
+            scope="root",
+            location=LocationInfo(13, 13, 0, 0),
+        ),
+        arguments={"arg": "value"},
+        locals={"local": "value"},
+        is_entry=True,
+        is_shim=False,
+    )
+
+    thread = PyThread(
+        tid=1,
+        frame=frame,
+        native_frames=[],
+        holds_the_gil=False,
+        is_gc_collecting=False,
+        python_version=(3, 8),
+    )
+
+    # WHEN
+    source_data = ""
+    with (
+        patch("builtins.open", mock_open(read_data=source_data)),
+        patch("os.path.exists", return_value=True),
+    ):
+        lines = list(format_thread(thread, NativeReportingMode.OFF))
+
+    # THEN
+
+    assert lines == [
+        "Traceback for thread 1 [] (most recent call last):",
+        '    (Python) File "template.html", line 13, in root',
+        "      Arguments:",
+        "        arg: value",
+        "      Locals:",
+        "        local: value",
+        "",
+    ]
+
+
 def test_traceback_formatter_with_source():
     # GIVEN
 
