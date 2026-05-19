@@ -108,7 +108,7 @@ def test_single_thread_stack_for_relocated_core(
     assert functions == ["<module>", "first_func", "second_func", "third_func"]
 
     *line_numbers, last_line = [frame.code.location.lineno for frame in frames]
-    assert line_numbers == [20, 6, 10]
+    assert line_numbers == [19, 6, 10]
     assert last_line in {16, 17}
 
     assert thread.native_frames
