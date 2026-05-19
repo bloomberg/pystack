@@ -27,18 +27,19 @@ def format_frame(frame: PyFrame) -> Iterable[str]:
     if os.path.exists(code.filename):
         with open(code.filename, "r") as fp:
             lines = fp.readlines()
-        source = lines[code.location.lineno - 1]
-        line_start, line_end, col_start, col_end = code.location
-        if col_start == col_end == 0:
-            yield f"        {source.strip()}"
-        else:
-            if line_end != line_start:
-                col_end = len(source)
-            a = source[:col_start]
-            b = source[col_start:col_end].strip("\n")
-            c = source[col_end:]
-            final = f'{a}{colored(b, color="blue")}{c}'
-            yield f"        {final.strip()}"
+        if 1 <= code.location.lineno <= len(lines):
+            source = lines[code.location.lineno - 1]
+            line_start, line_end, col_start, col_end = code.location
+            if col_start == col_end == 0:
+                yield f"        {source.strip()}"
+            else:
+                if line_end != line_start:
+                    col_end = len(source)
+                a = source[:col_start]
+                b = source[col_start:col_end].strip("\n")
+                c = source[col_end:]
+                final = f'{a}{colored(b, color="blue")}{c}'
+                yield f"        {final.strip()}"
 
     if frame.arguments:
         yield f"      {colored('Arguments:', attrs=['faint'])}"
