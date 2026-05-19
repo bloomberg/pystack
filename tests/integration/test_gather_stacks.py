@@ -61,7 +61,7 @@ def test_single_thread_stack(python, blocking, method, tmpdir):
     assert functions == ["<module>", "first_func", "second_func", "third_func"]
 
     *line_numbers, last_line = [frame.code.location.lineno for frame in frames]
-    assert line_numbers == [20, 6, 10]
+    assert line_numbers == [19, 6, 10]
     assert last_line in {16, 17}
 
     assert not thread.native_frames
@@ -90,7 +90,7 @@ def test_single_thread_stack_non_blocking(tmpdir):
     assert functions == ["<module>", "first_func", "second_func", "third_func"]
 
     *line_numbers, last_line = [frame.code.location.lineno for frame in frames]
-    assert line_numbers == [20, 6, 10]
+    assert line_numbers == [19, 6, 10]
     assert last_line in {16, 17}
 
     assert not thread.native_frames
@@ -134,7 +134,7 @@ def test_multiple_thread_stack(python, blocking, method, tmpdir):
     assert functions == ["<module>", "first_func", "second_func", "third_func"]
 
     *line_numbers, last_line = [frame.code.location.lineno for frame in frames]
-    assert line_numbers == [42, 23, 27]
+    assert line_numbers == [41, 23, 27]
     assert last_line in {38, 39}
 
     assert not main_thread.native_frames
@@ -193,7 +193,7 @@ def test_single_thread_stack_native(python, method, blocking, tmpdir):
     assert functions == ["<module>", "first_func", "second_func", "third_func"]
 
     *line_numbers, last_line = [frame.code.location.lineno for frame in frames]
-    assert line_numbers == [20, 6, 10]
+    assert line_numbers == [19, 6, 10]
     assert last_line in {16, 17}
 
     assert thread.native_frames
@@ -255,7 +255,7 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
     assert functions == ["<module>", "first_func", "second_func", "third_func"]
 
     *line_numbers, last_line = [frame.code.location.lineno for frame in frames]
-    assert line_numbers == [42, 23, 27]
+    assert line_numbers == [41, 23, 27]
     assert last_line in {38, 39}
 
     assert main_thread.native_frames
@@ -352,7 +352,7 @@ def test_thread_registered_with_python_but_with_no_python_calls(python, tmpdir):
     assert functions == ["<module>", "foo"]
 
     lines = [frame.code.location.lineno for frame in frames]
-    assert lines == [13, 10]
+    assert lines == [12, 9]
 
 
 def test_thread_registered_with_python_with_other_threads(tmpdir):
@@ -394,7 +394,7 @@ def test_thread_registered_with_python_with_other_threads(tmpdir):
     assert functions == ["<module>", "foo"]
 
     lines = [frame.code.location.lineno for frame in frames]
-    assert lines == [13, 10]
+    assert lines == [12, 9]
 
     native_frames = list(non_python_thread.native_frames)
     assert len(native_frames) >= 4
