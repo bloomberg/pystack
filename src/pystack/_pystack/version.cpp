@@ -106,22 +106,6 @@ py_framev314()
 }
 
 template<class T>
-constexpr py_frame_v
-py_framev315()
-{
-    return {
-            sizeof(T),
-            {offsetof(T, previous)},
-            {offsetof(T, f_executable)},
-            {0},
-            {offsetof(T, instr_ptr)},
-            {offsetof(T, localsplus)},
-            {0},
-            {offsetof(T, owner)},
-    };
-}
-
-template<class T>
 constexpr py_thread_v
 py_thead_h()
 {
