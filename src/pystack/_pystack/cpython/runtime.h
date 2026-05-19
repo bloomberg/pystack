@@ -682,10 +682,16 @@ typedef struct _Py_DebugOffsets
         uint64_t next;
         uint64_t interp;
         uint64_t current_frame;
+        uint64_t base_frame;
+        uint64_t last_profiled_frame;
         uint64_t thread_id;
         uint64_t native_thread_id;
         uint64_t datastack_chunk;
         uint64_t status;
+        uint64_t holds_gil;
+        uint64_t gil_requested;
+        uint64_t current_exception;
+        uint64_t exc_state;
     } thread_state;
 
     // InterpreterFrame offset;
@@ -803,6 +809,9 @@ typedef struct _Py_DebugOffsets
     {
         uint64_t size;
         uint64_t collecting;
+        uint64_t frame;
+        uint64_t generation_stats_size;
+        uint64_t generation_stats;
     } gc;
 
     // Generator object offset;
