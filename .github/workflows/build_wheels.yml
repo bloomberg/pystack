@@ -72,7 +72,7 @@ jobs:
       - name: Build wheels
         uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084 # v3.4.1
         env:
-          CIBW_BUILD: "cp3{9..14}{t,}-${{ matrix.wheel_type }}"
+          CIBW_BUILD: "cp3{9..15}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
           CIBW_ENABLE: cpython-prerelease cpython-freethreading
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -166,7 +166,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t"]
+        python_version: ["3.9", "3.10", "3.11", "3.12", "3.13", "3.13t", "3.14", "3.14t", "3.15", "3.15t"]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -203,7 +203,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.9", "3.13", "3.14"]
+        python_version: ["3.9", "3.13", "3.14", "3.15"]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:
@@ -243,7 +243,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python_version: ["3.13", "3.14"]
+        python_version: ["3.13", "3.14", "3.15"]
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
         with:

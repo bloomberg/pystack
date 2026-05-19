@@ -122,9 +122,23 @@ struct _PyUnicode_State
 
 }  // namespace Python3_14t
 
+namespace Python3_15t {
+
+struct _PyUnicode_State
+{
+    unsigned char interned;
+    unsigned int kind : 3;
+    unsigned int compact : 1;
+    unsigned int ascii : 1;
+    unsigned int statically_allocated : 1;
+};
+
+}  // namespace Python3_15t
+
 union AnyPyUnicodeState {
     Python3::_PyUnicode_State python3;
     Python3_14t::_PyUnicode_State python3_14t;
+    Python3_15t::_PyUnicode_State python3_15t;
 };
 
 }  // namespace pystack
