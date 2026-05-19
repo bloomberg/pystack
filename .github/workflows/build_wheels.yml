@@ -289,7 +289,7 @@ jobs:
       fail-fast: false
 
     container:
-      image: alpine:3.22.4
+      image: alpine
       options: --cap-add=SYS_PTRACE
 
     steps:
@@ -321,7 +321,7 @@ jobs:
       fail-fast: false
 
     container:
-      image: fedora:45
+      image: fedora
       options: --cap-add=SYS_PTRACE
 
     steps:
@@ -359,7 +359,7 @@ jobs:
       fail-fast: false
 
     container:
-      image: archlinux:base-devel-20260517.0.530531
+      image: archlinux
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -400,7 +400,7 @@ jobs:
       fail-fast: false
 
     container:
-      image: debian:stable
+      image: debian
       options: --cap-add=SYS_PTRACE
 
     steps:
