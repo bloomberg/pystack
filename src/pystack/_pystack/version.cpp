@@ -781,7 +781,7 @@ python_v python_v3_15 = {
         py_threadv313<Python3_13::PyThreadState>(),
         py_isv312<Python3_13::PyInterpreterState>(),
         py_runtimev313<Python3_14::PyRuntimeState>(),
-        py_gc<Python3_14::_gc_runtime_state>(),
+        py_gc<Python3_15::_gc_runtime_state>(),
         py_cframe<Python3_12::CFrame>(),
         py_gilruntimestate<Python3_14::_gil_runtime_state>(),
 };
