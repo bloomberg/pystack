@@ -5,6 +5,7 @@ rules:
       - coverage.yml:74
       - coverage.yml:80
   unpinned-images:
+    ignore:
       - build_wheels.yml:292
       - build_wheels.yml:324
       - build_wheels.yml:362
