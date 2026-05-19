@@ -117,7 +117,7 @@ struct _gc_runtime_state
     struct Python3_8::gc_generation permanent_generation;
     struct gc_generation_stats generation_stats[NUM_GENERATIONS];
     int collecting;
-    _PyInterpreterFrame* frame;
+    struct _PyInterpreterFrame* frame;
     PyObject* garbage;
     PyObject* callbacks;
     Py_ssize_t heap_size;

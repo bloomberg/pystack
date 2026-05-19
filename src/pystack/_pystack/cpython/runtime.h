@@ -694,6 +694,12 @@ typedef struct _Py_DebugOffsets
         uint64_t exc_state;
     } thread_state;
 
+    // Exception stack item offset
+    struct
+    {
+        uint64_t exc_value;
+    } err_stackitem;
+
     // InterpreterFrame offset;
     struct _interpreter_frame
     {
@@ -737,7 +743,16 @@ typedef struct _Py_DebugOffsets
         uint64_t tp_name;
         uint64_t tp_repr;
         uint64_t tp_flags;
+        uint64_t tp_basicsize;
+        uint64_t tp_dictoffset;
     } type_object;
+
+    // PyHeapTypeObject offset;
+    struct _heap_type_object
+    {
+        uint64_t size;
+        uint64_t ht_cached_keys;
+    } heap_type_object;
 
     // PyTuple object offset;
     struct _tuple_object
@@ -802,6 +817,7 @@ typedef struct _Py_DebugOffsets
         uint64_t state;
         uint64_t length;
         uint64_t asciiobject_size;
+        uint64_t compactunicodeobject_size;
     } unicode_object;
 
     // GC runtime state offset;
