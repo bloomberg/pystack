@@ -70,7 +70,7 @@ jobs:
         run: |
           tar zxvf *.tar.gz --strip-components=1
       - name: Build wheels
-        uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084 # v3.4.1
+        uses: pypa/cibuildwheel@54327ab9d35de03b359ac25c97de9417d94639c0 # v4.0.0rc1
         env:
           CIBW_BUILD: "cp3{9..15}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
@@ -447,6 +447,10 @@ jobs:
           mv dist/sdist/*.tar.gz dist/
           mv dist/*-wheels/*.whl dist/
           rmdir dist/{sdist,*-wheels}
+          ls -R dist
+      - name: Avoid publishing Python 3.15 wheels
+        run: |
+          rm -f dist/*cp315*
           ls -R dist
       - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # release/v1
         with:
