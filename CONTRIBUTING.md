@@ -91,6 +91,21 @@ Changes should always include tests. If this is a bug fix it is a good idea to a
 first commit of the pull request and the changes to fix the issue in subsequent commits to make it
 easier to validate it.
 
+### Running tests before submitting pull request
+
+To run local tests, first install the test requirements:
+
+```shell
+python3 -m pip install --upgrade pip
+python3 -m pip install -e . --group test
+```
+
+Then, run the check:
+
+```shell
+make check
+```
+
 ## Pull requests
 
 ### Linting your code
