@@ -8,6 +8,7 @@ from contextlib import suppress
 from textwrap import dedent
 from typing import Any
 from typing import Dict
+from typing import List
 from typing import NoReturn
 from typing import Optional
 from typing import Set
@@ -17,9 +18,10 @@ from pystack.errors import InvalidPythonProcess
 from pystack.process import decompress_gzip
 from pystack.process import is_elf
 from pystack.process import is_gzip
+from pystack.types import PyThread
 
+from . import TracebackPrinter
 from . import errors
-from . import print_thread
 from .colors import colored
 from .engine import CoreFileAnalyzer
 from .engine import NativeReportingMode
@@ -283,18 +285,27 @@ def main() -> None:
         _exit_with_code(the_error)
 
 
+def _include_subinterpreters(threads: List[PyThread]) -> bool:
+    return len(set(thread.interpreter_id for thread in threads)) > 1
+
+
 def process_remote(parser: argparse.ArgumentParser, args: argparse.Namespace) -> None:
     if not args.block and args.native_mode != NativeReportingMode.OFF:
         parser.error("Native traces are only available in blocking mode")
 
-    for thread in get_process_threads(
+    threads = get_process_threads(
         args.pid,
         stop_process=args.block,
         native_mode=args.native_mode,
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
-    ):
-        print_thread(thread, args.native_mode)
+    )
+
+    printer = TracebackPrinter(
+        args.native_mode, include_subinterpreters=_include_subinterpreters(threads)
+    )
+    for thread in threads:
+        printer.print_thread(thread)
 
 
 def format_psinfo_information(psinfo: Dict[str, Any]) -> str:
@@ -414,15 +425,19 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
                 elf_id if elf_id else "<MISSING>",
             )
 
-    for thread in get_process_threads_for_core(
+    threads = get_process_threads_for_core(
         corefile,
         executable,
         library_search_path=lib_search_path,
         native_mode=args.native_mode,
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
-    ):
-        print_thread(thread, args.native_mode)
+    )
+    printer = TracebackPrinter(
+        args.native_mode, include_subinterpreters=_include_subinterpreters(threads)
+    )
+    for thread in threads:
+        printer.print_thread(thread)
 
 
 if __name__ == "__main__":  # pragma: no cover

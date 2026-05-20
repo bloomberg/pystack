@@ -11,6 +11,7 @@ set(PYSTACK_SOURCES
     logging.cpp
     maps_parser.cpp
     mem.cpp
+    native_frame.cpp
     process.cpp
     pycode.cpp
     pyframe.cpp
@@ -21,6 +22,7 @@ set(PYSTACK_SOURCES
     version.cpp
     version_detector.cpp
     bindings.cpp
+    interpreter.cpp
 )
 
 # Create the nanobind module

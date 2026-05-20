@@ -7,6 +7,8 @@ from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
 
+from ._pystack import frame_type as _frame_type_cpp
+
 SYMBOL_IGNORELIST = {
     "PyObject_Call",
     "call_function",
@@ -44,38 +46,11 @@ class NativeFrame:
         OTHER = 3
 
 
-def _is_eval_frame(symbol: str, python_version: Tuple[int, int]) -> bool:
-    if python_version < (3, 6):
-        return "PyEval_EvalFrameEx" in symbol
-    if "_PyEval_EvalFrameDefault" in symbol:
-        return True
-    # Python 3.14 tail call interpreter uses LLVM-generated functions
-    if symbol.startswith("_TAIL_CALL_") and ".llvm." in symbol:
-        return True
-    # Python 3.15+ tail call interpreter drops the .llvm. suffix
-    if python_version >= (3, 15) and symbol.startswith("_TAIL_CALL_"):
-        return True
-    return False
-
-
 def frame_type(
     frame: NativeFrame, python_version: Optional[Tuple[int, int]]
 ) -> NativeFrame.FrameType:
-    symbol = frame.symbol
-    if python_version and _is_eval_frame(symbol, python_version):
-        return frame.FrameType.EVAL
-    if symbol.startswith("PyEval") or symbol.startswith("_PyEval"):
-        return frame.FrameType.IGNORE
-    if symbol.startswith("_Py"):
-        return frame.FrameType.IGNORE
-    if symbol.startswith("_TAIL_CALL_"):
-        return frame.FrameType.IGNORE
-    if python_version and python_version >= (3, 8) and "vectorcall" in symbol.lower():
-        return frame.FrameType.IGNORE
-    if any(symbol.startswith(ignored_symbol) for ignored_symbol in SYMBOL_IGNORELIST):
-        return frame.FrameType.IGNORE
-
-    return frame.FrameType.OTHER
+    result = _frame_type_cpp(frame.symbol, python_version)
+    return NativeFrame.FrameType(result.value)
 
 
 class LocationInfo(NamedTuple):
@@ -119,6 +94,7 @@ class PyThread:
     is_gc_collecting: int
     python_version: Optional[Tuple[int, int]]
     name: Optional[str] = None
+    interpreter_id: Optional[int] = None
 
     @property
     def frames(self) -> Iterable[PyFrame]:

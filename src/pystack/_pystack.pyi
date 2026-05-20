@@ -85,6 +85,16 @@ def get_bss_info(binary: Union[str, pathlib.Path]) -> Optional[Dict[str, Any]]: 
 def copy_memory_from_address(pid: int, address: int, size: int) -> bytes: ...
 def _check_interpreter_shutdown(manager: ProcessManager) -> None: ...
 
+class NativeFrameType(enum.Enum):
+    IGNORE = 0
+    EVAL = 1
+    OTHER = 3
+
+def is_eval_frame(symbol: str, python_version: Tuple[int, int]) -> bool: ...
+def frame_type(
+    symbol: str, python_version: Optional[Tuple[int, int]] = None
+) -> NativeFrameType: ...
+
 F = TypeVar("F", bound=Callable[..., Any])
 
 def intercept_runtime_errors() -> Callable[[F], F]: ...

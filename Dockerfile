@@ -53,6 +53,7 @@ RUN apt-get update \
     file \
     less \
     libcrypt-dev \
+    bear \
     libzstd-dev \
     liblzma-dev \
     libbz2-dev \

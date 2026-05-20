@@ -4,8 +4,8 @@ from unittest.mock import patch
 import pytest
 
 from pystack.engine import NativeReportingMode
+from pystack.traceback_formatter import TracebackPrinter
 from pystack.traceback_formatter import format_thread
-from pystack.traceback_formatter import print_thread
 from pystack.types import SYMBOL_IGNORELIST
 from pystack.types import LocationInfo
 from pystack.types import NativeFrame
@@ -1268,7 +1268,7 @@ def test_print_thread(capsys):
         "pystack.traceback_formatter.format_thread",
         return_value=("1", "2", "3"),
     ):
-        print_thread(thread, NativeReportingMode.OFF)
+        TracebackPrinter(NativeReportingMode.OFF).print_thread(thread)
 
     # THEN
 

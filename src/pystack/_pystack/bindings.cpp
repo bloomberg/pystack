@@ -1,3 +1,4 @@
+#include <algorithm>
 #include <nanobind/nanobind.h>
 #include <nanobind/stl/filesystem.h>
 #include <nanobind/stl/function.h>
@@ -11,14 +12,19 @@
 
 #include <filesystem>
 #include <memory>
+#include <numeric>
 #include <optional>
+#include <ranges>
 #include <unordered_set>
+#include <vector>
 
 #include "corefile.h"
 #include "elf_common.h"
+#include "interpreter.h"
 #include "logging.h"
 #include "maps_parser.h"
 #include "mem.h"
+#include "native_frame.h"
 #include "process.h"
 #include "thread_builder.h"
 
@@ -491,7 +497,8 @@ buildPyThreadObject(
             thread.gil_status,
             thread.gc_status,
             nb::make_tuple(python_version.first, python_version.second),
-            "name"_a = thread.name ? nb::cast(*thread.name) : nb::none());
+            "name"_a = thread.name ? nb::cast(*thread.name) : nb::none(),
+            "interpreter_id"_a = thread.interpreter_id);
 }
 
 // Build a native-only thread object (no Python frames)
@@ -534,6 +541,107 @@ logMemoryMaps(const std::vector<pystack::VirtualMap>& maps, const char* source)
     }
 }
 
+std::vector<pystack::PyThreadData>
+_slice_native_stack(std::vector<pystack::PyThreadData> data)
+{
+    // Capture a canonical
+    auto canonical_thread =
+            std::find_if(data.begin(), data.end(), [](const pystack::PyThreadData& py_thread_data) {
+                return !py_thread_data.native_frames.empty();
+            });
+    if (canonical_thread == data.end()) {
+        return data;
+    }
+
+    // Capture canonical frames and python version
+    const std::vector<pystack::NativeFrame> canonical_frames = canonical_thread->native_frames;
+    const auto python_version = data[0].python_version;
+
+    std::vector<std::size_t> eval_index;
+    for (std::size_t i = 0; i < canonical_frames.size(); ++i) {
+        if (pystack::is_eval_frame(canonical_frames[i].symbol, python_version)) {
+            eval_index.push_back(i);
+        }
+    }
+
+    const auto total_entry_frames = static_cast<std::size_t>(
+            std::accumulate(data.begin(), data.end(), 0, [](int acc, const pystack::PyThreadData& d) {
+                return acc
+                       + static_cast<int>(std::count_if(
+                               d.frames.begin(),
+                               d.frames.end(),
+                               [](const pystack::PyFrameData& frame) { return frame.is_entry; }));
+            }));
+
+    if (eval_index.size() != total_entry_frames) {
+        return data;
+    }
+
+    std::vector<pystack::PyThreadData> ordered_threads = std::move(data);
+    // Sort by:
+    //  1. With stack anchor (!=0) before without
+    //  2. Stack anchor in descending order
+    //  3. Index in PyThreadData vec (handled by stable_sort)
+    std::stable_sort(
+            ordered_threads.begin(),
+            ordered_threads.end(),
+            [](const pystack::PyThreadData& a, const pystack::PyThreadData& b) {
+                return std::make_tuple(a.stack_anchor == 0 ? 1 : 0, -a.stack_anchor)
+                       < std::make_tuple(b.stack_anchor == 0 ? 1 : 0, -b.stack_anchor);
+            });
+
+    // Slice frames according to eval frames per python thread
+    std::size_t cursor = 0;
+    for (auto& thread_data : ordered_threads) {
+        const auto required_eval_frames = static_cast<std::size_t>(std::count_if(
+                thread_data.frames.begin(),
+                thread_data.frames.end(),
+                [](const pystack::PyFrameData& py_frame) { return py_frame.is_entry; }));
+
+        if (required_eval_frames == 0) {
+            continue;
+        }
+
+        const std::size_t end = cursor + required_eval_frames;
+        const std::size_t from = eval_index[cursor];
+        const std::size_t to = end < eval_index.size() ? eval_index[end] : canonical_frames.size();
+        thread_data.native_frames.assign(canonical_frames.begin() + from, canonical_frames.begin() + to);
+        cursor = end;
+    }
+    return ordered_threads;
+}
+
+std::vector<pystack::PyThreadData>
+_normalize_threads(std::vector<pystack::PyThreadData> threads, NativeReportingMode native_mode)
+{
+    if (native_mode == NativeReportingMode::OFF) {
+        return threads;
+    }
+
+    // First pass: bucket threads by TID (capture index only)
+    std::unordered_map<int, std::vector<std::size_t>> indices_by_tid;
+    for (std::size_t i = 0; i < threads.size(); ++i) {
+        indices_by_tid[threads[i].tid].push_back(i);
+    }
+
+    // Second pass: for groups that share a TID, slice native stacks.
+    for (auto& [_, indices] : indices_by_tid) {
+        if (indices.size() <= 1) {
+            continue;
+        }
+        std::vector<pystack::PyThreadData> group;
+        for (const std::size_t idx : indices) {
+            group.push_back(std::move(threads[idx]));
+        }
+        auto sliced = _slice_native_stack(std::move(group));
+        for (std::size_t i = 0; i < indices.size(); ++i) {
+            threads[indices[i]] = std::move(sliced[i]);
+        }
+    }
+
+    return threads;
+}
+
 nb::object
 get_process_threads(
         pid_t pid,
@@ -571,21 +679,28 @@ get_process_threads(
             } else {
                 python_version = manager->python_version();
                 std::vector<int> all_tids = pystack::getThreadIds(manager->get_manager());
+                bool add_native = native_mode != NativeReportingMode::OFF;
 
-                if (head != 0) {
-                    bool add_native = native_mode != NativeReportingMode::OFF;
-                    python_threads = pystack::buildThreadsFromInterpreter(
-                            manager->get_manager(),
-                            head,
-                            pid,
-                            add_native,
-                            locals);
+                while (head) {
+                    std::vector<pystack::PyThreadData> new_threads =
+                            pystack::buildThreadsFromInterpreter(
+                                    manager->get_manager(),
+                                    head,
+                                    pid,
+                                    add_native,
+                                    locals);
 
-                    for (const auto& thread : python_threads) {
+                    for (const auto& thread : new_threads) {
                         all_tids.erase(
                                 std::remove(all_tids.begin(), all_tids.end(), thread.tid),
                                 all_tids.end());
                     }
+                    python_threads.insert(
+                            python_threads.end(),
+                            std::make_move_iterator(new_threads.begin()),
+                            std::make_move_iterator(new_threads.end()));
+
+                    head = pystack::InterpreterUtils::getNextInterpreter(manager->get_manager(), head);
                 }
 
                 if (native_mode == NativeReportingMode::ALL) {
@@ -606,7 +721,7 @@ get_process_threads(
         }
 
         nb::list result;
-        for (const auto& thread : python_threads) {
+        for (const auto& thread : _normalize_threads(python_threads, native_mode)) {
             result.append(buildPyThreadObject(thread, types, python_version));
         }
         for (const auto& thread : native_only_threads) {
@@ -651,11 +766,11 @@ get_process_threads_for_core(
         }
 
         nb::list result;
+        std::vector<pystack::PyThreadData> ret_cpp;
         std::vector<int> all_tids = pystack::getThreadIds(manager->get_manager());
+        bool add_native = native_mode != NativeReportingMode::OFF;
 
-        if (head != 0) {
-            bool add_native = native_mode == NativeReportingMode::PYTHON
-                              || native_mode == NativeReportingMode::ALL;
+        while (head) {
             auto threads = pystack::buildThreadsFromInterpreter(
                     manager->get_manager(),
                     head,
@@ -664,11 +779,20 @@ get_process_threads_for_core(
                     locals);
 
             for (const auto& thread : threads) {
-                result.append(buildPyThreadObject(thread, types, manager->python_version()));
                 all_tids.erase(
                         std::remove(all_tids.begin(), all_tids.end(), thread.tid),
                         all_tids.end());
             }
+            ret_cpp.insert(
+                    ret_cpp.end(),
+                    std::make_move_iterator(threads.begin()),
+                    std::make_move_iterator(threads.end()));
+
+            head = pystack::InterpreterUtils::getNextInterpreter(manager->get_manager(), head);
+        }
+
+        for (const auto& thread : _normalize_threads(ret_cpp, native_mode)) {
+            result.append(buildPyThreadObject(thread, types, manager->python_version()));
         }
 
         if (native_mode == NativeReportingMode::ALL) {
@@ -863,4 +987,26 @@ NB_MODULE(_pystack, m)
     // intercept_runtime_errors decorator - re-export from pystack.errors
     nb::module_ pystack_errors = nb::module_::import_("pystack.errors");
     m.attr("intercept_runtime_errors") = pystack_errors.attr("intercept_runtime_errors");
+
+    nb::enum_<pystack::NativeFrame::FrameType>(m, "NativeFrameType")
+            .value("IGNORE", pystack::NativeFrame::FrameType::IGNORE)
+            .value("EVAL", pystack::NativeFrame::FrameType::EVAL)
+            .value("OTHER", pystack::NativeFrame::FrameType::OTHER);
+
+    m.def("is_eval_frame",
+          &pystack::is_eval_frame,
+          "symbol"_a,
+          "python_version"_a,
+          "Return True if the symbol is a CPython eval frame function");
+
+    m.def(
+            "frame_type",
+            [](const std::string& symbol, std::optional<std::pair<int, int>> python_version) {
+                pystack::NativeFrame frame{};
+                frame.symbol = symbol;
+                return pystack::frame_type(frame, python_version);
+            },
+            "symbol"_a,
+            "python_version"_a = nb::none(),
+            "Return the FrameType for a native frame symbol");
 }

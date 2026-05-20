@@ -17,6 +17,7 @@ class Thread
     Thread(pid_t pid, pid_t tid);
     pid_t Tid() const;
     const std::vector<NativeFrame>& NativeFrames() const;
+    remote_addr_t stack_anchor;
 
     // Methods
     void populateNativeStackTrace(const std::shared_ptr<const AbstractProcessManager>& manager);
@@ -45,6 +46,7 @@ class PyThread : public Thread
     // Methods
     GilStatus isGilHolder() const;
     GCStatus isGCCollecting() const;
+    remote_addr_t stackAnchor() const;
 
     // Static Methods
     static remote_addr_t getFrameAddr(
@@ -60,6 +62,8 @@ class PyThread : public Thread
     remote_addr_t d_next_addr;
     std::shared_ptr<PyThread> d_next;
     std::shared_ptr<FrameObject> d_first_frame;
+    remote_addr_t d_stack_anchor;
+    int interpreter_id;
 
     // Methods
     GilStatus calculateGilStatus(
