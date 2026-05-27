@@ -80,6 +80,37 @@ jobs:
           name: ${{ matrix.wheel_type }}-wheels
           path: ./wheelhouse/*.whl
 
+  build_cp313t_wheels:
+    needs: [build_sdist, choose_wheel_types]
+    name: ${{ matrix.wheel_type }} wheels
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        wheel_type: ${{ fromJSON(needs.choose_wheel_types.outputs.wheel_types) }}
+        include:
+          - os: ubuntu-latest
+          - wheel_type: manylinux_aarch64
+            os: ubuntu-24.04-arm
+
+    steps:
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: sdist
+      - name: Extract sdist
+        run: |
+          tar zxvf *.tar.gz --strip-components=1
+      - name: Build wheels
+        uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084 # v3.4.1
+        env:
+          CIBW_BUILD: "cp313t-${{ matrix.wheel_type }}"
+          CIBW_ARCHS_LINUX: auto
+          CIBW_ENABLE: cpython-freethreading
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: ${{ matrix.wheel_type }}-cp313t-wheels
+          path: ./wheelhouse/*.whl
+
   test_attaching_to_eol_interpreters:
     needs: [build_wheels]
     runs-on: ubuntu-22.04
@@ -161,7 +192,7 @@ jobs:
         run: python3 -m pytest tests -n auto -vvv
 
   test_wheels:
-    needs: [build_wheels]
+    needs: [build_wheels, build_cp313t_wheels]
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -178,6 +209,10 @@ jobs:
       - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: "manylinux_x86_64-wheels"
+          path: dist
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: "manylinux_x86_64-cp313t-wheels"
           path: dist
       - name: Set up dependencies
         run: |
