@@ -49,7 +49,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip scikit-build-core nanobind
-          python3 -m pip install -e . -r requirements-test.txt
+          python3 -m pip install -e . --group test
       - name: Disable ptrace security restrictions
         run: |
           echo 0 | sudo tee /proc/sys/kernel/yama/ptrace_scope

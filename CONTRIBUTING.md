@@ -11,6 +11,40 @@ You can also search this project for issues with the following labels:
 | [help wanted](https://github.com/bloomberg/pystack/search?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22+&type=Issues&utf8=%E2%9C%93) | `is:issue is:open label:"help wanted"` | General issues where contributors help is wanted. |
 | [question](https://github.com/bloomberg/pystack/search?q=is%3Aissue+is%3Aopen+label%3Aquestion&type=Issues&utf8=%E2%9C%93) | `is:issue is:open label:question` | Open discussions to resolve everything from implementation details to desired functionality. |
 
+## Setting up a development environment
+
+### GitHub Codespaces
+
+The repository ships with a dev container configuration that works with
+[GitHub Codespaces](https://github.com/features/codespaces). You can open
+a ready-to-use environment directly:
+
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/bloomberg/pystack)
+
+Once the codespace is ready, all dependencies will be installed and hooks
+will be configured automatically.
+
+Note that the dev container is built from the project's `Dockerfile`, which
+compiles `elfutils` from source, so the first build takes a few minutes.
+
+pystack requires elevated ptrace permissions to inspect processes — the dev
+container already handles this via `--cap-add=SYS_PTRACE` and
+`seccomp=unconfined`, so things should work out of the box.
+
+### Local setup
+
+You'll need Linux with `libdw`, `libelf`, CMake, and a C++ compiler (Clang or
+GCC). Then:
+
+```shell
+git clone https://github.com/bloomberg/pystack.git pystack
+cd pystack
+python3 -m venv ../pystack-env/
+source ../pystack-env/bin/activate
+pip install -e . -r requirements-test.txt -r requirements-extra.txt
+prek install
+```
+
 ## Contribution Licensing
 
 Since this project is distributed under the terms of an [open source license](LICENSE),
@@ -57,6 +91,21 @@ Changes should always include tests. If this is a bug fix it is a good idea to a
 first commit of the pull request and the changes to fix the issue in subsequent commits to make it
 easier to validate it.
 
+### Running tests before submitting pull request
+
+To run local tests, first install the test requirements:
+
+```shell
+python3 -m pip install --upgrade pip
+python3 -m pip install -e . --group test
+```
+
+Then, run the check:
+
+```shell
+make check
+```
+
 ## Pull requests
 
 ### Linting your code
@@ -64,7 +113,7 @@ easier to validate it.
 Before commiting anything, install the prek (pre-commit) hooks:
 
 ```shell
-python3 -m pip install -r requirements-extra.txt
+python3 -m pip install --group extra
 prek install
 ```
 

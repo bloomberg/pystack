@@ -1,6 +1,0 @@
-coverage[toml]
-pyinstaller
-pytest
-pytest-cov
-pytest-xdist
-setuptools

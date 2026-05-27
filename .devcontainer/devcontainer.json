@@ -5,5 +5,5 @@
     "dockerfile": "../Dockerfile"
   },
   "runArgs": ["--cap-add=SYS_PTRACE", "--security-opt", "seccomp=unconfined"],
-  "onCreateCommand": "pip install -e ."
+  "onCreateCommand": "pip install -e . && prek install"
 }

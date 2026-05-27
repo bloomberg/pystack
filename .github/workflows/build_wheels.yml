@@ -112,7 +112,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements-test.txt
+          python3 -m pip install --group test
           python3 -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Disable ptrace security restrictions
         run: |
@@ -150,7 +150,7 @@ jobs:
           sudo apt-get install -qy gdb
       - name: Install Python dependencies
         run: |
-          uv pip install -r requirements-test.txt
+          uv pip install --group test
           uv pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Disable ptrace security restrictions
         run: |
@@ -187,7 +187,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python${{matrix.python_version}} -m pip install --upgrade pip
-          python${{matrix.python_version}} -m pip install -r requirements-test.txt
+          python${{matrix.python_version}} -m pip install --group test
           python${{matrix.python_version}} -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Disable ptrace security restrictions
         run: |
@@ -227,7 +227,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python${{matrix.python_version}} -m pip install --upgrade pip
-          python${{matrix.python_version}} -m pip install -r requirements-test.txt
+          python${{matrix.python_version}} -m pip install --group test
           python${{matrix.python_version}} -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Disable ptrace security restrictions
         run: |
@@ -268,7 +268,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python${{matrix.python_version}} -m pip install --upgrade pip
-          python${{matrix.python_version}} -m pip install -r requirements-test.txt
+          python${{matrix.python_version}} -m pip install --group test
           python${{matrix.python_version}} -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Install setuptools for the free-threading version
         run: |
@@ -307,7 +307,7 @@ jobs:
         run: |
           python3 -m venv venv
           venv/bin/python3 -m pip install --upgrade pip
-          venv/bin/python3 -m pip install -r requirements-test.txt
+          venv/bin/python3 -m pip install --group test
           venv/bin/python3 -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Run pytest
         env:
@@ -345,7 +345,7 @@ jobs:
       - name: Install Python dependencies
         run: |
           python3 -m pip install --upgrade pip
-          python3 -m pip install -r requirements-test.txt
+          python3 -m pip install --group test
           python3 -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Run pytest
         env:
@@ -385,7 +385,7 @@ jobs:
         run: |
           python -m venv venv
           venv/bin/python -m pip install --upgrade pip
-          venv/bin/python -m pip install -r requirements-test.txt
+          venv/bin/python -m pip install --group test
           venv/bin/python -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Run pytest
         env:
@@ -425,7 +425,7 @@ jobs:
         run: |
           python3 -m venv venv
           venv/bin/python3 -m pip install --upgrade pip
-          venv/bin/python3 -m pip install -r requirements-test.txt
+          venv/bin/python3 -m pip install --group test
           venv/bin/python3 -m pip install --no-index --find-links=dist/ --only-binary=pystack pystack
       - name: Run pytest
         env:
