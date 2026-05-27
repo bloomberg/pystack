@@ -37,6 +37,7 @@ RUN apt-get update \
 # Stage 2: Final stage
 FROM ubuntu:24.04
 ARG DEBIAN_FRONTEND=noninteractive
+LABEL org.opencontainers.image.source="https://github.com/bloomberg/pystack"
 
 # Install runtime dependencies
 RUN apt-get update \
