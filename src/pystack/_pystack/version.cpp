@@ -746,6 +746,32 @@ python_v python_v3_14 = {
 
 // -----------------------------------------------------------------------------
 
+// ---- Python 3.15 ------------------------------------------------------------
+
+python_v python_v3_15 = {
+        py_tuple<PyTupleObject>(),
+        py_list<PyListObject>(),
+        py_dict<Python3::PyDictObject>(),
+        py_dictkeys<Python3_11::PyDictKeysObject>(),
+        py_dictvalues<Python3_13::PyDictValuesObject>(),
+        py_float<PyFloatObject>(),
+        py_long<_PyLongObject>(),
+        py_bytes<Python3::PyBytesObject>(),
+        py_unicode<Python3_12::PyUnicodeObject>(),
+        py_object<PyObject>(),
+        py_type<Python3_8::PyTypeObject>(),
+        py_codev311<Python3_14::PyCodeObject>(),
+        py_framev314<Python3_14::PyFrameObject>(),
+        py_threadv313<Python3_13::PyThreadState>(),
+        py_isv312<Python3_13::PyInterpreterState>(),
+        py_runtimev313<Python3_15::PyRuntimeState>(),
+        py_gc<Python3_15::_gc_runtime_state>(),
+        py_cframe<Python3_12::CFrame>(),
+        py_gilruntimestate<Python3_14::_gil_runtime_state>(),
+};
+
+// -----------------------------------------------------------------------------
+
 const python_v*
 getCPythonOffsets(int major, int minor)
 {
@@ -811,11 +837,14 @@ getCPythonOffsets(int major, int minor)
                 case 13:
                     return &python_v3_13;
                     break;
+                case 14:
+                    return &python_v3_14;
+                    break;
                 default:
                     warnAboutUnsuportedVersion(major, minor);
                     // fallthrough to latest
-                case 14:
-                    return &python_v3_14;
+                case 15:
+                    return &python_v3_15;
                     break;
             }
             break;
