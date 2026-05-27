@@ -324,7 +324,7 @@ jobs:
       fail-fast: false
 
     container:
-      image: alpine
+      image: alpine # zizmor: ignore[unpinned-images]
       options: --cap-add=SYS_PTRACE
 
     steps:
@@ -356,7 +356,7 @@ jobs:
       fail-fast: false
 
     container:
-      image: fedora
+      image: fedora # zizmor: ignore[unpinned-images]
       options: --cap-add=SYS_PTRACE
 
     steps:
@@ -394,7 +394,7 @@ jobs:
       fail-fast: false
 
     container:
-      image: archlinux
+      image: archlinux # zizmor: ignore[unpinned-images]
       options: --cap-add=SYS_PTRACE --security-opt seccomp=unconfined
     steps:
       - uses: actions/checkout@de0fac2e4500dabe0009e67214ff5f5447ce83dd # v6
@@ -435,7 +435,7 @@ jobs:
       fail-fast: false
 
     container:
-      image: debian
+      image: debian # zizmor: ignore[unpinned-images]
       options: --cap-add=SYS_PTRACE
 
     steps:
