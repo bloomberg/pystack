@@ -41,32 +41,9 @@ LABEL org.opencontainers.image.source="https://github.com/bloomberg/pystack"
 
 # Install runtime dependencies
 RUN apt-get update \
-    && apt-get install -y --force-yes --no-install-recommends software-properties-common gpg-agent \
-    && add-apt-repository ppa:deadsnakes/ppa \
     && apt-get install -y --force-yes --no-install-recommends \
     build-essential \
     pkg-config \
-    python3.7-dev \
-    python3.7-dbg \
-    python3.7-distutils \
-    python3.8-dev \
-    python3.8-dbg \
-    python3.8-distutils \
-    python3.9-dev \
-    python3.9-dbg \
-    python3.9-distutils \
-    python3.10-dev \
-    python3.10-dbg \
-    python3.10-distutils \
-    python3.11-dev \
-    python3.11-dbg \
-    python3.11-distutils \
-    python3.12-dev \
-    python3.12-dbg \
-    python3.12-venv \
-    python3.13-dev \
-    python3.13-dbg \
-    python3.13-venv \
     make \
     cmake \
     gdb \
@@ -75,6 +52,7 @@ RUN apt-get update \
     lcov \
     file \
     less \
+    libcrypt-dev \
     libzstd-dev \
     liblzma-dev \
     libbz2-dev \
@@ -85,21 +63,30 @@ RUN apt-get update \
 # Copy the installed files from the elfutils_builder stage
 COPY --from=elfutils_builder /usr/local /usr/local
 
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
+
 # Set environment variables
-ENV PYTHON=python3.12 \
-    VIRTUAL_ENV="/venv" \
-    PATH="/venv/bin:$PATH" \
+ENV VIRTUAL_ENV="/venv" \
+    PATH="/venv/bin:/root/.local/bin:/usr/local/sbin:/usr/local/bin:/sbin:/bin" \
     PYTHONDONTWRITEBYTECODE=1 \
     TZ=UTC \
     PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
+
+# Install Python interpreters via uv, and install setuptools for each
+RUN uv_versions="3.8 3.9 3.10 3.11 3.12 3.13 3.14 3.15" \
+    && uv python install --no-config $uv_versions \
+    && for ver in $uv_versions; do \
+           PATH=/root/.local/bin /usr/local/bin/uv pip install --system --break-system-packages --python=python$ver setuptools; \
+       done
 
 # Copy the required files
 COPY pyproject.toml /tmp/
 
 # Install Python packages
-RUN $PYTHON -m venv $VIRTUAL_ENV \
-    && pip install -U pip wheel setuptools cython pkgconfig \
-    && pip install -U --group "/tmp/pyproject.toml:test" --group "/tmp/pyproject.toml:extra"
+RUN uv venv $VIRTUAL_ENV \
+    && uv pip install pip wheel setuptools cython pkgconfig \
+    && uv pip install --group "/tmp/pyproject.toml:test" --group "/tmp/pyproject.toml:extra"
 
 # Set the working directory
 WORKDIR /src
