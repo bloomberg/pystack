@@ -619,21 +619,6 @@ typedef struct _Py_DebugOffsets
 typedef struct pyruntimestate
 {
     _Py_DebugOffsets debug_offsets;
-    int _initialized;
-    int preinitializing;
-    int preinitialized;
-    int core_initialized;
-    int initialized;
-    struct _pythreadstate* finalizing;
-    unsigned long _finalizing_id;
-
-    struct pyinterpreters
-    {
-        Python3_13::PyMutex mutex;
-        PyInterpreterState* head;
-        PyInterpreterState* main;
-        int64_t next_id;
-    } interpreters;
 } PyRuntimeState;
 
 }  // namespace Python3_14
@@ -859,21 +844,6 @@ typedef struct _Py_DebugOffsets
 typedef struct pyruntimestate
 {
     _Py_DebugOffsets debug_offsets;
-    int _initialized;
-    int preinitializing;
-    int preinitialized;
-    int core_initialized;
-    int initialized;
-    struct _pythreadstate* finalizing;
-    unsigned long _finalizing_id;
-
-    struct pyinterpreters
-    {
-        Python3_13::PyMutex mutex;
-        PyInterpreterState* head;
-        PyInterpreterState* main;
-        int64_t next_id;
-    } interpreters;
 } PyRuntimeState;
 
 }  // namespace Python3_15
