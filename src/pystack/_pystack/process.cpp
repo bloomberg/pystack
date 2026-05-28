@@ -821,6 +821,11 @@ AbstractProcessManager::setPythonVersion(const std::pair<int, int>& version)
 void
 AbstractProcessManager::warnIfOffsetsAreMismatched(remote_addr_t runtime_addr) const
 {
+    if (versionIsAtLeast(3, 14)) {
+        // From 3.14 onwards, we don't have static offsets to compare to.
+        return;
+    }
+
     Structure<py_runtime_v> py_runtime(shared_from_this(), runtime_addr);
 
     if (0 != memcmp(py_runtime.getField(&py_runtime_v::o_dbg_off_cookie), "xdebugpy", 8)) {
@@ -1455,6 +1460,12 @@ ProcessManager::initializeVersion(pid_t pid, const ProcessMemoryMapInfo& map_inf
     }
 
     setPythonVersion(python_version);
+
+    if (!d_debug_offsets && versionIsAtLeast(3, 14)) {
+        throw std::runtime_error(
+                "The process runs Python " + std::to_string(d_major) + "." + std::to_string(d_minor)
+                + ", but we've failed to locate its _Py_DebugOffsets structure in memory.");
+    }
 }
 
 const std::vector<int>&
@@ -1539,6 +1550,12 @@ CoreFileProcessManager::initializeVersion(
     }
 
     setPythonVersion(python_version);
+
+    if (!d_debug_offsets && versionIsAtLeast(3, 14)) {
+        throw std::runtime_error(
+                "The process runs Python " + std::to_string(d_major) + "." + std::to_string(d_minor)
+                + ", but we've failed to locate its _Py_DebugOffsets structure in memory.");
+    }
 }
 
 const std::vector<int>&
