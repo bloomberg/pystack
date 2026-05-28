@@ -1,5 +1,5 @@
 # Stage 1: Elfutils build stage
-FROM ubuntu:24.04 AS elfutils_builder
+FROM ubuntu:26.04 AS elfutils_builder
 ARG DEBIAN_FRONTEND=noninteractive
 ENV VERS=0.193
 
@@ -35,7 +35,7 @@ RUN apt-get update \
     && make install
 
 # Stage 2: Final stage
-FROM ubuntu:24.04
+FROM ubuntu:26.04
 ARG DEBIAN_FRONTEND=noninteractive
 LABEL org.opencontainers.image.source="https://github.com/bloomberg/pystack"
 
