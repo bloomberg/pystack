@@ -1350,3 +1350,51 @@ def test_executable_is_not_elf_uses_the_first_map():
         locals=False,
         method=StackMethod.AUTO,
     )
+
+
+def test_include_subinterpreters_false_for_single_interpreter():
+    # GIVEN
+
+    argv = ["pystack", "remote", "31"]
+
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=0), Mock(interpreter_id=0)]
+
+    # WHEN
+
+    with (
+        patch("pystack.__main__.get_process_threads") as get_process_threads_mock,
+        patch("pystack.__main__.TracebackPrinter") as MockPrinter,
+        patch("sys.argv", argv),
+    ):
+        get_process_threads_mock.return_value = threads
+        main()
+
+    # THEN: TracebackPrinter must NOT show interpreter headers for a single interpreter
+
+    MockPrinter.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=False
+    )
+
+
+def test_include_subinterpreters_true_for_multiple_interpreters():
+    # GIVEN
+
+    argv = ["pystack", "remote", "31"]
+
+    threads = [Mock(interpreter_id=0), Mock(interpreter_id=1), Mock(interpreter_id=2)]
+
+    # WHEN
+
+    with (
+        patch("pystack.__main__.get_process_threads") as get_process_threads_mock,
+        patch("pystack.__main__.TracebackPrinter") as MockPrinter,
+        patch("sys.argv", argv),
+    ):
+        get_process_threads_mock.return_value = threads
+        main()
+
+    # THEN: TracebackPrinter must show interpreter headers when sub-interpreters exist
+
+    MockPrinter.assert_called_once_with(
+        NativeReportingMode.OFF, include_subinterpreters=True
+    )
