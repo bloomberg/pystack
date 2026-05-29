@@ -121,13 +121,14 @@ skip = "*-musllinux_aarch64"
 [tool.cibuildwheel.linux]
 before-all = [
   "yum install -y libzstd-devel cmake",
+  "yum install -y devtoolset-10-make || true",  # Install a new enough GNU make on manylinux2014
   "cd /",
   "VERS=0.195",
   "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
   "tar -xf elfutils.tar.bz2",
   "cd elfutils-$VERS",
   "CFLAGS='-Wno-error -g -O3' CXXFLAGS='-Wno-error -g -O3' ./configure --disable-nls --enable-libdebuginfod=dummy --disable-debuginfod --with-zstd",
-  "make install"
+  'PATH="/opt/rh/devtoolset-10/root/usr/bin/:$PATH" make install',  # Ensure we pick up gnu make 4.x on manylinux2014
 ]
 
 # Override the default linux before-all for musl linux
