@@ -122,7 +122,7 @@ skip = "*-musllinux_aarch64"
 before-all = [
   "yum install -y libzstd-devel cmake",
   "cd /",
-  "VERS=0.193",
+  "VERS=0.195",
   "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
   "tar -xf elfutils.tar.bz2",
   "cd elfutils-$VERS",
@@ -144,7 +144,7 @@ before-all = [
   # https://git.alpinelinux.org/aports/tree/main/elfutils/musl-macros.patch
   "cd /",
   "apk add --update argp-standalone bison bsd-compat-headers bzip2-dev flex-dev libtool linux-headers musl-fts-dev musl-libintl musl-obstack-dev xz-dev zlib-dev zstd-dev cmake",
-  "VERS=0.193",
+  "VERS=0.195",
   "curl https://sourceware.org/elfutils/ftp/$VERS/elfutils-$VERS.tar.bz2 > ./elfutils.tar.bz2",
   "tar -xf elfutils.tar.bz2",
   "cd elfutils-$VERS",
