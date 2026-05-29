@@ -25,7 +25,7 @@ Once the codespace is ready, all dependencies will be installed and hooks
 will be configured automatically.
 
 Note that the dev container is built from the project's `Dockerfile`, which
-compiles `elfutils` from source, so the first build takes a few minutes.
+uses the distribution-provided `libdw` and `libelf` development packages.
 
 pystack requires elevated ptrace permissions to inspect processes — the dev
 container already handles this via `--cap-add=SYS_PTRACE` and
