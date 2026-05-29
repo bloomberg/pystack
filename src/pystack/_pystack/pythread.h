@@ -17,7 +17,6 @@ class Thread
     Thread(pid_t pid, pid_t tid);
     pid_t Tid() const;
     const std::vector<NativeFrame>& NativeFrames() const;
-    remote_addr_t stack_anchor;
 
     // Methods
     void populateNativeStackTrace(const std::shared_ptr<const AbstractProcessManager>& manager);
