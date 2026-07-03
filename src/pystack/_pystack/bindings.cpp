@@ -541,7 +541,7 @@ logMemoryMaps(const std::vector<pystack::VirtualMap>& maps, const char* source)
 }
 
 size_t
-num_entry_frames(const pystack::PyThreadData& thread)
+numEntryFrames(const pystack::PyThreadData& thread)
 {
     return std::count_if(
             thread.frames.begin(),
@@ -550,7 +550,7 @@ num_entry_frames(const pystack::PyThreadData& thread)
 }
 
 std::vector<pystack::PyThreadData>
-sort_threads_by_stack_anchor(std::vector<pystack::PyThreadData> data)
+sortThreadsByStackAnchor(std::vector<pystack::PyThreadData> data)
 {
     // Sort by:
     //  1. With stack anchor (!=0) before without
@@ -567,7 +567,7 @@ sort_threads_by_stack_anchor(std::vector<pystack::PyThreadData> data)
 }
 
 std::vector<pystack::PyThreadData>
-_slice_native_stack(std::vector<pystack::PyThreadData> data)
+sliceNativeStack(std::vector<pystack::PyThreadData> data)
 {
     // Capture a canonical
     auto canonical_thread =
@@ -593,7 +593,7 @@ _slice_native_stack(std::vector<pystack::PyThreadData> data)
             data.begin(),
             data.end(),
             size_t{0},
-            [](size_t acc, const pystack::PyThreadData& d) { return acc + num_entry_frames(d); });
+            [](size_t acc, const pystack::PyThreadData& d) { return acc + numEntryFrames(d); });
 
     if (eval_index.size() != total_entry_frames) {
         pystack::LOG(pystack::DEBUG) << "Skipping same-tid native slicing for tid " << data[0].tid
@@ -606,7 +606,7 @@ _slice_native_stack(std::vector<pystack::PyThreadData> data)
     std::size_t cursor = 0;
     auto native_frames_cursor = native_frames.begin();
     for (auto& thread_data : data) {
-        const auto num_entry_frames_for_thread = num_entry_frames(thread_data);
+        const auto num_entry_frames_for_thread = numEntryFrames(thread_data);
 
         if (num_entry_frames_for_thread == 0) {
             thread_data.native_frames.clear();
@@ -627,7 +627,7 @@ _slice_native_stack(std::vector<pystack::PyThreadData> data)
 }
 
 std::vector<pystack::PyThreadData>
-_normalize_threads(std::vector<pystack::PyThreadData> threads, NativeReportingMode native_mode)
+normalizeThreads(std::vector<pystack::PyThreadData> threads, NativeReportingMode native_mode)
 {
     // Group threads by TID, preserving first-seen order.
     // One TID can have multiple PyThreadData due to subinterpreters.
@@ -646,10 +646,10 @@ _normalize_threads(std::vector<pystack::PyThreadData> threads, NativeReportingMo
     for (auto& group : groups) {
         if (group.size() > 1) {
             // Order interpreters for this TID from outermost to innermost
-            group = sort_threads_by_stack_anchor(std::move(group));
+            group = sortThreadsByStackAnchor(std::move(group));
             // Associate each Python stack with its chunk of the native stack
             if (native_mode != NativeReportingMode::OFF) {
-                group = _slice_native_stack(std::move(group));
+                group = sliceNativeStack(std::move(group));
             }
         }
         for (auto& thread : group) {
@@ -739,7 +739,7 @@ get_process_threads(
         }
 
         nb::list result;
-        for (const auto& thread : _normalize_threads(python_threads, native_mode)) {
+        for (const auto& thread : normalizeThreads(python_threads, native_mode)) {
             result.append(buildPyThreadObject(thread, types, python_version));
         }
         for (const auto& thread : native_only_threads) {
@@ -809,7 +809,7 @@ get_process_threads_for_core(
             head = pystack::InterpreterUtils::getNextInterpreter(manager->get_manager(), head);
         }
 
-        for (const auto& thread : _normalize_threads(python_threads, native_mode)) {
+        for (const auto& thread : normalizeThreads(python_threads, native_mode)) {
             result.append(buildPyThreadObject(thread, types, manager->python_version()));
         }
 
