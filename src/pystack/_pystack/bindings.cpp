@@ -1011,4 +1011,52 @@ NB_MODULE(_pystack, m)
           "symbol"_a,
           "python_version"_a,
           "Return True if the symbol is a CPython eval frame function");
+
+    m.def(
+            "_normalize_threads_for_testing",
+            [](nb::list thread_descs, NativeReportingMode native_mode) -> nb::list {
+                auto types = PyTypes::load();
+                std::vector<pystack::PyThreadData> threads;
+
+                for (auto desc_handle : thread_descs) {
+                    nb::dict desc = nb::cast<nb::dict>(desc_handle);
+                    pystack::PyThreadData td{};
+                    td.tid = nb::cast<int>(desc["tid"]);
+                    td.stack_anchor = nb::cast<pystack::remote_addr_t>(desc["stack_anchor"]);
+                    td.interpreter_id = nb::cast<int64_t>(desc["interpreter_id"]);
+                    td.python_version = nb::cast<std::pair<int, int>>(desc["python_version"]);
+
+                    nb::list symbols = nb::cast<nb::list>(desc["native_symbols"]);
+                    for (auto sym_handle : symbols) {
+                        pystack::NativeFrame nf{};
+                        nf.symbol = nb::cast<std::string>(sym_handle);
+                        nf.path = "test.c";
+                        nf.linenumber = 1;
+                        td.native_frames.push_back(nf);
+                    }
+
+                    nb::list frames = nb::cast<nb::list>(desc["frames"]);
+                    for (auto frame_handle : frames) {
+                        auto frame_tuple = nb::cast<nb::tuple>(frame_handle);
+                        pystack::PyFrameData fd{};
+                        fd.code.filename = "test.py";
+                        fd.code.scope = nb::cast<std::string>(frame_tuple[0]);
+                        fd.code.location = {1, 1, 0, 0};
+                        fd.is_entry = nb::cast<bool>(frame_tuple[1]);
+                        td.frames.push_back(fd);
+                    }
+
+                    threads.push_back(std::move(td));
+                }
+
+                auto normalized = normalizeThreads(std::move(threads), native_mode);
+
+                nb::list result;
+                for (const auto& t : normalized) {
+                    result.append(buildPyThreadObject(t, types, t.python_version));
+                }
+                return result;
+            },
+            "thread_descs"_a,
+            "native_mode"_a);
 }
