@@ -630,6 +630,33 @@ normalizeThreads(
         NativeReportingMode native_mode,
         std::pair<int, int> python_version)
 {
+    if (pystack::isLoggingEnabled(pystack::DEBUG)) {
+        for (const auto& thread : threads) {
+            // clang-format off: manually formatted with one field per line
+            pystack::LOG(pystack::DEBUG)
+                    << "Discovered Python thread"
+                    << " tid=" << thread.tid
+                    << " interpreter_id=" << thread.interpreter_id
+                    << " stack_anchor=" << std::hex << std::showbase << thread.stack_anchor
+                    << " num_frames=" << std::dec << thread.frames.size()
+                    << " num_native_frames=" << thread.native_frames.size();
+            for (const auto& frame : thread.frames) {
+                pystack::LOG(pystack::DEBUG)
+                        << "  Frame: " << frame.code.scope
+                        << " file=" << frame.code.filename
+                        << " line=" << frame.code.location.lineno
+                        << " end_line=" << frame.code.location.end_lineno
+                        << " column=" << frame.code.location.column
+                        << " end_column=" << frame.code.location.end_column
+                        << " is_entry=" << frame.is_entry
+                        << " is_shim=" << frame.is_shim
+                        << " num_args=" << frame.arguments.size()
+                        << " num_locals=" << frame.locals.size();
+            }
+            // clang-format on
+        }
+    }
+
     // Group threads by TID, preserving first-seen order.
     // One TID can have multiple PyThreadData due to subinterpreters.
     std::unordered_map<int, std::size_t> tid_to_group;
