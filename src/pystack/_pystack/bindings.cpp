@@ -569,16 +569,11 @@ sortThreadsByStackAnchor(std::vector<pystack::PyThreadData> data)
 std::vector<pystack::PyThreadData>
 sliceNativeStack(std::vector<pystack::PyThreadData> data, std::pair<int, int> python_version)
 {
-    // Capture a canonical
-    auto canonical_thread =
-            std::find_if(data.begin(), data.end(), [](const pystack::PyThreadData& py_thread_data) {
-                return !py_thread_data.native_frames.empty();
-            });
-    if (canonical_thread == data.end()) {
+    if (data.empty() || data[0].native_frames.empty()) {
         return data;
     }
 
-    const std::vector<pystack::NativeFrame> native_frames = canonical_thread->native_frames;
+    const std::vector<pystack::NativeFrame> native_frames = data[0].native_frames;
 
     std::vector<std::size_t> eval_index;
     for (std::size_t i = 0; i < native_frames.size(); ++i) {
