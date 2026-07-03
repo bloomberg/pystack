@@ -14,7 +14,7 @@ from pystack.engine import NativeReportingMode
 from pystack.engine import StackMethod
 from pystack.engine import get_process_threads
 from pystack.engine import get_process_threads_for_core
-from pystack.traceback_formatter import TracebackPrinter
+from pystack.traceback_formatter import print_threads
 from pystack.types import NativeFrame
 from pystack.types import frame_type
 from tests.utils import ALL_PYTHONS_THAT_SUPPORT_SUBINTERPRETERS
@@ -265,21 +265,16 @@ def _assert_interpreter_headers(
     native_mode: NativeReportingMode,
     interpreter_ids,
 ) -> str:
-    printer = TracebackPrinter(
-        native_mode=native_mode,
-        include_subinterpreters=True,
-    )
     output = io.StringIO()
     with redirect_stdout(output):
-        for thread in threads:
-            printer.print_thread(thread)
+        print_threads(threads, native_mode=native_mode)
 
     result = output.getvalue()
-    assert "Interpreter-0 (main)" in result
+    assert "In the main interpreter" in result
     for interpreter_id in interpreter_ids:
         if interpreter_id == 0:
             continue
-        assert f"Interpreter-{interpreter_id}" in result
+        assert f"In interpreter {interpreter_id}" in result
     return result
 
 

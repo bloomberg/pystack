@@ -98,6 +98,8 @@ buildNativeThread(const std::shared_ptr<AbstractProcessManager>& manager, pid_t 
     data.name = getThreadName(pid, tid);
     data.gil_status = 0;  // NOT_HELD
     data.gc_status = 0;  // NOT_COLLECTING
+    data.interpreter_id = 0;  // No Python stack for this thread means no interpreter
+    data.stack_anchor = 0;  // and no stack anchor.
 
     LOG(INFO) << "Constructing new native thread with tid " << tid;
 

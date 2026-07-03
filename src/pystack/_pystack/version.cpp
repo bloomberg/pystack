@@ -231,23 +231,6 @@ py_isv312()
 }
 
 template<class T>
-constexpr py_is_v
-py_isv314()
-{
-    return {
-            sizeof(T),
-            {offsetof(T, next)},
-            {offsetof(T, threads.head)},
-            {offsetof(T, gc)},
-            {offsetof(T, imports.modules)},
-            {offsetof(T, sysdict)},
-            {offsetof(T, builtins)},
-            {offsetof(T, _gil)},
-            {offsetof(T, id)},
-    };
-}
-
-template<class T>
 constexpr py_gc_v
 py_gc()
 {

@@ -61,8 +61,7 @@ class PyThread : public Thread
     remote_addr_t d_next_addr;
     std::shared_ptr<PyThread> d_next;
     std::shared_ptr<FrameObject> d_first_frame;
-    remote_addr_t d_stack_anchor;
-    int interpreter_id;
+    remote_addr_t d_stack_anchor{};
 
     // Methods
     GilStatus calculateGilStatus(

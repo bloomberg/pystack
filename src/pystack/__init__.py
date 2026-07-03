@@ -1,7 +1,7 @@
 from ._version import __version__
-from .traceback_formatter import TracebackPrinter
+from .traceback_formatter import print_threads
 
 __all__ = [
     "__version__",
-    "TracebackPrinter",
+    "print_threads",
 ]

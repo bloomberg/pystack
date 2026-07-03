@@ -1,7 +1,6 @@
 #include <memory>
 
 #include "interpreter.h"
-#include "logging.h"
 #include "process.h"
 #include "structure.h"
 #include "version.h"
@@ -23,14 +22,13 @@ InterpreterUtils::getInterpreterId(
         remote_addr_t interpreter_addr)
 {
     if (!manager->versionIsAtLeast(3, 7)) {
-        // No support for subinterpreters so the only interpreter is ID 0.
-        return 0;
+        // Interpreter ID was added in Python 3.7, so for earlier versions
+        // we just return the address as a unique identifier.
+        return static_cast<int64_t>(interpreter_addr);
     }
 
     Structure<py_is_v> is(manager, interpreter_addr);
-    int64_t id_value = is.getField(&py_is_v::o_id);
-
-    return id_value;
+    return is.getField(&py_is_v::o_id);
 }
 
 }  // namespace pystack

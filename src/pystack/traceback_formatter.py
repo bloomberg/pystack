@@ -1,6 +1,7 @@
 import os
 import sys
 from typing import Iterable
+from typing import List
 from typing import Optional
 
 from .colors import colored
@@ -12,39 +13,17 @@ from .types import PyThread
 from .types import frame_type
 
 
-class TracebackPrinter:
-    def __init__(
-        self, native_mode: NativeReportingMode, include_subinterpreters: bool = False
-    ):
-        self.native_mode = native_mode
-        self.include_subinterpreters = include_subinterpreters
-        self._current_interpreter_id: Optional[int] = None
-        self._first_print_sentinel = True
-
-    def print_thread(self, thread: PyThread) -> None:
-        # Print interpreter header if we've switched interpreters
-        if self.include_subinterpreters:
-            if (
-                thread.interpreter_id != self._current_interpreter_id
-                or self._first_print_sentinel
-            ):
-                self._print_interpreter_header(thread.interpreter_id)
-                self._current_interpreter_id = thread.interpreter_id
-                self._first_print_sentinel = False
-
-        # Print the thread with indentation
-        for line in format_thread(thread, self.native_mode):
-            if self.include_subinterpreters:
-                print(" " * 2, end="")
+def print_threads(threads: List[PyThread], native_mode: NativeReportingMode) -> None:
+    for i, thread in enumerate(threads):
+        same_tid_as_prev = i > 0 and thread.tid == threads[i - 1].tid
+        same_tid_as_next = i < len(threads) - 1 and thread.tid == threads[i + 1].tid
+        for line in format_thread(
+            thread,
+            native_mode,
+            continuing_from_previous=same_tid_as_prev,
+            continues_to_next=same_tid_as_next,
+        ):
             print(line, file=sys.stdout, flush=True)
-
-    def _print_interpreter_header(self, interpreter_id: Optional[int]) -> None:
-        header = (
-            f"Interpreter-{interpreter_id if interpreter_id is not None else 'Unknown'}"
-        )
-        if interpreter_id == 0:
-            header += " (main)"
-        print(header, file=sys.stdout, flush=True)
 
 
 def format_frame(frame: PyFrame) -> Iterable[str]:
@@ -94,18 +73,39 @@ def _are_the_stacks_mergeable(thread: PyThread) -> bool:
     return n_eval_frames == n_entry_frames
 
 
-def format_thread(thread: PyThread, native_mode: NativeReportingMode) -> Iterable[str]:
+def format_thread(
+    thread: PyThread,
+    native_mode: NativeReportingMode,
+    continuing_from_previous: bool = False,
+    continues_to_next: bool = False,
+) -> Iterable[str]:
     native = native_mode != NativeReportingMode.OFF
     current_frame: Optional[PyFrame] = thread.first_frame
-    if current_frame is None and not native:
+    if (
+        current_frame is None
+        and not native
+        and not continuing_from_previous
+        and not continues_to_next
+    ):
         yield f"The frame stack for thread {thread.tid} is empty"
         return
 
     thread_name = f" ({thread.name}) " if thread.name else " "
-    yield (
-        f"Traceback for thread {thread.tid}{thread_name}{thread.status} "
-        "(most recent call last):"
-    )
+    if not continuing_from_previous:
+        yield (
+            f"Traceback for thread {thread.tid}{thread_name}"
+            f"{thread.status + ' ' if not continues_to_next else ''}"
+            f"(most recent call last):"
+        )
+
+    if continues_to_next or continuing_from_previous:
+        if thread.interpreter_id is None:
+            interp_name = "Not attached to any interpreter"
+        elif thread.interpreter_id == 0:
+            interp_name = "In the main interpreter"
+        else:
+            interp_name = f"In interpreter {thread.interpreter_id}"
+        yield f"  {interp_name} {thread.status}"
 
     if not (native and _are_the_stacks_mergeable(thread)):
         if native:
@@ -118,7 +118,8 @@ def format_thread(thread: PyThread, native_mode: NativeReportingMode) -> Iterabl
         yield from _format_merged_stacks(
             thread, current_frame, native_mode == NativeReportingMode.LAST
         )
-    yield ""
+    if not continues_to_next:
+        yield ""
 
 
 def _format_merged_stacks(

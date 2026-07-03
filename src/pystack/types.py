@@ -7,7 +7,7 @@ from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
 
-from ._pystack import frame_type as _frame_type_cpp
+from ._pystack import is_eval_frame as _is_eval_frame
 
 SYMBOL_IGNORELIST = {
     "PyObject_Call",
@@ -49,8 +49,21 @@ class NativeFrame:
 def frame_type(
     frame: NativeFrame, python_version: Optional[Tuple[int, int]]
 ) -> NativeFrame.FrameType:
-    result = _frame_type_cpp(frame.symbol, python_version)
-    return NativeFrame.FrameType(result.value)
+    symbol = frame.symbol
+    if python_version and _is_eval_frame(symbol, python_version):
+        return frame.FrameType.EVAL
+    if symbol.startswith("PyEval") or symbol.startswith("_PyEval"):
+        return frame.FrameType.IGNORE
+    if symbol.startswith("_Py"):
+        return frame.FrameType.IGNORE
+    if symbol.startswith("_TAIL_CALL_"):
+        return frame.FrameType.IGNORE
+    if python_version and python_version >= (3, 8) and "vectorcall" in symbol.lower():
+        return frame.FrameType.IGNORE
+    if any(symbol.startswith(ignored_symbol) for ignored_symbol in SYMBOL_IGNORELIST):
+        return frame.FrameType.IGNORE
+
+    return frame.FrameType.OTHER
 
 
 class LocationInfo(NamedTuple):
