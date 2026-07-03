@@ -567,7 +567,7 @@ sortThreadsByStackAnchor(std::vector<pystack::PyThreadData> data)
 }
 
 std::vector<pystack::PyThreadData>
-sliceNativeStack(std::vector<pystack::PyThreadData> data)
+sliceNativeStack(std::vector<pystack::PyThreadData> data, std::pair<int, int> python_version)
 {
     // Capture a canonical
     auto canonical_thread =
@@ -578,9 +578,7 @@ sliceNativeStack(std::vector<pystack::PyThreadData> data)
         return data;
     }
 
-    // Capture native frames and python version
     const std::vector<pystack::NativeFrame> native_frames = canonical_thread->native_frames;
-    const auto python_version = data[0].python_version;
 
     std::vector<std::size_t> eval_index;
     for (std::size_t i = 0; i < native_frames.size(); ++i) {
@@ -627,7 +625,10 @@ sliceNativeStack(std::vector<pystack::PyThreadData> data)
 }
 
 std::vector<pystack::PyThreadData>
-normalizeThreads(std::vector<pystack::PyThreadData> threads, NativeReportingMode native_mode)
+normalizeThreads(
+        std::vector<pystack::PyThreadData> threads,
+        NativeReportingMode native_mode,
+        std::pair<int, int> python_version)
 {
     // Group threads by TID, preserving first-seen order.
     // One TID can have multiple PyThreadData due to subinterpreters.
@@ -649,7 +650,7 @@ normalizeThreads(std::vector<pystack::PyThreadData> threads, NativeReportingMode
             group = sortThreadsByStackAnchor(std::move(group));
             // Associate each Python stack with its chunk of the native stack
             if (native_mode != NativeReportingMode::OFF) {
-                group = sliceNativeStack(std::move(group));
+                group = sliceNativeStack(std::move(group), python_version);
             }
         }
         for (auto& thread : group) {
@@ -739,7 +740,7 @@ get_process_threads(
         }
 
         nb::list result;
-        for (const auto& thread : normalizeThreads(python_threads, native_mode)) {
+        for (const auto& thread : normalizeThreads(python_threads, native_mode, python_version)) {
             result.append(buildPyThreadObject(thread, types, python_version));
         }
         for (const auto& thread : native_only_threads) {
@@ -809,7 +810,9 @@ get_process_threads_for_core(
             head = pystack::InterpreterUtils::getNextInterpreter(manager->get_manager(), head);
         }
 
-        for (const auto& thread : normalizeThreads(python_threads, native_mode)) {
+        for (const auto& thread :
+             normalizeThreads(python_threads, native_mode, manager->python_version()))
+        {
             result.append(buildPyThreadObject(thread, types, manager->python_version()));
         }
 
@@ -1014,7 +1017,9 @@ NB_MODULE(_pystack, m)
 
     m.def(
             "_normalize_threads_for_testing",
-            [](nb::list thread_descs, NativeReportingMode native_mode) -> nb::list {
+            [](nb::list thread_descs,
+               NativeReportingMode native_mode,
+               std::pair<int, int> python_version) -> nb::list {
                 auto types = PyTypes::load();
                 std::vector<pystack::PyThreadData> threads;
 
@@ -1024,7 +1029,6 @@ NB_MODULE(_pystack, m)
                     td.tid = nb::cast<int>(desc["tid"]);
                     td.stack_anchor = nb::cast<pystack::remote_addr_t>(desc["stack_anchor"]);
                     td.interpreter_id = nb::cast<int64_t>(desc["interpreter_id"]);
-                    td.python_version = nb::cast<std::pair<int, int>>(desc["python_version"]);
 
                     nb::list symbols = nb::cast<nb::list>(desc["native_symbols"]);
                     for (auto sym_handle : symbols) {
@@ -1049,14 +1053,15 @@ NB_MODULE(_pystack, m)
                     threads.push_back(std::move(td));
                 }
 
-                auto normalized = normalizeThreads(std::move(threads), native_mode);
+                auto normalized = normalizeThreads(std::move(threads), native_mode, python_version);
 
                 nb::list result;
                 for (const auto& t : normalized) {
-                    result.append(buildPyThreadObject(t, types, t.python_version));
+                    result.append(buildPyThreadObject(t, types, python_version));
                 }
                 return result;
             },
             "thread_descs"_a,
-            "native_mode"_a);
+            "native_mode"_a,
+            "python_version"_a);
 }

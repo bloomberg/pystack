@@ -40,7 +40,6 @@ struct PyThreadData
     int gil_status;  // -1 = unknown, 0 = not held, 1 = held
     int gc_status;  // -1 = unknown, 0 = not collecting, 1 = collecting
     int64_t interpreter_id;
-    std::pair<int, int> python_version;
     remote_addr_t stack_anchor;
 };
 

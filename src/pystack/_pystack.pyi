@@ -88,6 +88,7 @@ def is_eval_frame(symbol: str, python_version: Tuple[int, int]) -> bool: ...
 def _normalize_threads_for_testing(
     thread_descs: List[Dict[str, Any]],
     native_mode: NativeReportingMode,
+    python_version: Tuple[int, int],
 ) -> List[PyThread]: ...
 
 F = TypeVar("F", bound=Callable[..., Any])

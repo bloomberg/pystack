@@ -84,7 +84,6 @@ buildPythonThread(
     data.gil_status = static_cast<int>(thread->isGilHolder());
     data.gc_status = static_cast<int>(thread->isGCCollecting());
     data.interpreter_id = interpreter_id;
-    data.python_version = manager->pythonVersion();
     data.stack_anchor = thread->stackAnchor();
 
     return data;
@@ -108,7 +107,6 @@ buildNativeThread(const std::shared_ptr<AbstractProcessManager>& manager, pid_t 
 
     const auto& native_frames = native_thread.NativeFrames();
     data.native_frames.assign(native_frames.rbegin(), native_frames.rend());
-    data.python_version = manager->pythonVersion();
 
     return data;
 }

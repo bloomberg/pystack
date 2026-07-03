@@ -25,7 +25,6 @@ def _make_thread(
         interpreter_id=interpreter_id,
         native_symbols=(native_symbols or []),
         frames=(frames or []),
-        python_version=PY_VERSION,
     )
 
 
@@ -48,7 +47,9 @@ def test_unique_tids_pass_through_in_order():
         ),
     ]
 
-    result = _normalize_threads_for_testing(threads, NativeReportingMode.PYTHON)
+    result = _normalize_threads_for_testing(
+        threads, NativeReportingMode.PYTHON, PY_VERSION
+    )
 
     assert len(result) == 3
     assert [t.tid for t in result] == [3, 1, 2]
@@ -68,7 +69,9 @@ def test_first_seen_tid_order_preserved():
         _make_thread(10, interpreter_id=1, stack_anchor=500, frames=[("c", True)]),
     ]
 
-    result = _normalize_threads_for_testing(threads, NativeReportingMode.OFF)
+    result = _normalize_threads_for_testing(
+        threads, NativeReportingMode.OFF, PY_VERSION
+    )
 
     assert [t.tid for t in result] == [10, 10, 20, 20]
     assert [t.interpreter_id for t in result] == [0, 1, 0, 1]
@@ -85,7 +88,9 @@ def test_stack_anchor_sort_within_group():
         _make_thread(1, interpreter_id=1, stack_anchor=5000, frames=[("middle", True)]),
     ]
 
-    result = _normalize_threads_for_testing(threads, NativeReportingMode.OFF)
+    result = _normalize_threads_for_testing(
+        threads, NativeReportingMode.OFF, PY_VERSION
+    )
 
     assert len(result) == 3
     assert [t.interpreter_id for t in result] == [0, 1, 2]
@@ -128,7 +133,9 @@ def test_native_slice_correctness():
         ),
     ]
 
-    result = _normalize_threads_for_testing(threads, NativeReportingMode.PYTHON)
+    result = _normalize_threads_for_testing(
+        threads, NativeReportingMode.PYTHON, PY_VERSION
+    )
 
     assert len(result) == 3
     assert result[0].interpreter_id == 0
@@ -181,7 +188,9 @@ def test_middle_interpreter_no_frames_gets_native_cleared():
         ),
     ]
 
-    result = _normalize_threads_for_testing(threads, NativeReportingMode.PYTHON)
+    result = _normalize_threads_for_testing(
+        threads, NativeReportingMode.PYTHON, PY_VERSION
+    )
 
     assert len(result) == 3
     assert result[0].interpreter_id == 0
