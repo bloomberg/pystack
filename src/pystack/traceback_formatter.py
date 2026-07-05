@@ -14,14 +14,18 @@ from .types import frame_type
 
 
 def print_threads(threads: List[PyThread], native_mode: NativeReportingMode) -> None:
+    multiple_interpreters = (
+        len({t.interpreter_id for t in threads if t.interpreter_id is not None}) > 1
+    )
     for i, thread in enumerate(threads):
         same_tid_as_prev = i > 0 and thread.tid == threads[i - 1].tid
-        same_tid_as_next = i < len(threads) - 1 and thread.tid == threads[i + 1].tid
+        if i > 0 and not same_tid_as_prev:
+            print("", file=sys.stdout, flush=True)  # Separate TIDs with a blank line
         for line in format_thread(
             thread,
             native_mode,
-            continuing_from_previous=same_tid_as_prev,
-            continues_to_next=same_tid_as_next,
+            show_thread_header=not same_tid_as_prev,
+            show_interpreter=multiple_interpreters,
         ):
             print(line, file=sys.stdout, flush=True)
 
@@ -76,31 +80,26 @@ def _are_the_stacks_mergeable(thread: PyThread) -> bool:
 def format_thread(
     thread: PyThread,
     native_mode: NativeReportingMode,
-    continuing_from_previous: bool = False,
-    continues_to_next: bool = False,
+    show_thread_header: bool = True,
+    show_interpreter: bool = False,
 ) -> Iterable[str]:
     native = native_mode != NativeReportingMode.OFF
     current_frame: Optional[PyFrame] = thread.first_frame
-    if (
-        current_frame is None
-        and not native
-        and not continuing_from_previous
-        and not continues_to_next
-    ):
+    if current_frame is None and not native and not show_interpreter:
         yield f"The frame stack for thread {thread.tid} is empty"
         return
 
     thread_name = f" ({thread.name}) " if thread.name else " "
-    if not continuing_from_previous:
+    if show_thread_header:
         yield (
             f"Traceback for thread {thread.tid}{thread_name}"
-            f"{thread.status + ' ' if not continues_to_next else ''}"
+            f"{thread.status + ' ' if not show_interpreter else ''}"
             f"(most recent call last):"
         )
 
-    if continues_to_next or continuing_from_previous:
+    if show_interpreter:
         if thread.interpreter_id is None:
-            interp_name = "Not attached to any interpreter"
+            interp_name = "Not currently attached to any interpreter"
         elif thread.interpreter_id == 0:
             interp_name = "In the main interpreter"
         else:
@@ -118,8 +117,6 @@ def format_thread(
         yield from _format_merged_stacks(
             thread, current_frame, native_mode == NativeReportingMode.LAST
         )
-    if not continues_to_next:
-        yield ""
 
 
 def _format_merged_stacks(
