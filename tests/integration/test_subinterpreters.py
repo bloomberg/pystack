@@ -28,21 +28,23 @@ NUM_THREADS_PER_SUBINTERPRETER = 2
 # Compatibility shim so test programs work on both 3.13 (_interpreters)
 # and 3.14+ (concurrent.interpreters).
 _INTERPRETERS_SHIM = """\
-import sys as _sys
+import os
 try:
     from concurrent import interpreters
+
+    def run_in_new_interpreter(code):
+        interpreters.create().exec(code)
 except ImportError:
-    import _interpreters as _raw
-    class _W:
-        def __init__(self, id):
-            self.id = id
-        def exec(self, code):
-            _raw.exec(self.id, code)
-    class interpreters:
-        @staticmethod
-        def create():
-            return _W(_raw.create())
-        Interpreter = _W
+    try:
+        import _interpreters
+
+        def run_in_new_interpreter(code):
+            _interpreters.exec(_interpreters.create(), code)
+    except ImportError:
+        import _xxsubinterpreters
+
+        def run_in_new_interpreter(code):
+            _xxsubinterpreters.run_string(_xxsubinterpreters.create(isolated=False), code)
 """
 
 PROGRAM = f"""\
@@ -55,8 +57,8 @@ import time
 NUM_INTERPRETERS = {NUM_INTERPRETERS}
 
 
-def start_interpreter_async(interp, code):
-    t = threading.Thread(target=interp.exec, args=(code,))
+def start_interpreter_async(code):
+    t = threading.Thread(target=run_in_new_interpreter, args=(code,))
     t.daemon = True
     t.start()
     return t
@@ -70,8 +72,7 @@ while True:
 
 threads = []
 for _ in range(NUM_INTERPRETERS):
-    interp = interpreters.create()
-    t = start_interpreter_async(interp, CODE)
+    t = start_interpreter_async(CODE)
     threads.append(t)
 
 # Give sub-interpreters time to start executing
@@ -96,8 +97,8 @@ import time
 NUM_INTERPRETERS = {NUM_INTERPRETERS_WITH_THREADS}
 
 
-def start_interpreter_async(interp, code):
-    t = threading.Thread(target=interp.exec, args=(code,))
+def start_interpreter_async(code):
+    t = threading.Thread(target=run_in_new_interpreter, args=(code,))
     t.daemon = True
     t.start()
     return t
@@ -126,8 +127,7 @@ while True:
 
 threads = []
 for _ in range(NUM_INTERPRETERS):
-    interp = interpreters.create()
-    t = start_interpreter_async(interp, CODE)
+    t = start_interpreter_async(CODE)
     threads.append(t)
 
 # Give sub-interpreters and their internal workers time to start.
@@ -156,9 +156,6 @@ _SHIM = '''"""
 
 fifo = sys.argv[1]
 
-interp_outer = interpreters.create()
-interp_inner = interpreters.create()
-
 inner_code = f'''\\
 import time
 with open({fifo!r}, "w") as f:
@@ -167,10 +164,10 @@ while True:
     time.sleep(1)
 '''
 outer_code = _SHIM + f'''
-interpreters.Interpreter({{inner_id}}).exec({{inner_code!r}})
-'''.format(inner_id=interp_inner.id, inner_code=inner_code)
+run_in_new_interpreter({{inner_code!r}})
+'''.format(inner_code=inner_code)
 
-t = threading.Thread(target=interp_outer.exec, args=(outer_code,))
+t = threading.Thread(target=run_in_new_interpreter, args=(outer_code,))
 t.daemon = True
 t.start()
 
@@ -206,27 +203,11 @@ while True:
 '''
 
 
-def make_level2_code(interp3_id, level3_code):
-    return _SHIM + f'''
-interpreters.Interpreter({interp3_id}).exec({level3_code!r})
-'''
-
-
-def make_level1_code(interp2_id, level2_code):
-    return _SHIM + f'''
-interpreters.Interpreter({interp2_id}).exec({level2_code!r})
-'''
-
-
 def launch_chain(token):
-    interp1 = interpreters.create()
-    interp2 = interpreters.create()
-    interp3 = interpreters.create()
-
     level3_code = make_level3_code(token)
-    level2_code = make_level2_code(interp3.id, level3_code)
-    level1_code = make_level1_code(interp2.id, level2_code)
-    interp1.exec(level1_code)
+    level2_code = _SHIM + "\\n" + f"run_in_new_interpreter({level3_code!r})"
+    level1_code = _SHIM + "\\n" + f"run_in_new_interpreter({level2_code!r})"
+    run_in_new_interpreter(level1_code)
 
 
 t1 = threading.Thread(target=launch_chain, args=("chain1",), daemon=True)
@@ -244,9 +225,10 @@ def _collect_threads(
     python_executable: Path,
     tmpdir: Path,
     native_mode: NativeReportingMode = NativeReportingMode.OFF,
+    program: str = PROGRAM,
 ):
     test_file = Path(str(tmpdir)) / "subinterpreters_program.py"
-    test_file.write_text(PROGRAM)
+    test_file.write_text(program)
 
     with spawn_child_process(
         str(python_executable), str(test_file), tmpdir
@@ -256,6 +238,7 @@ def _collect_threads(
                 child_process.pid,
                 stop_process=True,
                 native_mode=native_mode,
+                method=StackMethod.AUTO,
             )
         )
 
@@ -433,18 +416,12 @@ def test_subinterpreters_with_native(python, tmpdir, native_mode):
 def test_subinterpreters_many_threads_with_native(python, tmpdir):
     _, python_executable = python
 
-    test_file = Path(str(tmpdir)) / "subinterpreters_with_threads_program.py"
-    test_file.write_text(PROGRAM_WITH_THREADS)
-
-    with spawn_child_process(python_executable, test_file, tmpdir) as child_process:
-        threads = list(
-            get_process_threads(
-                child_process.pid,
-                stop_process=True,
-                native_mode=NativeReportingMode.PYTHON,
-                method=StackMethod.DEBUG_OFFSETS,
-            )
-        )
+    threads = _collect_threads(
+        python_executable=python_executable,
+        tmpdir=tmpdir,
+        native_mode=NativeReportingMode.PYTHON,
+        program=PROGRAM_WITH_THREADS,
+    )
 
     interpreter_ids = _interpreter_ids(threads)
     assert 0 in interpreter_ids
@@ -470,18 +447,12 @@ def test_subinterpreters_many_threads_with_native(python, tmpdir):
 def test_subinterpreters_nested_same_thread_with_native(python, tmpdir):
     _, python_executable = python
 
-    test_file = Path(str(tmpdir)) / "subinterpreters_nested_same_thread.py"
-    test_file.write_text(PROGRAM_NESTED_SAME_THREAD)
-
-    with spawn_child_process(python_executable, test_file, tmpdir) as child_process:
-        threads = list(
-            get_process_threads(
-                child_process.pid,
-                stop_process=True,
-                native_mode=NativeReportingMode.PYTHON,
-                method=StackMethod.DEBUG_OFFSETS,
-            )
-        )
+    threads = _collect_threads(
+        python_executable=python_executable,
+        tmpdir=tmpdir,
+        native_mode=NativeReportingMode.PYTHON,
+        program=PROGRAM_NESTED_SAME_THREAD,
+    )
 
     assert any(thread.native_frames for thread in threads)
     _assert_native_eval_symbols(threads)
@@ -510,7 +481,7 @@ def test_subinterpreters_two_threads_three_per_thread_with_native(python, tmpdir
     test_file.write_text(PROGRAM_TWO_THREADS_THREE_SUBINTERPRETERS_EACH)
 
     with subprocess.Popen(
-        [str(python_executable), str(test_file), str(signal_file)],
+        [str(python_executable), "-S", str(test_file), str(signal_file)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -531,7 +502,7 @@ def test_subinterpreters_two_threads_three_per_thread_with_native(python, tmpdir
                 child_process.pid,
                 stop_process=True,
                 native_mode=NativeReportingMode.PYTHON,
-                method=StackMethod.DEBUG_OFFSETS,
+                method=StackMethod.AUTO,
             )
         )
 

@@ -93,7 +93,7 @@ def spawn_child_process(
     fifo = tmpdir / "the_fifo"
     os.mkfifo(fifo)
     with subprocess.Popen(
-        [python, test_file, str(fifo)],
+        [python, "-S", test_file, str(fifo)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -119,7 +119,7 @@ def generate_core_file(
     fifo = tmpdir / "the_fifo"
     os.mkfifo(fifo)
     with subprocess.Popen(
-        [python, test_file, str(fifo)],
+        [python, "-S", test_file, str(fifo)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ) as process:
@@ -316,8 +316,8 @@ ALL_PYTHONS_THAT_DO_NOT_SUPPORT_ELF_DATA = pytest.mark.parametrize(
 
 ALL_PYTHONS_THAT_SUPPORT_SUBINTERPRETERS = pytest.mark.parametrize(
     "python",
-    [python[:2] for python in AVAILABLE_PYTHONS if python.version >= (3, 13)],
-    ids=[python[1].name for python in AVAILABLE_PYTHONS if python.version >= (3, 13)],
+    [python[:2] for python in AVAILABLE_PYTHONS if python.version >= (3, 12)],
+    ids=[python[1].name for python in AVAILABLE_PYTHONS if python.version >= (3, 12)],
 )
 
 
