@@ -135,23 +135,28 @@ getStackAnchor(const std::shared_ptr<const AbstractProcessManager>& manager, rem
     if (!frame_addr) {
         return 0;
     }
-    if (!manager->versionIsAtLeast(3, 12)) {
+    if (!manager->versionIsAtLeast(3, 11)) {
         return frame_addr;
     }
 
     remote_addr_t current_addr = frame_addr;
     for (int i = 0; i < 4096 && current_addr; ++i) {
         Structure<py_frame_v> current_frame(manager, current_addr);
-        auto owner = current_frame.getField(&py_frame_v::o_owner);
 
         if (manager->versionIsAtLeast(3, 14)) {
+            auto owner = current_frame.getField(&py_frame_v::o_owner);
             if (owner == Python3_14::FRAME_OWNED_BY_INTERPRETER
                 || owner == Python3_14::FRAME_OWNED_BY_CSTACK)
             {
                 return current_addr;
             }
-        } else {
+        } else if (manager->versionIsAtLeast(3, 12)) {
+            auto owner = current_frame.getField(&py_frame_v::o_owner);
             if (owner == Python3_12::FRAME_OWNED_BY_CSTACK) {
+                return current_addr;
+            }
+        } else {
+            if (current_frame.getField(&py_frame_v::o_is_entry)) {
                 return current_addr;
             }
         }
