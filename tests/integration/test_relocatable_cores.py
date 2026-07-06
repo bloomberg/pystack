@@ -51,7 +51,9 @@ def test_single_thread_stack_for_relocated_core(
     caplog.set_level(logging.WARNING)
 
     # WHEN
-    with generate_core_file(Path("env"), executable, tmpdir) as core_file:
+    with generate_core_file(
+        Path("env"), executable, tmpdir, disable_site=False
+    ) as core_file:
         target_bundle.rename(relocated_bundle)
 
         # Hack: help libdw find the split debug for ld-musl on Alpine.
