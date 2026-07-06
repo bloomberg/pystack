@@ -723,6 +723,21 @@ get_process_threads(
                 bool add_native = native_mode != NativeReportingMode::OFF;
 
                 while (head) {
+                    auto next =
+                            pystack::InterpreterUtils::getNextInterpreter(manager->get_manager(), head);
+                    if (next && !manager->get_manager()->versionIsAtLeast(3, 11)) {
+                        // We are currently unable to reliably determine the
+                        // order of the stacks for different interpreters on
+                        // the same OS thread for versions < 3.11, and so we
+                        // ignore interpreters but the main one (which should
+                        // be the last one in the linked list).
+                        pystack::LOG(pystack::WARNING)
+                                << "Ignoring subinterpreter at address " << std::hex << std::showbase
+                                << head << ". pystack can only handle subinterpreters for Python 3.11+";
+                        head = next;
+                        continue;
+                    }
+
                     std::vector<pystack::PyThreadData> new_threads =
                             pystack::buildThreadsFromInterpreter(
                                     manager->get_manager(),
@@ -740,8 +755,7 @@ get_process_threads(
                             python_threads.end(),
                             std::make_move_iterator(new_threads.begin()),
                             std::make_move_iterator(new_threads.end()));
-
-                    head = pystack::InterpreterUtils::getNextInterpreter(manager->get_manager(), head);
+                    head = next;
                 }
 
                 if (native_mode == NativeReportingMode::ALL) {
@@ -812,6 +826,20 @@ get_process_threads_for_core(
         bool add_native = native_mode != NativeReportingMode::OFF;
 
         while (head) {
+            auto next = pystack::InterpreterUtils::getNextInterpreter(manager->get_manager(), head);
+            if (next && !manager->get_manager()->versionIsAtLeast(3, 11)) {
+                // We are currently unable to reliably determine the
+                // order of the stacks for different interpreters on
+                // the same OS thread for versions < 3.11, and so we
+                // ignore interpreters but the main one (which should
+                // be the last one in the linked list).
+                pystack::LOG(pystack::WARNING)
+                        << "Ignoring subinterpreter at address " << std::hex << std::showbase << head
+                        << ". pystack can only handle subinterpreters for Python 3.11+";
+                head = next;
+                continue;
+            }
+
             auto new_threads = pystack::buildThreadsFromInterpreter(
                     manager->get_manager(),
                     head,
@@ -829,7 +857,7 @@ get_process_threads_for_core(
                     std::make_move_iterator(new_threads.begin()),
                     std::make_move_iterator(new_threads.end()));
 
-            head = pystack::InterpreterUtils::getNextInterpreter(manager->get_manager(), head);
+            head = next;
         }
 
         for (const auto& thread :
