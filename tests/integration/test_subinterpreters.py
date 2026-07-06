@@ -1,6 +1,4 @@
 import io
-import subprocess
-import time
 from collections import Counter
 from contextlib import redirect_stdout
 from pathlib import Path
@@ -48,6 +46,7 @@ except ImportError:
 """
 
 PROGRAM = f"""\
+import os
 import sys
 import threading
 import time
@@ -55,6 +54,8 @@ import time
 {_INTERPRETERS_SHIM}
 
 NUM_INTERPRETERS = {NUM_INTERPRETERS}
+
+r_fd, w_fd = os.pipe()
 
 
 def start_interpreter_async(code):
@@ -65,18 +66,24 @@ def start_interpreter_async(code):
 
 
 CODE = '''\\
+import os
 import time
+os.write(%d, b"x")
 while True:
     time.sleep(1)
-'''
+''' % w_fd
 
 threads = []
 for _ in range(NUM_INTERPRETERS):
     t = start_interpreter_async(CODE)
     threads.append(t)
 
-# Give sub-interpreters time to start executing
-time.sleep(1)
+# Wait for all sub-interpreters to start executing
+data = b""
+while len(data) < NUM_INTERPRETERS:
+    data += os.read(r_fd, NUM_INTERPRETERS - len(data))
+os.close(r_fd)
+os.close(w_fd)
 
 fifo = sys.argv[1]
 with open(fifo, "w") as f:
@@ -88,6 +95,7 @@ while True:
 
 
 PROGRAM_WITH_THREADS = f"""\
+import os
 import sys
 import threading
 import time
@@ -95,6 +103,8 @@ import time
 {_INTERPRETERS_SHIM}
 
 NUM_INTERPRETERS = {NUM_INTERPRETERS_WITH_THREADS}
+
+r_fd, w_fd = os.pipe()
 
 
 def start_interpreter_async(code):
@@ -105,12 +115,14 @@ def start_interpreter_async(code):
 
 
 CODE = '''\\
+import os
 import threading
 import time
 
 NUM_THREADS = {NUM_THREADS_PER_SUBINTERPRETER}
 
 def worker():
+    os.write(%d, b"x")
     while True:
         time.sleep(1)
 
@@ -121,17 +133,24 @@ for _ in range(NUM_THREADS):
     t.start()
     threads.append(t)
 
+os.write(%d, b"x")
 while True:
     time.sleep(1)
-'''
+''' % (w_fd, w_fd)
 
 threads = []
 for _ in range(NUM_INTERPRETERS):
     t = start_interpreter_async(CODE)
     threads.append(t)
 
-# Give sub-interpreters and their internal workers time to start.
-time.sleep(2)
+TOTAL_EXPECTED = NUM_INTERPRETERS * ({NUM_THREADS_PER_SUBINTERPRETER} + 1)
+
+# Wait for all sub-interpreters and their workers to start
+data = b""
+while len(data) < TOTAL_EXPECTED:
+    data += os.read(r_fd, TOTAL_EXPECTED - len(data))
+os.close(r_fd)
+os.close(w_fd)
 
 fifo = sys.argv[1]
 with open(fifo, "w") as f:
@@ -178,10 +197,10 @@ while True:
 
 PROGRAM_TWO_THREADS_THREE_SUBINTERPRETERS_EACH = (
     """\
+import os
 import sys
 import threading
 import time
-from pathlib import Path
 
 """
     + _INTERPRETERS_SHIM
@@ -190,30 +209,41 @@ _SHIM = '''"""
     + _INTERPRETERS_SHIM
     + """'''
 
-signal_file = Path(sys.argv[1])
+r_fd, w_fd = os.pipe()
 
 
-def make_level3_code(token):
+def make_level3_code():
     return f'''\\
+import os
 import time
-from pathlib import Path
-Path({str(signal_file)!r}).open("a").write("{token}\\\\n")
+os.write({w_fd}, b"x")
 while True:
     time.sleep(1)
 '''
 
 
-def launch_chain(token):
-    level3_code = make_level3_code(token)
+def launch_chain():
+    level3_code = make_level3_code()
     level2_code = _SHIM + "\\n" + f"run_in_new_interpreter({level3_code!r})"
     level1_code = _SHIM + "\\n" + f"run_in_new_interpreter({level2_code!r})"
     run_in_new_interpreter(level1_code)
 
 
-t1 = threading.Thread(target=launch_chain, args=("chain1",), daemon=True)
-t2 = threading.Thread(target=launch_chain, args=("chain2",), daemon=True)
+t1 = threading.Thread(target=launch_chain, daemon=True)
+t2 = threading.Thread(target=launch_chain, daemon=True)
 t1.start()
 t2.start()
+
+# Wait for both level-3 subinterpreters to start
+data = b""
+while len(data) < 2:
+    data += os.read(r_fd, 2 - len(data))
+os.close(r_fd)
+os.close(w_fd)
+
+fifo = sys.argv[1]
+with open(fifo, "w") as f:
+    f.write("ready")
 
 while True:
     time.sleep(1)
@@ -475,40 +505,12 @@ def test_subinterpreters_nested_same_thread_with_native(python, tmpdir):
 def test_subinterpreters_two_threads_three_per_thread_with_native(python, tmpdir):
     _, python_executable = python
 
-    test_file = Path(str(tmpdir)) / "subinterpreters_two_threads_three_each.py"
-    signal_file = Path(str(tmpdir)) / "subinterpreters_ready.txt"
-    signal_file.write_text("")
-    test_file.write_text(PROGRAM_TWO_THREADS_THREE_SUBINTERPRETERS_EACH)
-
-    with subprocess.Popen(
-        [str(python_executable), "-S", str(test_file), str(signal_file)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.PIPE,
-        text=True,
-    ) as child_process:
-        deadline = time.time() + 10
-        while time.time() < deadline:
-            lines = [line for line in signal_file.read_text().splitlines() if line]
-            if len(lines) >= 2:
-                break
-            time.sleep(0.1)
-        else:
-            child_process.terminate()
-            child_process.kill()
-            raise AssertionError("Timed out waiting for nested subinterpreter chains")
-
-        threads = list(
-            get_process_threads(
-                child_process.pid,
-                stop_process=True,
-                native_mode=NativeReportingMode.PYTHON,
-                method=StackMethod.AUTO,
-            )
-        )
-
-        child_process.terminate()
-        child_process.kill()
-        child_process.wait(timeout=5)
+    threads = _collect_threads(
+        python_executable=python_executable,
+        tmpdir=tmpdir,
+        native_mode=NativeReportingMode.PYTHON,
+        program=PROGRAM_TWO_THREADS_THREE_SUBINTERPRETERS_EACH,
+    )
 
     groups = _shared_tid_groups_with_min_interpreters(threads, min_interpreters=3)
     assert len(groups) >= 2
