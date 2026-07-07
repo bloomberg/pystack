@@ -28,6 +28,7 @@ PyStack has the following amazing features:
 - 🧵 Shows if each thread currently holds the Python GIL, is waiting to acquire it, or is currently
   dropping it.
 - 🗑️ Shows if a thread is running a garbage collection cycle.
+- 🪆 Reports on multiple interpreters in the same process.
 - 🐍 Optionally shows native function calls, as well as Python ones. In this mode, PyStack prints
   the native stack trace (C/C++/Rust function calls), except that the calls to Python callables are
   replaced with frames showing the Python code being executed, instead of showing the internal C
