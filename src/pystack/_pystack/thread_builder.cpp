@@ -1,9 +1,10 @@
 #include "thread_builder.h"
 
+#include <cstdint>
+
 #include "interpreter.h"
 #include "logging.h"
 #include "maps_parser.h"
-#include <cstdint>
 
 namespace pystack {
 

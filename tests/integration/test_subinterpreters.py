@@ -23,17 +23,16 @@ NUM_INTERPRETERS = 3
 NUM_INTERPRETERS_WITH_THREADS = 2
 NUM_THREADS_PER_SUBINTERPRETER = 2
 
-SUBINTERPRETERS_SHIM = Path(__file__).parent / "subinterpreters_shim.py"
-TEST_SUBINTERPRETERS = Path(__file__).parent / "subinterpreters_program.py"
+SCRIPTS_DIR = Path(__file__).parent
+SUBINTERPRETERS_SHIM = SCRIPTS_DIR / "subinterpreters_shim.py"
+TEST_SUBINTERPRETERS = SCRIPTS_DIR / "subinterpreters_program.py"
 TEST_SUBINTERPRETERS_WITH_THREADS = (
-    Path(__file__).parent / "subinterpreters_with_threads_program.py"
+    SCRIPTS_DIR / "subinterpreters_with_threads_program.py"
 )
 TEST_SUBINTERPRETERS_NESTED_SAME_THREAD = (
-    Path(__file__).parent / "subinterpreters_nested_same_thread_program.py"
+    SCRIPTS_DIR / "subinterpreters_nested_same_thread_program.py"
 )
-TEST_SUBINTERPRETERS_TWO_CHAINS = (
-    Path(__file__).parent / "subinterpreters_two_chains_program.py"
-)
+TEST_SUBINTERPRETERS_TWO_CHAINS = SCRIPTS_DIR / "subinterpreters_two_chains_program.py"
 
 
 def _collect_threads(
