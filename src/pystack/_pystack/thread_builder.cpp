@@ -1,5 +1,8 @@
 #include "thread_builder.h"
 
+#include <cstdint>
+
+#include "interpreter.h"
 #include "logging.h"
 #include "maps_parser.h"
 
@@ -58,7 +61,8 @@ buildPythonThread(
         PyThread* thread,
         pid_t pid,
         bool add_native_traces,
-        bool resolve_locals)
+        bool resolve_locals,
+        int64_t interpreter_id)
 {
     PyThreadData data;
     data.tid = thread->Tid();
@@ -80,6 +84,8 @@ buildPythonThread(
 
     data.gil_status = static_cast<int>(thread->isGilHolder());
     data.gc_status = static_cast<int>(thread->isGCCollecting());
+    data.interpreter_id = interpreter_id;
+    data.stack_anchor = thread->stackAnchor();
 
     return data;
 }
@@ -92,6 +98,8 @@ buildNativeThread(const std::shared_ptr<AbstractProcessManager>& manager, pid_t 
     data.name = getThreadName(pid, tid);
     data.gil_status = 0;  // NOT_HELD
     data.gc_status = 0;  // NOT_COLLECTING
+    data.interpreter_id = 0;  // No Python stack for this thread means no interpreter
+    data.stack_anchor = 0;  // and no stack anchor.
 
     LOG(INFO) << "Constructing new native thread with tid " << tid;
 
@@ -116,11 +124,17 @@ buildThreadsFromInterpreter(
     std::vector<PyThreadData> threads;
 
     auto thread = getThreadFromInterpreterState(manager, interpreter_head);
+    int64_t interpreter_id = InterpreterUtils::getInterpreterId(manager, interpreter_head);
     PyThread* current_thread = thread.get();
 
     while (current_thread != nullptr) {
-        threads.push_back(
-                buildPythonThread(manager, current_thread, pid, add_native_traces, resolve_locals));
+        threads.push_back(buildPythonThread(
+                manager,
+                current_thread,
+                pid,
+                add_native_traces,
+                resolve_locals,
+                interpreter_id));
 
         auto next = current_thread->NextThread();
         current_thread = next.get();

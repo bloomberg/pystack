@@ -1,6 +1,7 @@
 import os
 import sys
 from typing import Iterable
+from typing import List
 from typing import Optional
 
 from .colors import colored
@@ -12,9 +13,21 @@ from .types import PyThread
 from .types import frame_type
 
 
-def print_thread(thread: PyThread, native_mode: NativeReportingMode) -> None:
-    for line in format_thread(thread, native_mode):
-        print(line, file=sys.stdout, flush=True)
+def print_threads(threads: List[PyThread], native_mode: NativeReportingMode) -> None:
+    multiple_interpreters = (
+        len({t.interpreter_id for t in threads if t.interpreter_id is not None}) > 1
+    )
+    for i, thread in enumerate(threads):
+        same_tid_as_prev = i > 0 and thread.tid == threads[i - 1].tid
+        if i > 0 and not same_tid_as_prev:
+            print("", file=sys.stdout, flush=True)  # Separate TIDs with a blank line
+        for line in format_thread(
+            thread,
+            native_mode,
+            show_thread_header=not same_tid_as_prev,
+            show_interpreter=multiple_interpreters,
+        ):
+            print(line, file=sys.stdout, flush=True)
 
 
 def format_frame(frame: PyFrame) -> Iterable[str]:
@@ -64,18 +77,34 @@ def _are_the_stacks_mergeable(thread: PyThread) -> bool:
     return n_eval_frames == n_entry_frames
 
 
-def format_thread(thread: PyThread, native_mode: NativeReportingMode) -> Iterable[str]:
+def format_thread(
+    thread: PyThread,
+    native_mode: NativeReportingMode,
+    show_thread_header: bool = True,
+    show_interpreter: bool = False,
+) -> Iterable[str]:
     native = native_mode != NativeReportingMode.OFF
     current_frame: Optional[PyFrame] = thread.first_frame
-    if current_frame is None and not native:
+    if current_frame is None and not native and not show_interpreter:
         yield f"The frame stack for thread {thread.tid} is empty"
         return
 
     thread_name = f" ({thread.name}) " if thread.name else " "
-    yield (
-        f"Traceback for thread {thread.tid}{thread_name}{thread.status} "
-        "(most recent call last):"
-    )
+    if show_thread_header:
+        yield (
+            f"Traceback for thread {thread.tid}{thread_name}"
+            f"{thread.status + ' ' if not show_interpreter else ''}"
+            f"(most recent call last):"
+        )
+
+    if show_interpreter:
+        if thread.interpreter_id is None:
+            interp_name = "Not currently attached to any interpreter"
+        elif thread.interpreter_id == 0:
+            interp_name = "In the main interpreter"
+        else:
+            interp_name = f"In interpreter {thread.interpreter_id}"
+        yield f"  {interp_name} {thread.status}"
 
     if not (native and _are_the_stacks_mergeable(thread)):
         if native:
@@ -88,7 +117,6 @@ def format_thread(thread: PyThread, native_mode: NativeReportingMode) -> Iterabl
         yield from _format_merged_stacks(
             thread, current_frame, native_mode == NativeReportingMode.LAST
         )
-    yield ""
 
 
 def _format_merged_stacks(

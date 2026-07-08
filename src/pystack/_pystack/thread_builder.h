@@ -39,6 +39,8 @@ struct PyThreadData
     std::vector<NativeFrame> native_frames;
     int gil_status;  // -1 = unknown, 0 = not held, 1 = held
     int gc_status;  // -1 = unknown, 0 = not collecting, 1 = collecting
+    int64_t interpreter_id;
+    remote_addr_t stack_anchor;
 };
 
 std::vector<PyThreadData>
@@ -55,7 +57,8 @@ buildPythonThread(
         PyThread* thread,
         pid_t pid,
         bool add_native_traces,
-        bool resolve_locals);
+        bool resolve_locals,
+        int64_t interpreter_id);
 
 PyThreadData
 buildNativeThread(const std::shared_ptr<AbstractProcessManager>& manager, pid_t pid, pid_t tid);

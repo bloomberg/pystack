@@ -19,7 +19,7 @@ from pystack.process import is_elf
 from pystack.process import is_gzip
 
 from . import errors
-from . import print_thread
+from . import print_threads
 from .colors import colored
 from .engine import CoreFileAnalyzer
 from .engine import NativeReportingMode
@@ -287,14 +287,14 @@ def process_remote(parser: argparse.ArgumentParser, args: argparse.Namespace) ->
     if not args.block and args.native_mode != NativeReportingMode.OFF:
         parser.error("Native traces are only available in blocking mode")
 
-    for thread in get_process_threads(
+    threads = get_process_threads(
         args.pid,
         stop_process=args.block,
         native_mode=args.native_mode,
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
-    ):
-        print_thread(thread, args.native_mode)
+    )
+    print_threads(threads, args.native_mode)
 
 
 def format_psinfo_information(psinfo: Dict[str, Any]) -> str:
@@ -414,15 +414,15 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
                 elf_id if elf_id else "<MISSING>",
             )
 
-    for thread in get_process_threads_for_core(
+    threads = get_process_threads_for_core(
         corefile,
         executable,
         library_search_path=lib_search_path,
         native_mode=args.native_mode,
         locals=args.locals,
         method=StackMethod.ALL if args.exhaustive else StackMethod.AUTO,
-    ):
-        print_thread(thread, args.native_mode)
+    )
+    print_threads(threads, args.native_mode)
 
 
 if __name__ == "__main__":  # pragma: no cover

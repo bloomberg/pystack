@@ -129,6 +129,53 @@ findPthreadTidOffset(
     return 0;
 }
 
+remote_addr_t
+getStackAnchor(const std::shared_ptr<const AbstractProcessManager>& manager, remote_addr_t frame_addr)
+{
+    if (!frame_addr) {
+        return 0;
+    }
+    if (!manager->versionIsAtLeast(3, 11)) {
+        return frame_addr;
+    }
+
+    remote_addr_t current_addr = frame_addr;
+    for (int i = 0; i < 4096 && current_addr; ++i) {
+        Structure<py_frame_v> current_frame(manager, current_addr);
+
+        if (manager->versionIsAtLeast(3, 14)) {
+            auto owner = current_frame.getField(&py_frame_v::o_owner);
+            if (owner == Python3_14::FRAME_OWNED_BY_INTERPRETER
+                || owner == Python3_14::FRAME_OWNED_BY_CSTACK)
+            {
+                return current_addr;
+            }
+        } else if (manager->versionIsAtLeast(3, 12)) {
+            auto owner = current_frame.getField(&py_frame_v::o_owner);
+            if (owner == Python3_12::FRAME_OWNED_BY_CSTACK) {
+                return current_addr;
+            }
+        } else {
+            if (current_frame.getField(&py_frame_v::o_is_entry)) {
+                return current_addr;
+            }
+        }
+
+        remote_addr_t next_addr = current_frame.getField(&py_frame_v::o_back);
+        if (next_addr == current_addr) {
+            break;
+        }
+        current_addr = next_addr;
+    }
+    return frame_addr;
+}
+
+remote_addr_t
+PyThread::stackAnchor() const
+{
+    return d_stack_anchor;
+}
+
 PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager, remote_addr_t addr)
 : Thread(0, 0)
 {
@@ -142,6 +189,8 @@ PyThread::PyThread(const std::shared_ptr<const AbstractProcessManager>& manager,
         LOG(DEBUG) << std::hex << std::showbase << "Attempting to construct frame from address "
                    << frame_addr;
         d_first_frame = std::make_unique<FrameObject>(manager, frame_addr, 0);
+
+        d_stack_anchor = getStackAnchor(manager, frame_addr);
     }
 
     d_addr = addr;
@@ -366,7 +415,7 @@ getThreadFromInterpreterState(
         const std::shared_ptr<const AbstractProcessManager>& manager,
         remote_addr_t addr)
 {
-    if (tid_offset_in_pthread_struct == 0) {
+    if (tid_offset_in_pthread_struct == 0 && !manager->versionIsAtLeast(3, 11)) {
         tid_offset_in_pthread_struct = findPthreadTidOffset(manager, addr);
     }
 

@@ -5,7 +5,7 @@ import pytest
 
 from pystack.engine import NativeReportingMode
 from pystack.traceback_formatter import format_thread
-from pystack.traceback_formatter import print_thread
+from pystack.traceback_formatter import print_threads
 from pystack.types import SYMBOL_IGNORELIST
 from pystack.types import LocationInfo
 from pystack.types import NativeFrame
@@ -82,7 +82,6 @@ def test_traceback_formatter_no_native():
         '    (Python) File "file1.py", line 1, in function1',
         '    (Python) File "file2.py", line 2, in function2',
         '    (Python) File "file3.py", line 3, in function3',
-        "",
     ]
 
 
@@ -137,7 +136,6 @@ def test_traceback_formatter_no_frames_native():
         '    (C) File "native_file2.c", line 2, in native_function2 (library.so)',
         '    (C) File "native_file3.c", line 3, in native_function3 (library.so)',
         '    (C) File "native_file4.c", line 4, in native_function4 (library.so)',
-        "",
     ]
 
 
@@ -171,7 +169,6 @@ def test_traceback_formatter_no_frames_native_with_eval_frames():
     assert lines == [
         "Traceback for thread 1 [] (most recent call last):",
         "* - Unable to merge native stack due to insufficient native information - *",
-        "",
     ]
 
 
@@ -237,7 +234,6 @@ def test_traceback_formatter_no_mergeable_native_frames():
         '    (Python) File "file1.py", line 1, in function1',
         '    (Python) File "file2.py", line 2, in function2',
         '    (Python) File "file3.py", line 3, in function3',
-        "",
     ]
 
 
@@ -284,7 +280,6 @@ def test_traceback_formatter_with_source_lineno_out_of_range():
         "        arg: value",
         "      Locals:",
         "        local: value",
-        "",
     ]
 
 
@@ -358,7 +353,6 @@ def test_traceback_formatter_with_source():
         '        x = "This is the line 2"',
         '    (Python) File "file3.py", line 3, in function3',
         '        x = "This is the line 3"',
-        "",
     ]
 
 
@@ -435,7 +429,6 @@ def test_traceback_formatter_native_matching_simple_eval_frames():
         '    (C) File "native_file3.c", line 3, in native_function3 (library.so)',
         '    (Python) File "file3.py", line 3, in function3',
         '    (C) File "native_file4.c", line 4, in native_function4 (library.so)',
-        "",
     ]
 
 
@@ -524,7 +517,6 @@ def test_traceback_formatter_native_matching_composite_eval_frames():
         '    (C) File "native_file3.c", line 3, in native_function3 (library.so)',
         '    (Python) File "file3.py", line 3, in function3',
         '    (C) File "native_file4.c", line 4, in native_function4 (library.so)',
-        "",
     ]
 
 
@@ -641,7 +633,6 @@ def test_traceback_formatter_native_matching_eval_frames_ignore_frames():
         '    (C) File "native_file4.c", line 4, in native_function4 (library.so)',
         '    (Python) File "file4.py", line 4, in function4',
         '    (C) File "native_file5.c", line 5, in native_function5 (library.so)',
-        "",
     ]
 
 
@@ -679,7 +670,6 @@ def test_traceback_formatter_gil_detection():
     assert lines == [
         "Traceback for thread 1 [Has the GIL] (most recent call last):",
         '    (Python) File "file1.py", line 1, in function1',
-        "",
     ]
 
 
@@ -719,7 +709,6 @@ def test_traceback_formatter_gc_detection_with_native():
     assert lines == [
         "Traceback for thread 1 [Garbage collecting] (most recent call last):",
         '    (Python) File "file1.py", line 1, in function1',
-        "",
     ]
 
 
@@ -757,7 +746,6 @@ def test_traceback_formatter_gc_detection_without_native():
     assert lines == [
         "Traceback for thread 1 [Has the GIL,Garbage collecting] (most recent call last):",
         '    (Python) File "file1.py", line 1, in function1',
-        "",
     ]
 
 
@@ -804,7 +792,6 @@ def test_traceback_formatter_dropping_the_gil_detection():
     assert lines == [
         "Traceback for thread 1 [Dropping the GIL] (most recent call last):",
         '    (Python) File "file1.py", line 1, in function1',
-        "",
     ]
 
 
@@ -851,7 +838,6 @@ def test_traceback_formatter_taking_the_gil_detection():
     assert lines == [
         "Traceback for thread 1 [Waiting for the GIL] (most recent call last):",
         '    (Python) File "file1.py", line 1, in function1',
-        "",
     ]
 
 
@@ -916,7 +902,6 @@ def test_traceback_formatter_native_not_matching_simple_eval_frames():
         '    (Python) File "file1.py", line 1, in function1',
         '    (Python) File "file2.py", line 2, in function2',
         '    (Python) File "file3.py", line 3, in function3',
-        "",
     ]
 
 
@@ -994,7 +979,6 @@ def test_traceback_formatter_native_not_matching_composite_eval_frames():
         '    (Python) File "file1.py", line 1, in function1',
         '    (Python) File "file2.py", line 2, in function2',
         '    (Python) File "file3.py", line 3, in function3',
-        "",
     ]
 
 
@@ -1081,7 +1065,6 @@ def test_traceback_formatter_mixed_inlined_frames():
         '    (Python) File "file4.py", line 4, in function4',
         '    (Python) File "file5.py", line 5, in function5',
         '    (C) File "native_file3.c", line 3, in native_function3 (library.so)',
-        "",
     ]
     assert lines == expected_lines
 
@@ -1163,7 +1146,6 @@ def test_traceback_formatter_all_inlined_frames():
         '    (Python) File "file4.py", line 4, in function4',
         '    (Python) File "file5.py", line 5, in function5',
         '    (C) File "native_file3.c", line 3, in native_function3 (library.so)',
-        "",
     ]
     assert lines == expected_lines
 
@@ -1247,7 +1229,6 @@ def test_traceback_formatter_native_last():
         '    (Python) File "file5.py", line 5, in function5',
         '    (C) File "native_file3.c", line 3, in native_function3 (library.so)',
         '    (C) File "native_file4.c", line 4, in native_function4 (library.so)',
-        "",
     ]
     assert lines == expected_lines
 
@@ -1268,7 +1249,7 @@ def test_print_thread(capsys):
         "pystack.traceback_formatter.format_thread",
         return_value=("1", "2", "3"),
     ):
-        print_thread(thread, NativeReportingMode.OFF)
+        print_threads([thread], NativeReportingMode.OFF)
 
     # THEN
 
@@ -1360,11 +1341,15 @@ def test_traceback_formatter_locals(
 
     # THEN
     print(lines)
-    assert lines == [
-        "Traceback for thread 1 [] (most recent call last):",
-        '    (Python) File "file1.py", line 1, in function1',
-        '        x = "This is the line 1" or (1+1)',
-    ] + expected_locals_render + [""]
+    assert (
+        lines
+        == [
+            "Traceback for thread 1 [] (most recent call last):",
+            '    (Python) File "file1.py", line 1, in function1',
+            '        x = "This is the line 1" or (1+1)',
+        ]
+        + expected_locals_render
+    )
 
 
 def test_traceback_formatter_thread_names():
@@ -1402,7 +1387,7 @@ def test_traceback_formatter_thread_names():
     assert lines == [
         "Traceback for thread 1 (foo) [] (most recent call last):",
         '    (Python) File "file1.py", line 1, in function1',
-    ] + [""]
+    ]
 
 
 def test_traceback_formatter_position_infomation():
@@ -1471,7 +1456,6 @@ def test_traceback_formatter_position_infomation():
         '        x = "This is the line 2" or (1+1)',
         '    (Python) File "file3.py", line 3, in function3',
         '        x = "This is the line 3" or (1+1)',
-        "",
     ]
     colored_mock.assert_any_call("x =", color="blue")
     colored_mock.assert_any_call('"This is the line 2" ', color="blue")
@@ -1566,7 +1550,6 @@ def test_shim_frames_are_ignored():
         '        x = "This is the line 3" or (1+1)',
         '    (Python) File "file4.py", line 4, in function4',
         '        x = "This is the line 4" or (1+1)',
-        "",
     ]
     colored_mock.assert_any_call("x =", color="blue")
     colored_mock.assert_any_call('"This is the line 2" ', color="blue")
@@ -1676,7 +1659,6 @@ def test_native_traceback_with_shim_frames():
         '    (Python) File "file3.py", line 3, in function3',
         '        x = "This is the line 3" or (1+1)',
         '    (C) File "native_file4.c", line 4, in native_function4 (library.so)',
-        "",
     ]
 
     colored_mock.assert_any_call("x =", color="blue")

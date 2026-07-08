@@ -1,0 +1,1 @@
+Add :ref:`support for Python subinterpreters <multiple-interpreters>`. When a process uses multiple interpreters (e.g. via Python 3.14's `concurrent.interpreters` module), stacks for all interpreters are now reported instead of just the main one.

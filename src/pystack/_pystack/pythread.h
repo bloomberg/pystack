@@ -45,6 +45,7 @@ class PyThread : public Thread
     // Methods
     GilStatus isGilHolder() const;
     GCStatus isGCCollecting() const;
+    remote_addr_t stackAnchor() const;
 
     // Static Methods
     static remote_addr_t getFrameAddr(
@@ -60,6 +61,7 @@ class PyThread : public Thread
     remote_addr_t d_next_addr;
     std::shared_ptr<PyThread> d_next;
     std::shared_ptr<FrameObject> d_first_frame;
+    remote_addr_t d_stack_anchor{};
 
     // Methods
     GilStatus calculateGilStatus(

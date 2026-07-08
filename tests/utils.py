@@ -93,7 +93,7 @@ def spawn_child_process(
     fifo = tmpdir / "the_fifo"
     os.mkfifo(fifo)
     with subprocess.Popen(
-        [python, test_file, str(fifo)],
+        [python, "-S", test_file, str(fifo)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
         text=True,
@@ -114,12 +114,15 @@ def spawn_child_process(
 
 @contextlib.contextmanager
 def generate_core_file(
-    python: pathlib.Path, test_file: pathlib.Path, tmpdir: pathlib.Path
+    python: pathlib.Path,
+    test_file: pathlib.Path,
+    tmpdir: pathlib.Path,
+    disable_site: bool = True,
 ) -> Generator[pathlib.Path, None, None]:
     fifo = tmpdir / "the_fifo"
     os.mkfifo(fifo)
     with subprocess.Popen(
-        [python, test_file, str(fifo)],
+        [python, *(["-S"] if disable_site else []), test_file, str(fifo)],
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ) as process:
@@ -311,6 +314,13 @@ ALL_PYTHONS_THAT_DO_NOT_SUPPORT_ELF_DATA = pytest.mark.parametrize(
     "python",
     [python[:2] for python in AVAILABLE_PYTHONS if python.version < (3, 10)],
     ids=[python[1].name for python in AVAILABLE_PYTHONS if python.version < (3, 10)],
+)
+
+
+ALL_PYTHONS_THAT_SUPPORT_SUBINTERPRETERS = pytest.mark.parametrize(
+    "python",
+    [python[:2] for python in AVAILABLE_PYTHONS if python.version >= (3, 11)],
+    ids=[python[1].name for python in AVAILABLE_PYTHONS if python.version >= (3, 11)],
 )
 
 

@@ -98,6 +98,7 @@ class AbstractProcessManager : public std::enable_shared_from_this<AbstractProce
     void setPythonVersionFromDebugOffsets();
     void setPythonVersion(const std::pair<int, int>& version);
     bool versionIsAtLeast(int required_major, int required_minor) const;
+    std::pair<int, int> pythonVersion() const;
     bool isFreeThreaded() const;
     const python_v& offsets() const;
 

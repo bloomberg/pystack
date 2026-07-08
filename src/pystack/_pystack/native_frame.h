@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <utility>
 
 namespace pystack {
 // The reason this is a struct is so Cython can easily generate
@@ -14,4 +15,8 @@ struct NativeFrame
     int colnumber;
     std::string library;
 };
+
+bool
+is_eval_frame(const std::string& symbol, std::pair<int, int> python_version);
+
 }  // namespace pystack

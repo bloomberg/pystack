@@ -14,6 +14,9 @@ enum logLevel {
     CRITICAL = 50,
 };
 
+bool
+isLoggingEnabled(logLevel level);
+
 void
 logWithPython(const std::string& message, int level);
 

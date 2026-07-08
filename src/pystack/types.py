@@ -7,6 +7,8 @@ from typing import NamedTuple
 from typing import Optional
 from typing import Tuple
 
+from ._pystack import is_eval_frame as _is_eval_frame
+
 SYMBOL_IGNORELIST = {
     "PyObject_Call",
     "call_function",
@@ -42,20 +44,6 @@ class NativeFrame:
         IGNORE = 0
         EVAL = 1
         OTHER = 3
-
-
-def _is_eval_frame(symbol: str, python_version: Tuple[int, int]) -> bool:
-    if python_version < (3, 6):
-        return "PyEval_EvalFrameEx" in symbol
-    if "_PyEval_EvalFrameDefault" in symbol:
-        return True
-    # Python 3.14 tail call interpreter uses LLVM-generated functions
-    if symbol.startswith("_TAIL_CALL_") and ".llvm." in symbol:
-        return True
-    # Python 3.15+ tail call interpreter drops the .llvm. suffix
-    if python_version >= (3, 15) and symbol.startswith("_TAIL_CALL_"):
-        return True
-    return False
 
 
 def frame_type(
@@ -119,6 +107,7 @@ class PyThread:
     is_gc_collecting: int
     python_version: Optional[Tuple[int, int]]
     name: Optional[str] = None
+    interpreter_id: Optional[int] = None
 
     @property
     def frames(self) -> Iterable[PyFrame]:

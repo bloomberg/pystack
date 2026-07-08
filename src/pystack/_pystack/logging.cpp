@@ -47,6 +47,31 @@ initializePythonLoggerInterface()
     LOGGER_INITIALIZED = true;
 }
 
+bool
+isLoggingEnabled(logLevel level)
+{
+    if (!LOGGER_INITIALIZED || !g_logger) {
+        return false;
+    }
+
+    PyGILState_STATE gstate = PyGILState_Ensure();
+
+    if (PyErr_Occurred()) {
+        PyGILState_Release(gstate);
+        return false;
+    }
+
+    PyObject* result = PyObject_CallMethod(g_logger, "isEnabledFor", "i", static_cast<int>(level));
+    bool enabled = result && PyObject_IsTrue(result);
+    Py_XDECREF(result);
+    if (PyErr_Occurred()) {
+        PyErr_Clear();
+    }
+
+    PyGILState_Release(gstate);
+    return enabled;
+}
+
 void
 logWithPython(const std::string& message, int level)
 {
