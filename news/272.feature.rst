@@ -1,2 +1,0 @@
-Replace Cython with nanobind for Python bindings, improving performance by
-eliminating round-trips between Python and C++.

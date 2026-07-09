@@ -8,6 +8,27 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.7.0 (2026-07-09)
+--------------------------
+
+Features
+~~~~~~~~
+
+- Replace Cython with nanobind for Python bindings, improving performance by eliminating round-trips between Python and C++. (#272)
+- Add :ref:`support for Python subinterpreters <multiple-interpreters>`. When a process uses multiple interpreters (e.g. via Python 3.14's `concurrent.interpreters` module), stacks for all interpreters are now reported instead of just the main one. (#279)
+- Python 3.15 is now supported. The wheels are not yet published because the ABI is not yet frozen. (#289)
+- PyStack is now built against elfutils 0.195, up from 0.193. (#315)
+
+
+Bug Fixes
+~~~~~~~~~
+
+- Fix compatibility with the Python 3.14 JIT compiler. (#277)
+- Fix native mode stacks for Python 3.14's LLVM-generated ``*_TAIL_CALL_*`` frames. (#277)
+- Fix ``IndexError`` in traceback formatting when the source file has fewer lines than expected. (#191)
+- Fix an extra blank line sometimes being printed in the middle of a traceback. (#298)
+
+
 pystack 1.6.0 (2026-01-25)
 --------------------------
 
