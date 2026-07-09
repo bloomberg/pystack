@@ -100,8 +100,12 @@ jobs:
       - name: Extract sdist
         run: |
           tar zxvf *.tar.gz --strip-components=1
+      - name: Set up Python
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
+      - name: Install cibuildwheel v3
+        run: python -m pip install 'cibuildwheel<4'
       - name: Build wheels
-        uses: pypa/cibuildwheel@8d2b08b68458a16aeb24b64e68a09ab1c8e82084 # v3.4.1
+        run: python -m cibuildwheel
         env:
           CIBW_BUILD: "cp313t-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
