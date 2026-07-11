@@ -58,6 +58,11 @@ Homepage = "https://github.com/bloomberg/pystack"
 pystack = "pystack.__main__:main"
 
 [tool.scikit-build]
+minimum-version = "0.9"
+cmake.verbose = true
+cmake.build-type = "RelWithDebInfo"
+logging.level = "INFO"
+install.strip = false
 wheel.packages = ["src/pystack"]
 wheel.install-dir = "pystack"
 wheel.exclude = ["pystack/_pystack/**"]
@@ -75,8 +80,11 @@ sdist.exclude = [
   "uv.lock",
 ]
 
-[tool.scikit-build.cmake.define]
-CMAKE_BUILD_TYPE = "Release"
+[[tool.scikit-build.overrides]]
+if.state = "editable"
+build-dir = "build"
+editable.verbose = false
+cmake.build-type = "Debug"
 
 [tool.ruff]
 line-length = 95
