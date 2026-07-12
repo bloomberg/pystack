@@ -363,18 +363,6 @@ class ProcessManagerWrapper
     std::shared_ptr<pystack::AbstractProcessManager> d_manager;
 };
 
-nb::bytes
-copy_memory_from_address(pid_t pid, uintptr_t address, size_t size)
-{
-    auto manager = std::make_shared<pystack::ProcessMemoryManager>(pid);
-    PyObject* py_bytes = PyBytes_FromStringAndSize(nullptr, static_cast<Py_ssize_t>(size));
-    if (!py_bytes) {
-        throw nb::python_error();
-    }
-    manager->copyMemoryFromProcess(address, size, PyBytes_AS_STRING(py_bytes));
-    return nb::steal<nb::bytes>(py_bytes);
-}
-
 nb::object
 get_bss_info(const std::filesystem::path& binary)
 {
@@ -971,13 +959,6 @@ NB_MODULE(_pystack, m)
                     [](ProcessManagerWrapper& self) -> ProcessManagerWrapper& { return self; },
                     nb::rv_policy::reference)
             .def("__exit__", [](ProcessManagerWrapper& self, nb::args) { self.reset(); });
-
-    m.def("copy_memory_from_address",
-          &copy_memory_from_address,
-          "pid"_a,
-          "address"_a,
-          "size"_a,
-          "Copy memory from a remote process");
 
     m.def("get_bss_info", &get_bss_info, "binary"_a, "Get BSS section information from an ELF binary");
 
