@@ -66,6 +66,11 @@ install.strip = false
 wheel.packages = ["src/pystack"]
 wheel.install-dir = "pystack"
 wheel.exclude = ["pystack/_pystack/**"]
+# Build against the CPython Limited API / stable ABI so that CPython >= 3.12
+# non-free-threaded builds produce a single cp312-abi3 wheel. scikit-build-core
+# automatically ignores this for older Pythons (< 3.12) and for free-threaded
+# interpreters, which continue to produce version-specific wheels.
+wheel.py-api = "cp312"
 metadata.version.provider = "scikit_build_core.metadata.regex"
 metadata.version.input = "src/pystack/_version.py"
 sdist.include = ["src/pystack/_version.py"]
