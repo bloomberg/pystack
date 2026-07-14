@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <sys/stat.h>
 #include <utility>
 
 #include "compat.h"
@@ -13,6 +14,58 @@
 namespace pystack {
 
 using file_unique_ptr = std::unique_ptr<FILE, std::function<int(FILE*)>>;
+
+namespace {
+
+int
+set_process_pid(
+        Dwfl_Module* mod __attribute__((unused)),
+        void** userdata,
+        const char* name __attribute__((unused)),
+        Dwarf_Addr start __attribute__((unused)),
+        void* arg)
+{
+    *userdata = arg;
+    return DWARF_CB_OK;
+}
+
+int
+find_elf_through_process_root(void** userdata, const char* modname, char** file_name)
+{
+    if (userdata == nullptr || *userdata == nullptr || modname == nullptr || modname[0] != '/') {
+        return -1;
+    }
+
+    const auto pid = *static_cast<const pid_t*>(*userdata);
+    if (pid <= 0) {
+        return -1;
+    }
+
+    const std::string rooted_path =
+            "/proc/" + std::to_string(pid) + "/root" + std::string(modname);
+    int fd = open(rooted_path.c_str(), O_RDONLY);
+    if (fd < 0) {
+        return -1;
+    }
+
+    struct stat file_stat;
+    if (fstat(fd, &file_stat) != 0 || !S_ISREG(file_stat.st_mode)) {
+        close(fd);
+        return -1;
+    }
+
+    if (file_name != nullptr) {
+        *file_name = strdup(rooted_path.c_str());
+        if (*file_name == nullptr) {
+            close(fd);
+            return -1;
+        }
+    }
+
+    return fd;
+}
+
+}  // namespace
 
 int
 pystack_find_elf(
@@ -31,10 +84,14 @@ pystack_find_elf(
         return ret;
     }
     ret = dwfl_linux_proc_find_elf(mod, userdata, modname, base, file_name, elfp);
-    if (file_name == nullptr) {
+    if (ret < 0) {
+        ret = find_elf_through_process_root(userdata, modname, file_name);
+    }
+    if (ret < 0) {
         LOG(DEBUG) << "Could not locate debug info for " << the_modname;
     } else {
-        LOG(DEBUG) << "Located debug info for " << the_modname << " by path in " << *file_name;
+        const char* the_filename = (file_name == nullptr || *file_name == nullptr) ? "???" : *file_name;
+        LOG(DEBUG) << "Located debug info for " << the_modname << " by path in " << the_filename;
     }
     return ret;
 }
@@ -283,6 +340,10 @@ ProcessAnalyzer::ProcessAnalyzer(pid_t pid)
 
     if (dwfl_linux_proc_report(d_dwfl.get(), pid) || dwfl_report_end(d_dwfl.get(), nullptr, nullptr)) {
         throw ElfAnalyzerError("Failed to analyze DWARF information for the remote process");
+    }
+
+    if (dwfl_getmodules(d_dwfl.get(), set_process_pid, &d_pid, 0) == -1) {
+        throw ElfAnalyzerError("Failed to associate DWARF modules with the remote process");
     }
 
     if (dwfl_linux_proc_attach(d_dwfl.get(), pid, true) != 0) {
