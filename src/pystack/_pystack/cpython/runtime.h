@@ -669,6 +669,7 @@ typedef struct _Py_DebugOffsets
         uint64_t current_frame;
         uint64_t base_frame;
         uint64_t last_profiled_frame;
+        uint64_t last_profiled_frame_seq;  // Added in 3.15.0b4
         uint64_t thread_id;
         uint64_t native_thread_id;
         uint64_t datastack_chunk;
