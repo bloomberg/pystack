@@ -352,6 +352,7 @@ AbstractUnwinder::dwarfModuleAddrDie(Dwarf_Addr pc_adjusted, Dwfl_Module* mod, D
 
 struct ModuleArg
 {
+    Dwfl* dwfl;
     const char* symbol;
     const char* modulename;
     remote_addr_t addr;
@@ -382,10 +383,35 @@ module_callback(
     for (int i = 0; i < n_syms; i++) {
         const char* sname = dwfl_module_getsym_info(mod, i, &sym, &addr, nullptr, nullptr, nullptr);
         if (strcmp(sname, module_arg->symbol) == 0) {
-            module_arg->addr = addr;
-            LOG(INFO) << "Symbol '" << sname << "' found at address " << std::hex << std::showbase
-                      << addr;
-            return DWARF_CB_ABORT;
+            Dwfl_Module* actual_module = dwfl_addrmodule(module_arg->dwfl, addr);
+            if (actual_module != mod) {
+                // Save this address if it's the first one we've seen, but keep looking for a match
+                // that resolves to the expected module.
+                if (!module_arg->addr) {
+                    module_arg->addr = addr;
+                }
+                const char* actual_module_name = dwfl_module_info(
+                        actual_module,
+                        nullptr,
+                        nullptr,
+                        nullptr,
+                        nullptr,
+                        nullptr,
+                        nullptr,
+                        nullptr);
+                LOG(INFO) << "Symbol '" << sname << "' found at address " << std::hex << std::showbase
+                          << addr << " which falls in "
+                          << (actual_module_name ? actual_module_name : "a non-file-backed mapping")
+                          << " rather than the expected module " << module_arg->modulename
+                          << " so we will keep looking for a better match";
+                return DWARF_CB_OK;
+            } else {
+                // Otherwise, stop looking and use this match.
+                module_arg->addr = addr;
+                LOG(INFO) << "Symbol '" << sname << "' found at address " << std::hex << std::showbase
+                          << addr;
+                return DWARF_CB_ABORT;
+            }
         }
     }
     return DWARF_CB_OK;
@@ -395,7 +421,7 @@ remote_addr_t
 AbstractUnwinder::getAddressforSymbol(const std::string& symbol, const std::string& modulename) const
 {
     LOG(DEBUG) << "Trying to find address for symbol " << symbol;
-    ModuleArg arg = {symbol.c_str(), modulename.c_str(), 0};
+    ModuleArg arg = {Dwfl(), symbol.c_str(), modulename.c_str(), 0};
     if (dwfl_getmodules(Dwfl(), module_callback, &arg, 0) == -1) {
         throw UnwinderError("Failed to fetch modules!");
     }
