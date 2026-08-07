@@ -487,9 +487,9 @@ jobs:
           mv dist/*-wheels/*.whl dist/
           rmdir dist/{sdist,*-wheels}
           ls -R dist
-      - name: Avoid publishing Python 3.15 wheels
+      - name: Avoid publishing Python 3.16 wheels as its ABI is not yet frozen
         run: |
-          rm -f dist/*cp315*
+          rm -f dist/*cp316*
           ls -R dist
       - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
         with:
