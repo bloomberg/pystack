@@ -8,6 +8,27 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.7.1 (2026-08-07)
+--------------------------
+
+Features
+~~~~~~~~
+
+- Wheels for Python 3.15 are now published. (#342)
+
+Bug Fixes
+~~~~~~~~~
+
+- Our locating of the ``_PyRuntime`` symbol has been made more robust. (#336)
+- An incompatibility with Python 3.15 introduced in 3.15.0b4 has been fixed. (#337)
+
+Miscellaneous
+~~~~~~~~~~~~~
+
+- We now publish ``abi3`` wheels for Python 3.12 and later. (#331)
+- Release builds of PyStack are now built with LTO (Link Time Optimization) enabled. (#330)
+- Editable installs of PyStack are now built with ``-Og`` (optimizations suitable for debugging) enabled. (#330)
+
 pystack 1.7.0 (2026-07-09)
 --------------------------
 
