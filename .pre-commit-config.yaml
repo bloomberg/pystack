@@ -10,6 +10,7 @@ repos:
       - id: end-of-file-fixer
       - id: trailing-whitespace
         exclude: "^[.]bumpversion[.]cfg"
+        exclude_types: [diff]
 
   - repo: https://github.com/pre-commit/pygrep-hooks
     rev: 3a6eb0fadf60b3cccfd80bad9dbb6fae7e47b316  # frozen: v1.10.0
