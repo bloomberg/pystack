@@ -1,0 +1,98 @@
+diff --git a/backends/aarch64_unwind.c b/backends/aarch64_unwind.c
+index e0a7e96..d276d92 100644
+--- a/backends/aarch64_unwind.c
++++ b/backends/aarch64_unwind.c
+@@ -40,16 +40,91 @@
+ 
+ #include "libebl_CPU.h"
+ 
++/* Linux AArch64 rt_sigreturn ABI.  See kernel/vdso/sigreturn.S,
++   kernel/signal.c and include/uapi/asm/{ucontext,sigcontext}.h under:
++   https://github.com/torvalds/linux/tree/v6.6/arch/arm64
++
++   mov x8, #139 (0xd2801168) followed by svc #0 (0xd4000001) forms
++   RT_SIGRETURN_WORD on little-endian systems.  The frame offsets are:
++
++     mcontext = 128 + 8 + 8 + 24 + 128 + 8 = 0x130
++     regs = 8, sp = 8 + 31 * 8 = 0x100, pc = sp + 8 = 0x108.
++ */
++#define RT_SIGRETURN_WORD UINT64_C (0xd4000001d2801168)
++#define RT_SIGFRAME_SIGCONTEXT_OFFSET 0x130
++#define SIGCONTEXT_REGS_OFFSET 0x8
++#define SIGCONTEXT_SP_OFFSET 0x100
++#define SIGCONTEXT_PC_OFFSET 0x108
++
++static bool
++unwind_signal_frame (Ebl *ebl, Dwarf_Addr pc,
++		     ebl_tid_registers_t *setfunc,
++		     ebl_tid_registers_get_t *getfunc,
++		     ebl_pid_memory_read_t *readfunc, void *arg,
++		     bool *signal_framep)
++{
++  /* Do not guess at the Linux AArch64 big-endian signal ABI here.  */
++  if (ebl->data != ELFDATA2LSB)
++    return false;
++
++  /* frame_unwind.c normally passes PC - 1 for a non-activation frame.  */
++  if ((pc & 3) == 3)
++    ++pc;
++  else if ((pc & 3) != 0)
++    return false;
++
++  Dwarf_Word instructions;
++  if (!readfunc (pc, &instructions, arg)
++      || instructions != RT_SIGRETURN_WORD)
++    return false;
++
++  Dwarf_Word signal_sp;
++  if (!getfunc (SP_REG, 1, &signal_sp, arg))
++    return false;
++
++  const Dwarf_Addr sigcontext
++    = signal_sp + RT_SIGFRAME_SIGCONTEXT_OFFSET;
++  Dwarf_Word registers[31];
++  Dwarf_Word saved_sp;
++  Dwarf_Word saved_pc;
++
++  /* Read the whole context before changing the tentative caller state.  */
++  for (unsigned int regno = 0; regno < 31; ++regno)
++    if (!readfunc (sigcontext + SIGCONTEXT_REGS_OFFSET
++		       + regno * sizeof (Dwarf_Word),
++		       &registers[regno], arg))
++      return false;
++
++  if (!readfunc (sigcontext + SIGCONTEXT_SP_OFFSET, &saved_sp, arg)
++      || !readfunc (sigcontext + SIGCONTEXT_PC_OFFSET, &saved_pc, arg)
++      || saved_pc == 0
++      || saved_sp == 0
++      || (saved_sp & 15) != 0)
++    return false;
++
++  if (!setfunc (0, 31, registers, arg)
++      || !setfunc (SP_REG, 1, &saved_sp, arg)
++      || !setfunc (-1, 1, &saved_pc, arg))
++    return false;
++
++  *signal_framep = true;
++  return true;
++}
++
+ /* There was no CFI. Maybe we happen to have a frame pointer and can unwind from that?  */
+ 
+ bool
+-EBLHOOK(unwind) (Ebl *ebl __attribute__ ((unused)), Dwarf_Addr pc __attribute__ ((unused)),
++EBLHOOK(unwind) (Ebl *ebl, Dwarf_Addr pc,
+                  ebl_tid_registers_t *setfunc, ebl_tid_registers_get_t *getfunc,
+                  ebl_pid_memory_read_t *readfunc, void *arg,
+-                 bool *signal_framep __attribute__ ((unused)))
++                 bool *signal_framep)
+ {
+   Dwarf_Word fp, lr, sp;
+ 
++  if (unwind_signal_frame (ebl, pc, setfunc, getfunc, readfunc, arg,
++			   signal_framep))
++    return true;
++
+   if (!getfunc(LR_REG, 1, &lr, arg))
+     return false;
+ 
