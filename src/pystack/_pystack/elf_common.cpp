@@ -5,6 +5,7 @@
 #include <iomanip>
 #include <iostream>
 #include <string>
+#include <sys/stat.h>
 #include <utility>
 
 #include "compat.h"
@@ -13,6 +14,74 @@
 namespace pystack {
 
 using file_unique_ptr = std::unique_ptr<FILE, std::function<int(FILE*)>>;
+
+namespace {
+
+int
+set_module_process_pid_userdata(
+        Dwfl_Module* mod __attribute__((unused)),
+        void** userdata,
+        const char* name __attribute__((unused)),
+        Dwarf_Addr start __attribute__((unused)),
+        void* arg)
+{
+    *userdata = arg;
+    return DWARF_CB_OK;
+}
+
+bool
+is_deleted_mapping(const char* modname)
+{
+    if (modname == nullptr) {
+        return false;
+    }
+
+    // proc_pid_maps(5) documents this suffix for deleted file-backed mappings.
+    const char* last_space = strrchr(modname, ' ');
+    return last_space != nullptr && strcmp(last_space, " (deleted)") == 0;
+}
+
+// Open a mapped path relative to the target process root.
+int
+find_elf_through_proc_pid_root(void** userdata, const char* modname, char** file_name)
+{
+    if (userdata == nullptr || *userdata == nullptr || modname == nullptr || modname[0] != '/'
+        || is_deleted_mapping(modname))
+    {
+        return -1;
+    }
+
+    const auto pid = *static_cast<const int*>(*userdata);
+    const std::string rooted_path = "/proc/" + std::to_string(pid) + "/root" + modname;
+    int fd = open(rooted_path.c_str(), O_RDONLY | O_CLOEXEC);
+    if (fd < 0) {
+        return -1;
+    }
+
+    struct stat file_stat;
+    if (fstat(fd, &file_stat) != 0 || !S_ISREG(file_stat.st_mode)) {
+        close(fd);
+        return -1;
+    }
+
+    if (file_name != nullptr) {
+        // Record the plain path when it is the same file on the host so that
+        // debuginfo and module-name lookups behave exactly as they always have.
+        struct stat host_file_stat;
+        const bool same_file = stat(modname, &host_file_stat) == 0
+                               && host_file_stat.st_dev == file_stat.st_dev
+                               && host_file_stat.st_ino == file_stat.st_ino;
+        *file_name = strdup(same_file ? modname : rooted_path.c_str());
+        if (*file_name == nullptr) {
+            close(fd);
+            return -1;
+        }
+    }
+
+    return fd;
+}
+
+}  // namespace
 
 int
 pystack_find_elf(
@@ -30,11 +99,18 @@ pystack_find_elf(
         LOG(DEBUG) << "Located debug info for " << the_modname << " using BUILD ID in " << the_filename;
         return ret;
     }
-    ret = dwfl_linux_proc_find_elf(mod, userdata, modname, base, file_name, elfp);
-    if (file_name == nullptr) {
+
+    // A path from /proc/<pid>/maps belongs to the target's mount namespace.
+    // Prefer its process root, then retain libdwfl's existing fallback behavior.
+    ret = find_elf_through_proc_pid_root(userdata, modname, file_name);
+    if (ret < 0) {
+        ret = dwfl_linux_proc_find_elf(mod, userdata, modname, base, file_name, elfp);
+    }
+    if (ret < 0) {
         LOG(DEBUG) << "Could not locate debug info for " << the_modname;
     } else {
-        LOG(DEBUG) << "Located debug info for " << the_modname << " by path in " << *file_name;
+        const char* the_filename = (file_name == nullptr || *file_name == nullptr) ? "???" : *file_name;
+        LOG(DEBUG) << "Located debug info for " << the_modname << " by path in " << the_filename;
     }
     return ret;
 }
@@ -285,6 +361,11 @@ ProcessAnalyzer::ProcessAnalyzer(pid_t pid)
         throw ElfAnalyzerError("Failed to analyze DWARF information for the remote process");
     }
 
+    // The find_elf callback needs the PID to retry module paths through /proc/<pid>/root.
+    if (dwfl_getmodules(d_dwfl.get(), set_module_process_pid_userdata, &d_pid, 0) == -1) {
+        throw ElfAnalyzerError("Failed to associate DWARF modules with the remote process");
+    }
+
     if (dwfl_linux_proc_attach(d_dwfl.get(), pid, true) != 0) {
         throw ElfAnalyzerError("Could not attach the DWARF process analyzer");
     }
@@ -491,7 +572,7 @@ static int
 module_callback(
         Dwfl_Module* mod,
         void** userdata __attribute__((unused)),
-        const char* name __attribute__((unused)),
+        const char* name,
         Dwarf_Addr starty __attribute__((unused)),
         void* arg)
 {
@@ -504,15 +585,12 @@ module_callback(
     Dwarf_Addr end;
     const char* mainfile;
     const char* debugfile;
-    const char* modname =
-            dwfl_module_info(mod, nullptr, &start, &end, nullptr, nullptr, &mainfile, &debugfile);
-    if (mainfile != nullptr) {
-        modname = mainfile;
-    } else if (debugfile != nullptr) {
-        modname = debugfile;
-    }
-
-    if (args->second == modname) {
+    dwfl_module_info(mod, nullptr, &start, &end, nullptr, nullptr, &mainfile, &debugfile);
+    // Match the reported mapping path as well as the located main/debug files,
+    // which may carry a /proc/<pid>/root prefix.
+    if ((name != nullptr && args->second == name) || (mainfile != nullptr && args->second == mainfile)
+        || (debugfile != nullptr && args->second == debugfile))
+    {
         args->first = start;
         return DWARF_CB_ABORT;
     }
