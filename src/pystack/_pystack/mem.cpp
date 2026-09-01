@@ -256,7 +256,9 @@ ProcessMemoryManager::copyMemoryFromProcess(remote_addr_t addr, size_t len, void
         return vmap.containsAddr(addr) && vmap.containsAddr(addr + len - 1);
     });
 
-    if (vmap == d_vmaps.end() || !d_lru_cache.can_fit(vmap->Size())) {
+    if (vmap == d_vmaps.end() || !d_lru_cache.can_fit(vmap->Size())
+        || d_uncacheable_vmaps.contains(vmap->Start()))
+    {
         return readChunk(addr, len, reinterpret_cast<char*>(dst));
     }
 
@@ -272,7 +274,8 @@ ProcessMemoryManager::copyMemoryFromProcess(remote_addr_t addr, size_t len, void
             d_lru_cache.put(key, std::move(buf));
         } catch (const InvalidRemoteAddress&) {
             // The full vmap read failed (e.g. guard pages in JIT mappings).
-            // Fall back to reading just the requested bytes directly.
+            // Future reads from this vmap should avoid the same failing cache fill.
+            d_uncacheable_vmaps.insert(key);
             return readChunk(addr, len, reinterpret_cast<char*>(dst));
         }
     }
