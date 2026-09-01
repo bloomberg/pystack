@@ -1,0 +1,2 @@
+Avoid repeated whole-map reads when a readable memory map contains an inaccessible guard page.
+Reads of accessible addresses in the same map now bypass the cache after the first failed cache fill.
