@@ -1047,6 +1047,28 @@ NB_MODULE(_pystack, m)
           "Return True if the symbol is a CPython eval frame function");
 
     m.def(
+            "_copy_memory_for_testing",
+            [](pid_t pid,
+               pystack::remote_addr_t map_start,
+               pystack::remote_addr_t map_end,
+               const std::vector<std::pair<pystack::remote_addr_t, size_t>>& reads) {
+                std::vector<pystack::VirtualMap> maps;
+                maps.emplace_back(map_start, map_end, map_end - map_start, "rw-p", 0, "00:00", 0, "");
+                pystack::ProcessMemoryManager manager(pid, maps);
+                nb::list result;
+                for (const auto& [address, size] : reads) {
+                    std::vector<char> buffer(size);
+                    manager.copyMemoryFromProcess(address, size, buffer.data());
+                    result.append(nb::bytes(buffer.data(), buffer.size()));
+                }
+                return result;
+            },
+            "pid"_a,
+            "map_start"_a,
+            "map_end"_a,
+            "reads"_a);
+
+    m.def(
             "_normalize_threads_for_testing",
             [](nb::list thread_descs,
                NativeReportingMode native_mode,
