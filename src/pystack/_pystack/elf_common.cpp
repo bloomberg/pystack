@@ -1,3 +1,4 @@
+#include <bit>
 #include <cassert>
 #include <cerrno>
 #include <cstring>
@@ -82,6 +83,25 @@ CoreFileAnalyzer::CoreFileAnalyzer(
     if (!d_elf) {
         close(d_fd);
         throw ElfAnalyzerError("Cannot read elf file");
+    }
+
+    size_t ident_size = 0;
+    const char* ident = elf_getident(d_elf.get(), &ident_size);
+    if (ident == nullptr || ident_size <= EI_DATA) {
+        close(d_fd);
+        throw ElfAnalyzerError("Cannot read the ELF header of '" + d_filename + "'");
+    }
+
+    const auto core_endianness = static_cast<unsigned char>(ident[EI_DATA]);
+    const bool endianness_matches =
+            (core_endianness == ELFDATA2LSB && std::endian::native == std::endian::little)
+            || (core_endianness == ELFDATA2MSB && std::endian::native == std::endian::big);
+
+    const auto core_pointer_size = gelf_fsize(d_elf.get(), ELF_T_ADDR, 1, EV_CURRENT);
+    const bool pointer_size_matches = sizeof(uintptr_t) == core_pointer_size;
+    if (!endianness_matches || !pointer_size_matches) {
+        close(d_fd);
+        throw ElfAnalyzerError("The core file '" + d_filename + "' has an unsupported format.");
     }
 
     std::memset(&d_callbacks, 0, sizeof(d_callbacks));
