@@ -3,6 +3,7 @@ import sys
 import threading
 import time
 
+from subinterpreters_shim import read_n
 from subinterpreters_shim import run_in_new_interpreter
 
 NUM_INTERPRETERS = 3
@@ -28,9 +29,7 @@ while True:
 for _ in range(NUM_INTERPRETERS):
     start_interpreter_async(CODE)
 
-data = b""
-while len(data) < NUM_INTERPRETERS:
-    data += os.read(r_fd, NUM_INTERPRETERS - len(data))
+read_n(r_fd, NUM_INTERPRETERS, timeout=30.0)
 os.close(r_fd)
 os.close(w_fd)
 
