@@ -561,6 +561,25 @@ def test_core_analizer_raises_when_an_invalid_core_is_provided(tmpdir: Path) -> 
         list(get_process_threads_for_core(Path(not_a_core), Path(sys.executable)))
 
 
+@pytest.mark.parametrize(
+    ("ident_index", "incompatible_value"),
+    [
+        (5, 2 if sys.byteorder == "little" else 1),  # EI_DATA
+        (4, 1 if sys.maxsize > 2**32 else 2),  # EI_CLASS
+    ],
+)
+def test_core_analyzer_rejects_incompatible_core_format(
+    tmpdir: Path, ident_index: int, incompatible_value: int
+) -> None:
+    core = bytearray((CORE_FILE_PATHS / "segfault.core").read_bytes())
+    core[ident_index] = incompatible_value
+    incompatible_core = Path(tmpdir) / "incompatible.core"
+    incompatible_core.write_bytes(core)
+
+    with pytest.raises(RuntimeError, match="unsupported format"):
+        CoreFileAnalyzer(str(incompatible_core))
+
+
 def test_invalid_method_for_get_process_threads_for_core():
     # GIVEN
     devnull = Path("/dev/null")

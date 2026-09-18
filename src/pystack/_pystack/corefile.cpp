@@ -245,7 +245,7 @@ parseCoreSiginfo(const NoteData& note_data, CoreCrashInfo* result)
     }
 
     const size_t int_size = gelf_fsize(note_data.elf, ELF_T_WORD, 1, EV_CURRENT);
-    assert(int_size > 0);
+    const size_t addr_size = gelf_fsize(note_data.elf, ELF_T_ADDR, 1, EV_CURRENT);
 
     const char* ptr = static_cast<const char*>(note_data.data->d_buf);
     read_obj(&ptr, &result->si_signo, int_size);
@@ -263,8 +263,6 @@ parseCoreSiginfo(const NoteData& note_data, CoreCrashInfo* result)
             case SIGFPE:
             case SIGSEGV:
             case SIGBUS: {
-                const size_t addr_size = gelf_fsize(note_data.elf, ELF_T_ADDR, 1, EV_CURRENT);
-                assert(addr_size > 0);
                 read_obj(&ptr, &result->failed_addr, addr_size);
                 break;
             }
@@ -293,13 +291,12 @@ parseCoreFileNote(Elf* core, const NoteData& note_data, std::vector<CoreVirtualM
     const char* ptr = static_cast<const char*>(data->d_buf);
     const char* end = static_cast<const char*>(data->d_buf) + data->d_size;
 
-    uint64_t count, page_size;
+    uintptr_t count, page_size;
     read_obj(&ptr, &count, ulong_size);
     read_obj(&ptr, &page_size, ulong_size);
 
-    size_t addrsize = gelf_fsize(core, ELF_T_ADDR, 1, EV_CURRENT);
-    size_t entry_size = 3 * addrsize;  // mstart, mend, moffset
-    uint64_t maxcount = (size_t)(end - ptr) / entry_size;
+    const size_t entry_size = 3 * ulong_size;  // mstart, mend, moffset
+    const size_t maxcount = static_cast<size_t>(end - ptr) / entry_size;
     if (count > maxcount) {
         LOG(ERROR) << "Failed to parse file note data: invalid number of entries";
         return StatusCode::ERROR;
@@ -311,7 +308,7 @@ parseCoreFileNote(Elf* core, const NoteData& note_data, std::vector<CoreVirtualM
 
     for (size_t i = 0; i < count; ++i) {
         // Read the data for a single entry
-        uint64_t mstart, mend, moffset;
+        uintptr_t mstart, mend, moffset;
         read_obj(&ptr, &mstart, ulong_size);
         read_obj(&ptr, &mend, ulong_size);
         read_obj(&ptr, &moffset, ulong_size);
@@ -399,7 +396,10 @@ static StatusCode
 parseCoreExecfn(const NoteData& note_data, uintptr_t* result)
 {
     const size_t auxv_size = gelf_fsize(note_data.elf, ELF_T_AUXV, 1, EV_CURRENT);
-    assert(auxv_size > 0);
+    if (auxv_size == 0) {
+        LOG(ERROR) << "Cannot determine the size of an auxv entry for ELF file";
+        return StatusCode::ERROR;
+    }
     const size_t nauxv = note_data.descriptor_size / auxv_size;
     for (size_t i = 0; i < nauxv; ++i) {
         GElf_auxv_t av_mem;
