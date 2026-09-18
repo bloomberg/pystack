@@ -1,6 +1,8 @@
+import logging
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 from pathlib import Path
@@ -578,6 +580,25 @@ def test_core_analyzer_rejects_incompatible_core_format(
 
     with pytest.raises(RuntimeError, match="unsupported format"):
         CoreFileAnalyzer(str(incompatible_core))
+
+
+def test_core_analyzer_rejects_malformed_nt_file(
+    tmpdir: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    core = bytearray((CORE_FILE_PATHS / "segfault.core").read_bytes())
+    ulong_size = 8
+    desc, descsz = (2148, 451)
+    struct.pack_into(
+        "<Q", core, desc, int((descsz - (2 * ulong_size)) / (3 * ulong_size))
+    )
+    malformed_core = Path(tmpdir) / "malformed_nt_file.core"
+    malformed_core.write_bytes(bytes(core))
+
+    caplog.set_level(logging.ERROR)
+    CoreFileAnalyzer(str(malformed_core)).extract_maps()
+    assert (
+        "Failed to parse file note data: file name table ended too soon" in caplog.text
+    )
 
 
 def test_invalid_method_for_get_process_threads_for_core():

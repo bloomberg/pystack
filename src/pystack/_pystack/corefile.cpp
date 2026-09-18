@@ -278,16 +278,19 @@ parseCoreSiginfo(const NoteData& note_data, CoreCrashInfo* result)
 }
 
 static StatusCode
-parseCoreFileNote(Elf* core, const NoteData& note_data, std::vector<CoreVirtualMap>& result)
+parseNtFileNote(const NoteData& note_data, std::vector<CoreVirtualMap>& result)
 {
     Elf_Data* data = note_data.data;
     assert(data != NULL);
-
     const size_t ulong_size = gelf_fsize(note_data.elf, ELF_T_ADDR, 1, EV_CURRENT);
-    if (ulong_size <= 0) {
-        LOG(ERROR) << "Cannot determine the size of 'long' for ELF file";
+
+    // The note holds a header of 2 longs, then N sets of 3 longs, then N null terminated names.
+    // See https://github.com/torvalds/linux/blob/v4.18/fs/binfmt_elf.c#L1594
+    if (!data->d_buf || data->d_size < 2 * ulong_size) {
+        LOG(ERROR) << "Failed to parse file note data: note is too small";
         return StatusCode::ERROR;
     }
+
     const char* ptr = static_cast<const char*>(data->d_buf);
     const char* end = static_cast<const char*>(data->d_buf) + data->d_size;
 
@@ -302,10 +305,10 @@ parseCoreFileNote(Elf* core, const NoteData& note_data, std::vector<CoreVirtualM
         return StatusCode::ERROR;
     }
 
-    // File names are stored at the end of the main table
-    const char* filename_table_start = ptr + count * entry_size;
-    const char* filename_table_ptr = filename_table_start;
+    const char* next_filename_start = ptr + count * entry_size;
 
+    std::vector<CoreVirtualMap> parsed;
+    parsed.reserve(count);
     for (size_t i = 0; i < count; ++i) {
         // Read the data for a single entry
         uintptr_t mstart, mend, moffset;
@@ -313,19 +316,28 @@ parseCoreFileNote(Elf* core, const NoteData& note_data, std::vector<CoreVirtualM
         read_obj(&ptr, &mend, ulong_size);
         read_obj(&ptr, &moffset, ulong_size);
 
-        // Fetch the corresponding file name from the file name table
-        std::string filename(filename_table_ptr);
-        result.emplace_back(CoreVirtualMap{mstart, mend, 0, "", moffset * page_size, "", 0, filename});
+        uintptr_t offset;
+        if (__builtin_mul_overflow(moffset, page_size, &offset)) {
+            LOG(ERROR) << "Failed to parse file note data: file offset is out of range";
+            return StatusCode::ERROR;
+        }
 
-        // Advance the file name table pointer
-        const char* next_filename =
-                static_cast<const char*>(memchr(filename_table_ptr, '\0', end - filename_table_ptr));
-        if (next_filename == nullptr) {
+        // Fetch the corresponding file name from the file name table
+        const char* next_filename_end =
+                static_cast<const char*>(memchr(next_filename_start, '\0', end - next_filename_start));
+        if (next_filename_end == nullptr) {
             LOG(ERROR) << "Failed to parse file note data: file name table ended too soon";
             return StatusCode::ERROR;
         }
-        filename_table_ptr = next_filename + 1;
+
+        std::string filename(next_filename_start, next_filename_end);
+        parsed.emplace_back(CoreVirtualMap{mstart, mend, 0, "", offset, "", 0, filename});
+
+        // Advance the pointer to the next entry in the file name table
+        next_filename_start = next_filename_end + 1;
     }
+
+    result = std::move(parsed);  // Only modify the caller's vector once we've succeeded.
     return StatusCode::SUCCESS;
 }
 
@@ -337,12 +349,12 @@ CoreFileExtractor::extractMappedFiles() const
     LOG(DEBUG) << "Extracting mapped files from core file note";
 
     for (const auto& note_data : getNoteData(elf, NT_FILE, ELF_T_XWORD)) {
-        if (parseCoreFileNote(elf, note_data, result) != StatusCode::ERROR) {
+        if (parseNtFileNote(note_data, result) != StatusCode::ERROR) {
             LOG(DEBUG) << "Mapped files found in core file note";
             return result;
         }
     }
-    LOG(DEBUG) << "Mapped files could not be found in core file note";
+    LOG(DEBUG) << "Mapped files could not be retrieved from core file note";
     return result;
 }
 

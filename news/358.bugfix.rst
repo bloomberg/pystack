@@ -1,0 +1,1 @@
+Prevent reading past the end of a truncated or malformed core file's ``NT_FILE`` note.
