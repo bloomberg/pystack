@@ -31,9 +31,37 @@ execute_process(
 find_package(nanobind CONFIG REQUIRED)
 
 # Find libelf and libdw via pkg-config
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(LIBELF REQUIRED libelf)
-pkg_check_modules(LIBDW REQUIRED libdw)
+function(make_pkgconfig_target target modulespec)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(${target} REQUIRED ${modulespec})
+
+    set(static "")
+    if(${target}_LINK_LIBRARIES)
+        list(GET ${target}_LINK_LIBRARIES 0 lib)
+        get_filename_component(ext "${lib}" EXT)
+        if(ext STREQUAL "${CMAKE_STATIC_LIBRARY_SUFFIX}")
+            set(static "_STATIC")
+        endif()
+    endif()
+
+    # pkg-config doesn't report that libdw.a needs libdl.so
+    set(libraries ${${target}${static}_LIBRARIES})
+    if(static)
+        list(APPEND libraries ${CMAKE_DL_LIBS})
+    endif()
+
+    add_library(${target} INTERFACE IMPORTED)
+    set_target_properties(${target} PROPERTIES
+        INTERFACE_INCLUDE_DIRECTORIES "${${target}${static}_INCLUDE_DIRS}"
+        INTERFACE_LINK_DIRECTORIES    "${${target}${static}_LIBRARY_DIRS}"
+        INTERFACE_LINK_LIBRARIES      "${libraries}"
+        INTERFACE_COMPILE_OPTIONS     "${${target}${static}_CFLAGS_OTHER}"
+        INTERFACE_LINK_OPTIONS        "${${target}${static}_LDFLAGS_OTHER}"
+    )
+endfunction()
+
+make_pkgconfig_target(LIBELF libelf)
+make_pkgconfig_target(LIBDW  libdw)
 
 # Add the extension module subdirectory
 add_subdirectory(src/pystack/_pystack)
