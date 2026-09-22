@@ -3,6 +3,7 @@ import contextlib
 import itertools
 import os
 import pathlib
+import select
 import shutil
 import subprocess
 import sys
@@ -42,6 +43,70 @@ ALL_VERSIONS = [
 Interpreter = collections.namedtuple(
     "Interpreter", "version path has_symbols uses_musl"
 )
+
+
+def _format_child_output(output) -> str:
+    if isinstance(output, bytes):
+        return output.decode(errors="replace")
+    return output or "<empty>"
+
+
+def _raise_child_startup_error(process: "subprocess.Popen", error: str) -> None:
+    exit_code = process.poll()
+    if exit_code is None:
+        process.terminate()
+        try:
+            stdout, stderr = process.communicate(timeout=1)
+        except subprocess.TimeoutExpired:
+            process.kill()
+            stdout, stderr = process.communicate(timeout=TIMEOUT)
+        status = "still running and was terminated by the test"
+    else:
+        stdout, stderr = process.communicate(timeout=TIMEOUT)
+        status = f"exited with status {exit_code}"
+
+    raise AssertionError(
+        f"Child process {process.pid} {error}; it {status}.\n"
+        f"Command: {process.args!r}\n"
+        f"stdout:\n{_format_child_output(stdout)}\n"
+        f"stderr:\n{_format_child_output(stderr)}"
+    )
+
+
+def _wait_for_child_ready(
+    process: "subprocess.Popen", fifo: pathlib.Path, timeout: float = TIMEOUT
+) -> None:
+    deadline = time.monotonic() + timeout
+    response = bytearray()
+
+    read_fd = os.open(fifo, os.O_RDONLY | os.O_NONBLOCK)
+    # Ensure the FIFO has been opened for writing before we try to read it.
+    write_fd = os.open(fifo, os.O_WRONLY | os.O_NONBLOCK)
+    try:
+        while True:
+            if process.poll() is not None:
+                _raise_child_startup_error(process, "exited before reporting readiness")
+
+            remaining = deadline - time.monotonic()
+            if remaining <= 0:
+                _raise_child_startup_error(
+                    process, f"did not report readiness within {timeout:g} seconds"
+                )
+
+            readable, _, _ = select.select([read_fd], [], [], min(remaining, 0.1))
+            if not readable:
+                continue
+
+            response.extend(os.read(read_fd, 4096))
+            if response == b"ready":
+                return
+            if response and not b"ready".startswith(response):
+                _raise_child_startup_error(
+                    process, f"reported unexpected readiness value {bytes(response)!r}"
+                )
+    finally:
+        os.close(write_fd)
+        os.close(read_fd)
 
 
 def find_all_available_pythons() -> Iterable[Interpreter]:  # pragma: no cover
@@ -100,12 +165,9 @@ def spawn_child_process(
         stderr=subprocess.PIPE,
         text=True,
     ) as process:
-        with open(fifo, "r") as fifo_file:
-            response = fifo_file.read()
-
-        assert response == "ready"
-        time.sleep(0.1)
         try:
+            _wait_for_child_ready(process, fifo)
+            time.sleep(0.1)
             yield process
         finally:
             os.remove(fifo)
@@ -128,10 +190,7 @@ def generate_core_file(
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
     ) as process:
-        with open(fifo, "r") as fifo_file:
-            response = fifo_file.read()
-
-        assert response == "ready"
+        _wait_for_child_ready(process, fifo)
         subprocess.run(
             ["gcore", str(process.pid)],
             check=True,
