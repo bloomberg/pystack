@@ -349,22 +349,18 @@ def process_core(parser: argparse.ArgumentParser, args: argparse.Namespace) -> N
         corefile_analyzer = CoreFileAnalyzer(corefile)
         executable = pathlib.Path(corefile_analyzer.extract_executable())
         if not is_elf(executable):
-            first_map = next(
+            elf_map = next(
                 (
                     map
                     for map in corefile_analyzer.extract_maps()
-                    if map.path is not None
+                    if map.path is not None and is_elf(map.path)
                 ),
                 None,
             )
-            if (
-                first_map is not None
-                and first_map.path is not None
-                and is_elf(first_map.path)
-            ):
-                executable = first_map.path
+            if elf_map is not None and elf_map.path is not None:
+                executable = elf_map.path
                 LOGGER.info(
-                    "Setting executable automatically to the first map in the core: %s",
+                    "Setting executable automatically to the first ELF map in the core: %s",
                     executable,
                 )
         if not executable.exists():
