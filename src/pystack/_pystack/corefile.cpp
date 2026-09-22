@@ -452,9 +452,12 @@ CoreFileExtractor::findExecFn() const
                 continue;
             }
             LOG(DEBUG) << "Valid SHT_NOTE segment found with offset " << std::hex << std::showbase
-                       << shdr->sh_offset << ". Attempting to get ExecDn structure";
+                       << shdr->sh_offset << ". Attempting to get ExecFn structure";
             Elf_Data* data = elf_getdata(scn, nullptr);
-            const NoteData note_data{elf, data, shdr->sh_offset};
+            if (data == nullptr || data->d_buf == nullptr) {
+                continue;
+            }
+            const NoteData note_data{elf, data, data->d_size};
             if (parseCoreExecfn(note_data, &result) != StatusCode::ERROR) {
                 LOG(DEBUG) << "ExecFn structure found";
                 return result;

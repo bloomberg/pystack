@@ -362,9 +362,6 @@ getDataFromNoteSection(
 
         result.emplace_back(NoteData{elf, note_data, descr_size, desc_offset, note_contents});
     }
-    if (result.empty()) {
-        LOG(DEBUG) << "Failed to locate NOTE of type " << note_type << " in the core file";
-    }
     return result;
 }
 
@@ -378,6 +375,9 @@ getNoteData(Elf* elf, Elf64_Word note_type, Elf_Type note_data_type)
         return {};
     }
 
+    std::vector<NoteData> result;
+    bool found_pt_note = false;
+
     // We have to look through the program header to find the note sections.
     // Note that there can be more than one.
     for (size_t program_header_idx = 0; program_header_idx < n_program_headers; ++program_header_idx) {
@@ -387,6 +387,7 @@ getNoteData(Elf* elf, Elf64_Word note_type, Elf_Type note_data_type)
         if (program_header == nullptr || program_header->p_type != PT_NOTE) {
             continue;
         }
+        found_pt_note = true;
         LOG(DEBUG) << "Program header of type PT_NOTE found with offset " << std::hex << std::showbase
                    << program_header->p_offset;
         Elf_Data* data = elf_getdata_rawchunk(
@@ -404,10 +405,16 @@ getNoteData(Elf* elf, Elf64_Word note_type, Elf_Type note_data_type)
         LOG(DEBUG) << "Fetching data from NOTE segments of type " << note_type
                    << " in program header with offset " << std::hex << std::showbase
                    << program_header->p_offset;
-        return getDataFromNoteSection(elf, note_type, note_data_type, program_header, data);
+        auto notes = getDataFromNoteSection(elf, note_type, note_data_type, program_header, data);
+        result.insert(result.end(), notes.begin(), notes.end());
     }
-    LOG(ERROR) << "Failed to locate a program header of type PT_NOTE in the core file";
-    return {};
+    if (!found_pt_note) {
+        LOG(ERROR) << "Failed to locate a program header of type PT_NOTE in the core file";
+    }
+    if (result.empty()) {
+        LOG(DEBUG) << "Failed to locate NOTE of type " << note_type << " in the core file";
+    }
+    return result;
 }
 
 bool
