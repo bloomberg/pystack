@@ -1,1 +1,0 @@
-PyStack no longer falls back to running the interpreter's executable with ``--version`` to determine its version, since that could be unsafe for embedded interpreters. Since this was already a last resort, this should have minimal impact on users.

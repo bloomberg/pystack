@@ -1,1 +1,0 @@
-Explicitly reject core files whose endianness or word size does not match PyStack's. These would never have worked reliably, but until now the reason wasn't clearly surfaced to the user.
