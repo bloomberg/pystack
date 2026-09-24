@@ -415,8 +415,7 @@ CorefileRemoteMemoryManager::getMemoryLocationFromCore(remote_addr_t addr, off_t
         return StatusCode::ERROR;
     }
 
-    off_t base = corefile_it->Offset() - corefile_it->Start();
-    *offset_in_file = base + addr;
+    *offset_in_file = static_cast<off_t>(corefile_it->Offset() + (addr - corefile_it->Start()));
     return StatusCode::SUCCESS;
 }
 
