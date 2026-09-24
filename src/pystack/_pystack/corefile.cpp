@@ -429,44 +429,10 @@ uintptr_t
 CoreFileExtractor::findExecFn() const
 {
     LOG(DEBUG) << "Extracting ExecFn information";
-    // If we have section headers, look for SHT_NOTE sections.
-    // In a core file, the program headers may not be reliable.
+    LOG(DEBUG) << "Attempting to get ExecFn from auxiliary vector";
 
     Elf* elf = d_analyzer->d_elf.get();
     uintptr_t result = 0;
-    size_t shnum;
-
-    if (elf_getshdrnum(elf, &shnum) < 0) {
-        LOG(ERROR) << "Cannot determine the number of sections in the ELF file";
-        return (uintptr_t)nullptr;
-    }
-
-    LOG(DEBUG) << "Found " << shnum << " sections in the ELF file";
-
-    if (shnum != 0) {
-        Elf_Scn* scn = nullptr;
-        while ((scn = elf_nextscn(elf, scn)) != nullptr) {
-            GElf_Shdr shdr_mem;
-            GElf_Shdr* shdr = gelf_getshdr(scn, &shdr_mem);
-            if (shdr == nullptr || shdr->sh_type != SHT_NOTE) {
-                continue;
-            }
-            LOG(DEBUG) << "Valid SHT_NOTE segment found with offset " << std::hex << std::showbase
-                       << shdr->sh_offset << ". Attempting to get ExecFn structure";
-            Elf_Data* data = elf_getdata(scn, nullptr);
-            if (data == nullptr || data->d_buf == nullptr) {
-                continue;
-            }
-            const NoteData note_data{elf, data, data->d_size};
-            if (parseCoreExecfn(note_data, &result) != StatusCode::ERROR) {
-                LOG(DEBUG) << "ExecFn structure found";
-                return result;
-            }
-        }
-    }
-
-    LOG(DEBUG) << "Failed to locate the NOTE section via section headers";
-    LOG(DEBUG) << "Attempting to get ExecFn from auxiliary vector";
 
     for (const auto& note_data : getNoteData(elf, NT_AUXV, ELF_T_AUXV)) {
         if (parseCoreExecfn(note_data, &result) != StatusCode::ERROR) {
