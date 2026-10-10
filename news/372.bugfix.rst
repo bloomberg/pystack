@@ -1,0 +1,2 @@
+Fix native stack merging for Python 3.14 tail-call interpreter builds whose
+``_TAIL_CALL_`` symbols do not have a ``.llvm.`` suffix.
