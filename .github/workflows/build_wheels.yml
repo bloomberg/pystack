@@ -28,7 +28,7 @@ jobs:
       - name: Build sdist
         run: pipx run build --sdist
 
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: sdist
           path: dist/*.tar.gz
@@ -75,7 +75,7 @@ jobs:
           CIBW_BUILD: "cp3{9..15}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
           CIBW_ENABLE: cpython-prerelease
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ matrix.wheel_type }}-wheels
           path: ./wheelhouse/*.whl
@@ -110,7 +110,7 @@ jobs:
           CIBW_BUILD: "cp313t-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
           CIBW_ENABLE: cpython-freethreading
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: ${{ matrix.wheel_type }}-cp313t-wheels
           path: ./wheelhouse/*.whl
