@@ -3,6 +3,7 @@ import sys
 import threading
 import time
 
+from subinterpreters_shim import read_n
 from subinterpreters_shim import run_in_new_interpreter
 
 r_fd, w_fd = os.pipe()
@@ -28,9 +29,7 @@ t2 = threading.Thread(target=launch_chain, daemon=True)
 t1.start()
 t2.start()
 
-data = b""
-while len(data) < 2:
-    data += os.read(r_fd, 2 - len(data))
+read_n(r_fd, 2, timeout=30.0)
 os.close(r_fd)
 os.close(w_fd)
 

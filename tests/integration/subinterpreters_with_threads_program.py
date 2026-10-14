@@ -3,6 +3,7 @@ import sys
 import threading
 import time
 
+from subinterpreters_shim import read_n
 from subinterpreters_shim import run_in_new_interpreter
 
 NUM_INTERPRETERS = 2
@@ -48,9 +49,7 @@ for _ in range(NUM_INTERPRETERS):
 
 TOTAL_EXPECTED = NUM_INTERPRETERS * (NUM_THREADS_PER_SUBINTERPRETER + 1)
 
-data = b""
-while len(data) < TOTAL_EXPECTED:
-    data += os.read(r_fd, TOTAL_EXPECTED - len(data))
+read_n(r_fd, TOTAL_EXPECTED, timeout=30.0)
 os.close(r_fd)
 os.close(w_fd)
 
