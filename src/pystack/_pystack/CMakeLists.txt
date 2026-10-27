@@ -39,33 +39,18 @@ nanobind_add_module(
 # conflicts with system headers (e.g., cpython/pthread.h vs /usr/include/pthread.h)
 target_include_directories(_pystack PRIVATE
     ${CMAKE_CURRENT_SOURCE_DIR}
-    ${LIBELF_INCLUDE_DIRS}
-    ${LIBDW_INCLUDE_DIRS}
 )
 
 # Link libraries
 target_link_libraries(_pystack PRIVATE
-    ${LIBELF_LIBRARIES}
-    ${LIBDW_LIBRARIES}
     Threads::Threads
-    dl
     stdc++fs
-)
-
-# Compiler definitions
-target_compile_definitions(_pystack PRIVATE
-    ${LIBELF_CFLAGS_OTHER}
-    ${LIBDW_CFLAGS_OTHER}
+    LIBDW
+    LIBELF
 )
 
 # Add pthread compile options (needed for C++ threading support on Linux)
 target_compile_options(_pystack PRIVATE -pthread)
-
-# Link directories
-target_link_directories(_pystack PRIVATE
-    ${LIBELF_LIBRARY_DIRS}
-    ${LIBDW_LIBRARY_DIRS}
-)
 
 # Install the module (destination is relative to wheel.install-dir in pyproject.toml)
 install(TARGETS _pystack LIBRARY DESTINATION .)

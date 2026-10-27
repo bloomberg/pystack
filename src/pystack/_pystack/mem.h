@@ -10,6 +10,7 @@
 #include <string>
 #include <sys/mman.h>
 #include <sys/stat.h>
+#include <unordered_set>
 #include <vector>
 
 #include "elf_common.h"
@@ -174,6 +175,7 @@ class ProcessMemoryManager : public AbstractRemoteMemoryManager
     pid_t d_pid;
     std::vector<VirtualMap> d_vmaps;
     mutable LRUCache d_lru_cache;
+    mutable std::unordered_set<uintptr_t> d_uncacheable_vmaps;
     mutable file_unique_ptr d_memfile;
 
     // Methods

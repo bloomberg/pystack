@@ -70,7 +70,7 @@ jobs:
         run: |
           tar zxvf *.tar.gz --strip-components=1
       - name: Build wheels
-        uses: pypa/cibuildwheel@294735312765b09d24a2fbec22660ce817587d55 # v4.1.0
+        uses: pypa/cibuildwheel@e090b81e30c4d855ea63bf4b6e59204c09a101ae # v4.2.1
         env:
           CIBW_BUILD: "cp3{9..15}{t,}-${{ matrix.wheel_type }}"
           CIBW_ARCHS_LINUX: auto
@@ -173,7 +173,7 @@ jobs:
           name: "manylinux_x86_64-wheels"
           path: dist
       - name: Install uv
-        uses: astral-sh/setup-uv@c771a70e6277c0a99b617c7a806ffedaca235ff9 # v9.0.0
+        uses: astral-sh/setup-uv@bec219d24cd3e171d82865faccec33120bb574f4 # v10.1.0
         with:
           version: latest
           python-version: ${{ matrix.python_version }}
@@ -491,6 +491,6 @@ jobs:
         run: |
           rm -f dist/*cp316*
           ls -R dist
-      - uses: pypa/gh-action-pypi-publish@cef221092ed1bacb1cc03d23a2d87d1d172e277b # v1.14.0
+      - uses: pypa/gh-action-pypi-publish@dc37677b2e1c63e2034f94d8a5b11f265b73ba33 # v1.14.2
         with:
           skip_existing: true

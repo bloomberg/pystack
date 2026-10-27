@@ -1,3 +1,4 @@
+#include <bit>
 #include <cassert>
 #include <cerrno>
 #include <cstring>
@@ -158,6 +159,25 @@ CoreFileAnalyzer::CoreFileAnalyzer(
     if (!d_elf) {
         close(d_fd);
         throw ElfAnalyzerError("Cannot read elf file");
+    }
+
+    size_t ident_size = 0;
+    const char* ident = elf_getident(d_elf.get(), &ident_size);
+    if (ident == nullptr || ident_size <= EI_DATA) {
+        close(d_fd);
+        throw ElfAnalyzerError("Cannot read the ELF header of '" + d_filename + "'");
+    }
+
+    const auto core_endianness = static_cast<unsigned char>(ident[EI_DATA]);
+    const bool endianness_matches =
+            (core_endianness == ELFDATA2LSB && std::endian::native == std::endian::little)
+            || (core_endianness == ELFDATA2MSB && std::endian::native == std::endian::big);
+
+    const auto core_pointer_size = gelf_fsize(d_elf.get(), ELF_T_ADDR, 1, EV_CURRENT);
+    const bool pointer_size_matches = sizeof(uintptr_t) == core_pointer_size;
+    if (!endianness_matches || !pointer_size_matches) {
+        close(d_fd);
+        throw ElfAnalyzerError("The core file '" + d_filename + "' has an unsupported format.");
     }
 
     std::memset(&d_callbacks, 0, sizeof(d_callbacks));
@@ -423,9 +443,6 @@ getDataFromNoteSection(
 
         result.emplace_back(NoteData{elf, note_data, descr_size, desc_offset, note_contents});
     }
-    if (result.empty()) {
-        LOG(DEBUG) << "Failed to locate NOTE of type " << note_type << " in the core file";
-    }
     return result;
 }
 
@@ -439,6 +456,9 @@ getNoteData(Elf* elf, Elf64_Word note_type, Elf_Type note_data_type)
         return {};
     }
 
+    std::vector<NoteData> result;
+    bool found_pt_note = false;
+
     // We have to look through the program header to find the note sections.
     // Note that there can be more than one.
     for (size_t program_header_idx = 0; program_header_idx < n_program_headers; ++program_header_idx) {
@@ -448,6 +468,7 @@ getNoteData(Elf* elf, Elf64_Word note_type, Elf_Type note_data_type)
         if (program_header == nullptr || program_header->p_type != PT_NOTE) {
             continue;
         }
+        found_pt_note = true;
         LOG(DEBUG) << "Program header of type PT_NOTE found with offset " << std::hex << std::showbase
                    << program_header->p_offset;
         Elf_Data* data = elf_getdata_rawchunk(
@@ -465,10 +486,16 @@ getNoteData(Elf* elf, Elf64_Word note_type, Elf_Type note_data_type)
         LOG(DEBUG) << "Fetching data from NOTE segments of type " << note_type
                    << " in program header with offset " << std::hex << std::showbase
                    << program_header->p_offset;
-        return getDataFromNoteSection(elf, note_type, note_data_type, program_header, data);
+        auto notes = getDataFromNoteSection(elf, note_type, note_data_type, program_header, data);
+        result.insert(result.end(), notes.begin(), notes.end());
     }
-    LOG(ERROR) << "Failed to locate a program header of type PT_NOTE in the core file";
-    return {};
+    if (!found_pt_note) {
+        LOG(ERROR) << "Failed to locate a program header of type PT_NOTE in the core file";
+    }
+    if (result.empty()) {
+        LOG(DEBUG) << "Failed to locate NOTE of type " << note_type << " in the core file";
+    }
+    return result;
 }
 
 bool

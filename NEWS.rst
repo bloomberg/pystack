@@ -8,6 +8,25 @@ Changelog
 
 .. towncrier release notes start
 
+pystack 1.7.2 (2026-09-22)
+--------------------------
+
+Deprecations and Removals
+~~~~~~~~~~~~~~~~~~~~~~~~~
+
+- PyStack no longer falls back to running the interpreter's executable with ``--version`` to determine its version, since that could be unsafe for embedded interpreters. Since this was already a last resort, this should have minimal impact on users. (#359)
+
+
+Bug Fixes
+~~~~~~~~~
+
+- AArch64 wheels can now unwind through Linux signal frames, preserving the interrupted frames when inspecting a process in a signal handler. (#348)
+- Avoid repeated whole-map reads when a readable memory map contains an inaccessible guard page. Reads of accessible addresses in the same map now bypass the cache after the first failed cache fill. (#352)
+- Prevent reading past the end of a truncated or malformed core file's ``NT_FILE`` note. (#358)
+- Explicitly reject core files whose endianness or word size does not match PyStack's. These would never have worked reliably, but until now the reason wasn't clearly surfaced to the user. (#360)
+- Ensure PyStack considers every ``PT_NOTE`` segment in a core file that has multiple. (#366)
+
+
 pystack 1.7.1 (2026-08-07)
 --------------------------
 

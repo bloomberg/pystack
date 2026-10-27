@@ -3,13 +3,18 @@ import subprocess
 import sys
 from pathlib import Path
 
+import pytest
+
 from pystack.engine import NativeReportingMode
 from pystack.engine import get_process_threads
+from pystack.engine import get_process_threads_for_core
 from pystack.types import LocationInfo
 from pystack.types import NativeFrame
 from pystack.types import frame_type
 from tests.utils import ALL_PYTHONS
+from tests.utils import AVAILABLE_PYTHONS
 from tests.utils import all_pystack_combinations
+from tests.utils import generate_core_file
 from tests.utils import python_has_inlined_eval_frames
 from tests.utils import python_has_position_information
 from tests.utils import spawn_child_process
@@ -26,6 +31,7 @@ TEST_POSITION_INFO_FILE = Path(__file__).parent / "position_information_program.
 TEST_NO_FRAMES_AT_SHUTDOWN_FILE = (
     Path(__file__).parent / "no_frames_at_shutdown_program.py"
 )
+TEST_SIGNAL_HANDLER_EXTENSION = Path(__file__).parent / "testext"
 
 
 @all_pystack_combinations()
@@ -303,6 +309,110 @@ def test_multiple_thread_stack_native(python, method, blocking, tmpdir):
         else:  # pragma: no cover
             assert all(frame.linenumber != 0 for frame in eval_frames)
             assert any(frame.path and "?" not in frame.path for frame in eval_frames)
+
+
+def build_signal_handler_extension(python_executable, tmpdir):
+    """Build the testext extension in tmpdir and return its driver script."""
+    extension_path = tmpdir / "testext"
+    shutil.copytree(TEST_SIGNAL_HANDLER_EXTENSION, extension_path)
+    subprocess.run(
+        [python_executable, str(extension_path / "setup.py"), "build_ext", "--inplace"],
+        check=True,
+        cwd=extension_path,
+        capture_output=True,
+    )
+    return extension_path / "main.py"
+
+
+def assert_stack_was_unwound_through_signal_frame(thread, program):
+    """Ensure we got the expected Python stack and the right number of eval frames."""
+    frames = list(thread.frames)
+
+    filenames = {frame.code.filename for frame in frames}
+    assert filenames == {str(program)}
+
+    functions = [frame.code.scope for frame in frames]
+    assert functions == ["<module>", "first_func", "second_func", "third_func"]
+
+    native_frames = list(thread.native_frames)
+    assert native_frames
+
+    eval_frames = [
+        frame
+        for frame in native_frames
+        if frame_type(frame, thread.python_version) == NativeFrame.FrameType.EVAL
+    ]
+    assert eval_frames
+    assert len(eval_frames) == sum(frame.is_entry for frame in thread.frames)
+    assert all("?" not in frame.symbol for frame in eval_frames)
+
+
+ALL_PYTHONS_BUT_XFAIL_ON_ALPINE = pytest.mark.parametrize(
+    "python",
+    [
+        pytest.param(
+            python[:2],
+            marks=(
+                pytest.mark.xfail(
+                    python.uses_musl,
+                    reason="unwinding through signal frames fails on x86-64 Alpine",
+                )
+            ),
+        )
+        for python in AVAILABLE_PYTHONS
+    ],
+    ids=[python[1].name for python in AVAILABLE_PYTHONS],
+)
+
+
+@ALL_PYTHONS_BUT_XFAIL_ON_ALPINE
+def test_stack_of_thread_in_signal_handler(python, tmpdir):
+    # GIVEN
+
+    _, python_executable = python
+
+    # WHEN
+
+    program = build_signal_handler_extension(python_executable, tmpdir)
+    with spawn_child_process(python_executable, program, tmpdir) as child_process:
+        threads = list(
+            get_process_threads(
+                child_process.pid,
+                stop_process=True,
+                native_mode=NativeReportingMode.PYTHON,
+            )
+        )
+
+    # THEN
+
+    assert len(threads) == 1
+    (thread,) = threads
+    assert_stack_was_unwound_through_signal_frame(thread, program)
+
+
+@ALL_PYTHONS_BUT_XFAIL_ON_ALPINE
+def test_stack_of_thread_in_signal_handler_for_core(python, tmpdir):
+    # GIVEN
+
+    _, python_executable = python
+
+    # WHEN
+
+    program = build_signal_handler_extension(python_executable, tmpdir)
+    with generate_core_file(python_executable, program, tmpdir) as core_file:
+        threads = list(
+            get_process_threads_for_core(
+                core_file,
+                Path(python_executable),
+                native_mode=NativeReportingMode.PYTHON,
+            )
+        )
+
+    # THEN
+
+    assert len(threads) == 1
+    (thread,) = threads
+    assert_stack_was_unwound_through_signal_frame(thread, program)
 
 
 @ALL_PYTHONS

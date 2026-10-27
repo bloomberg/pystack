@@ -1,6 +1,5 @@
 #include "version_detector.h"
 
-#include <cstdio>
 #include <filesystem>
 #include <fstream>
 #include <regex>
@@ -108,36 +107,6 @@ inferVersionFromPath(const std::string& path)
     return std::nullopt;
 }
 
-// Matches: "Python 3.10.4" or similar --version output
-static const std::regex VERSION_OUTPUT_REGEXP(R"(Python (\d+)\.(\d+).*)", std::regex_constants::icase);
-
-static std::optional<PythonVersion>
-getVersionFromBinary(const std::string& binary_path)
-{
-    std::string cmd = binary_path + " --version 2>&1";
-    FILE* pipe = popen(cmd.c_str(), "r");
-    if (!pipe) {
-        return std::nullopt;
-    }
-
-    char buffer[256];
-    std::string output;
-    while (fgets(buffer, sizeof(buffer), pipe)) {
-        output += buffer;
-    }
-    pclose(pipe);
-
-    std::smatch match;
-    if (std::regex_search(output, match, VERSION_OUTPUT_REGEXP)) {
-        int major = std::stoi(match[1].str());
-        int minor = std::stoi(match[2].str());
-        LOG(INFO) << "Version found by running --version: " << major << "." << minor;
-        return PythonVersion(major, minor);
-    }
-
-    return std::nullopt;
-}
-
 static PythonVersion
 getVersionFromMapInfo(const ProcessMemoryMapInfo& mapinfo)
 {
@@ -154,13 +123,6 @@ getVersionFromMapInfo(const ProcessMemoryMapInfo& mapinfo)
         auto version = inferVersionFromPath(mapinfo.python.Path());
         if (version) {
             return *version;
-        }
-
-        LOG(INFO) << "Could not find version by looking at library or binary path: "
-                     "Trying to get it from running python --version";
-        auto bin_version = getVersionFromBinary(mapinfo.python.Path());
-        if (bin_version) {
-            return *bin_version;
         }
     }
 

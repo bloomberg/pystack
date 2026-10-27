@@ -39,7 +39,9 @@ ALL_VERSIONS = [
     ((2, 7), "python2.7"),
 ]
 
-Interpreter = collections.namedtuple("Interpreter", "version path has_symbols")
+Interpreter = collections.namedtuple(
+    "Interpreter", "version path has_symbols uses_musl"
+)
 
 
 def find_all_available_pythons() -> Iterable[Interpreter]:  # pragma: no cover
@@ -79,8 +81,8 @@ def find_all_available_pythons() -> Iterable[Interpreter]:  # pragma: no cover
         has_symbols = result.returncode == 0 and (
             b" stripped" not in result.stdout or b"not stripped" in result.stdout
         )
-
-        yield Interpreter(version, pathlib.Path(location), has_symbols)
+        uses_musl = b"musl" in result.stdout
+        yield Interpreter(version, pathlib.Path(location), has_symbols, uses_musl)
 
 
 AVAILABLE_PYTHONS = tuple(find_all_available_pythons())

@@ -1,6 +1,8 @@
+import logging
 import os
 import re
 import shutil
+import struct
 import subprocess
 import sys
 from pathlib import Path
@@ -559,6 +561,44 @@ def test_core_analizer_raises_when_an_invalid_core_is_provided(tmpdir: Path) -> 
     # WHEN / THEN
     with pytest.raises(EngineError):
         list(get_process_threads_for_core(Path(not_a_core), Path(sys.executable)))
+
+
+@pytest.mark.parametrize(
+    ("ident_index", "incompatible_value"),
+    [
+        (5, 2 if sys.byteorder == "little" else 1),  # EI_DATA
+        (4, 1 if sys.maxsize > 2**32 else 2),  # EI_CLASS
+    ],
+)
+def test_core_analyzer_rejects_incompatible_core_format(
+    tmpdir: Path, ident_index: int, incompatible_value: int
+) -> None:
+    core = bytearray((CORE_FILE_PATHS / "segfault.core").read_bytes())
+    core[ident_index] = incompatible_value
+    incompatible_core = Path(tmpdir) / "incompatible.core"
+    incompatible_core.write_bytes(core)
+
+    with pytest.raises(RuntimeError, match="unsupported format"):
+        CoreFileAnalyzer(str(incompatible_core))
+
+
+def test_core_analyzer_rejects_malformed_nt_file(
+    tmpdir: Path, caplog: pytest.LogCaptureFixture
+) -> None:
+    core = bytearray((CORE_FILE_PATHS / "segfault.core").read_bytes())
+    ulong_size = 8
+    desc, descsz = (2148, 451)
+    struct.pack_into(
+        "<Q", core, desc, int((descsz - (2 * ulong_size)) / (3 * ulong_size))
+    )
+    malformed_core = Path(tmpdir) / "malformed_nt_file.core"
+    malformed_core.write_bytes(bytes(core))
+
+    caplog.set_level(logging.ERROR)
+    CoreFileAnalyzer(str(malformed_core)).extract_maps()
+    assert (
+        "Failed to parse file note data: file name table ended too soon" in caplog.text
+    )
 
 
 def test_invalid_method_for_get_process_threads_for_core():
