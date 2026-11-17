@@ -1,0 +1,1 @@
+Fix the ``zombie`` field in the core file information header always being reported as ``True``.
