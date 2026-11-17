@@ -1130,12 +1130,13 @@ def test_format_failureinfo_information_with_no_info():
     )
 
 
-def test_format_psinfo():
+@pytest.mark.parametrize("zomb, expected_zombie", [(0, "False"), (1, "True")])
+def test_format_psinfo(zomb, expected_zombie):
     # GIVEN
     info = {
         "state": 0,
         "sname": 82,
-        "zomb": 0,
+        "zomb": zomb,
         "nice": 0,
         "flag": 4212480,
         "uid": 0,
@@ -1154,9 +1155,9 @@ def test_format_psinfo():
 
     # THEN
 
-    expected = dedent("""\
+    expected = dedent(f"""\
     Core file information:
-    state: R zombie: True niceness: 0
+    state: R zombie: {expected_zombie} niceness: 0
     pid: 75639 ppid: 1 sid: 1
     uid: 0 gid: 0 pgrp: 75639
     executable: a.out arguments: ./a.out
