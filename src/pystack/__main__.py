@@ -305,7 +305,7 @@ def format_psinfo_information(psinfo: Dict[str, Any]) -> str:
         return as_green_str(psinfo.get(key))
 
     state = as_green_str(chr(psinfo["sname"]))
-    zombie = as_green_str(bool([psinfo["zomb"]]))
+    zombie = as_green_str(bool(psinfo["zomb"]))
     return dedent(f"""
     {colored("Core file information:", "blue")}
     state: {state} zombie: {zombie} niceness: {green('nice')}
